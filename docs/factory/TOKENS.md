@@ -16,7 +16,7 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 | 4 | Cache des vérifications de bibliothèques, consulté avant Context7 | `docs/factory/libs-cache.md`, `docs/factory/CONTEXT7.md` |
 | 5 | Context7 réservé aux API nouvelles (implémenteur, relecteur, planner) | `CONTEXT7.md`, `reviewer.md`, `planner.md` |
 | 6 | Boucle de développement avec contrôles ciblés ; `pnpm verify` complet seulement avant de commiter | `/implement` |
-| 7 | `pnpm verify:quiet` : une ligne si vert, erreurs filtrées sinon, log complet dans `.context/verify.log` | `scripts/verify-quiet.mjs`, `package.json`, `/implement`, `/ship`, `/resolve` |
+| 7 | `pnpm verify:quiet` : une ligne si vert, erreurs filtrées sinon, log complet dans `.context/verify.log` | `scripts/verify-quiet.mjs`, `package.json`, `/implement`, `/fix`, `/ship`, `/resolve`, `conflict-resolver` |
 | 8 | Lectures en parallèle, pas de relecture après édition | `CLAUDE.md` (section « Sobriété en tokens ») |
 | 9 | Pré-revue par script : périmètre, contrat, dépendances déclarées, section Context7 | `scripts/pre-review.mjs check`, `/review` |
 | 10 | Diff filtré pour le relecteur (sans lockfile, `*.gen.ts`, tests de contrat) | `scripts/pre-review.mjs brief` |
@@ -41,7 +41,7 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 
 À connaître avant d'en retirer une : si tu retires un script, retire aussi ses appels.
 - 1 et 2 vivent dans `split-plan.mjs` ; `CLAUDE.md`, `/implement` et `reviewer.md` l'appellent.
-- 7 : `/implement`, `/ship`, `/resolve` appellent `verify:quiet`.
+- 7 : `/implement`, `/fix`, `/ship`, `/resolve` et `conflict-resolver` appellent `verify:quiet`.
 - 9 à 11 : `/review` et `reviewer.md` appellent `pre-review.mjs`.
 - 4 et 15 : `CLAUDE.md` pointe vers `CONTEXT7.md` et `DOMAIN-SECURITY.md`.
 - Les tests des scripts sont `tests/unit/{split-plan,verify-quiet,pre-review,token-report}.test.ts`.

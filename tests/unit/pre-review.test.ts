@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 interface PreReview {
   globMatch(glob: string, file: string): boolean;
   workMode(hasLease: boolean, branch: string): string;
+  isFixBranch(branch: string): boolean;
+  hasRegressionTest(files: string[]): boolean;
   labelGlobs(text: string, label: string): string[];
   reviewLevel(files: string[], labeler: string): string;
   reviewKind(files: string[]): string;
@@ -105,6 +107,24 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.workMode(false, "s4mf3nn/spec-0001-t2-x")).toBe("spec");
     expect(mod.workMode(false, "")).toBe("spec");
     expect(mod.workMode(false, "respec-0001-t2")).toBe("hors-spec");
+    expect(mod.workMode(false, "spec-0001-fix-42-empty-slug")).toBe("spec");
+  });
+
+  it("recognizes a fix branch", () => {
+    expect(mod.isFixBranch("spec-0001-fix-42-empty-slug")).toBe(true);
+    expect(mod.isFixBranch("s4mf3nn/spec-0001-fix-42")).toBe(true);
+    expect(mod.isFixBranch("spec-0001-fix")).toBe(true);
+    expect(mod.isFixBranch("spec-0001-t2-fix-typo")).toBe(false);
+    expect(mod.isFixBranch("spec-0001-fixture")).toBe(false);
+    expect(mod.isFixBranch("fix-login")).toBe(false);
+  });
+
+  it("requires a regression test outside the contract and the holdout scenarios", () => {
+    expect(mod.hasRegressionTest(["src/features/links/service.ts", "src/features/links/service.test.ts"])).toBe(true);
+    expect(mod.hasRegressionTest(["tests/unit/lease.test.ts"])).toBe(true);
+    expect(mod.hasRegressionTest(["src/features/links/service.ts"])).toBe(false);
+    expect(mod.hasRegressionTest(["tests/acceptance/SPEC-0001.test.ts"])).toBe(false);
+    expect(mod.hasRegressionTest(["tests/holdout/SPEC-0001.test.ts"])).toBe(false);
   });
 
   it("lit les globs d'une étiquette", () => {

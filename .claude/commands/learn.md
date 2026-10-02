@@ -14,4 +14,6 @@ Propose la forme la plus **déterministe** possible pour éviter la récidive, d
 
 « Règles actives » est plafonnée à 10 lignes (elles sont relues par chaque agent à chaque tâche) : si le plafond est atteint, propose d'abord d'en retirer ou de convertir l'une d'elles en forme plus déterministe (journal conservé).
 
+Si l'incident est un bug déjà corrigé par `/fix`, son test de non-régression existe : vise la classe de défauts (les autres endroits où le même bug peut se produire), pas ce cas précis.
+
 Montre-moi la proposition avant d'appliquer, puis ajoute une entrée datée dans le journal de `LEARNINGS.md`.

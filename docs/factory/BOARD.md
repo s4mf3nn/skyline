@@ -32,6 +32,7 @@ En local : `BOARD_PROJECT=<propriétaire>/<numéro> node scripts/board.mjs sync`
 ## Limites
 
 - `in-progress` n'est posé que si l'issue existe déjà au moment du bail ; sinon `/implement` continue et la carte passe directement à `in-review`.
+- Les correctifs de bug (`/fix`, branches `spec-xxxx-fix-*`) ne sont pas des tâches : ils ne déplacent aucune carte. L'issue `bug` est une issue ordinaire, fermée par `Fixes #<n>` à la fusion ; ajoute-la au Project à la main si tu veux la voir sur le tableau.
 - Une tâche supprimée du plan garde son issue (à fermer à la main).
 - Une issue fermée comme terminée reste `done`, même si sa PR n'est plus dans les 500 dernières.
 - Une PR en brouillon compte comme `in-review`.

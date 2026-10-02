@@ -3,12 +3,12 @@
 // Usage :
 //   node scripts/pre-review.mjs check   contrôles déterministes (code 1 s'il y a une violation)
 //   node scripts/pre-review.mjs level   niveau de revue : full | standard | light (selon .github/labeler.yml)
-//   node scripts/pre-review.mjs mode    travail de spec ou hors spec (bail du workspace ou branche spec-xxxx-t#-*)
+//   node scripts/pre-review.mjs mode    travail de spec ou hors spec (bail du workspace, branche spec-xxxx-t#-* ou spec-xxxx-fix-*)
 //   node scripts/pre-review.mjs brief   niveau, contrôles, fichiers et diff filtré, pour le subagent `reviewer`
 //   node scripts/pre-review.mjs kind    relecteur à lancer : spec (`spec-reviewer`) | code (`reviewer`)
 // Contrôles : fichiers modifiés dans le périmètre du bail, scénarios cachés retirés du workspace de tâche, tests de
 // contrat (check-contract), dépendances ajoutées et déclarées dans .pr-summary.md, section « Documentation consultée
-// (Context7) » remplie.
+// (Context7) » remplie, test de non-régression présent sur une branche de correctif (spec-xxxx-fix-*).
 // Variables : BASE_REF (défaut origin/main), CONDUCTOR_ROOT_PATH et CONDUCTOR_WORKSPACE_PATH (baux).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -129,9 +129,26 @@ export function checkSummary(summary, added) {
   return problems;
 }
 
-/** Travail de spec si bail, HEAD détaché ou branche `[préfixe/]spec-xxxx-t#-*` ; sinon hors spec (outillage). */
+/** Branche de correctif posée par `/fix` : `[préfixe/]spec-xxxx-fix-*`. */
+export function isFixBranch(branch) {
+  return /^(?:[^/]+\/)?spec-\d+-fix(-|$)/i.test(branch);
+}
+
+const TEST_FILE = /\.test\.tsx?$/;
+
+/** Le diff contient-il un test hors contrat et hors scénarios cachés (ceux-là sont immuables) ? */
+export function hasRegressionTest(files) {
+  return files.some((f) => TEST_FILE.test(f) && !inPerimeter(f, ["tests/acceptance", "tests/holdout"]));
+}
+
+/** Travail de spec si bail, HEAD détaché, branche de tâche `[préfixe/]spec-xxxx-t#-*` ou de correctif ; sinon hors spec (outillage). */
 export function workMode(hasLease, branch) {
-  return hasLease || branch === "" || /^(?:[^/]+\/)?spec-\d+-t\d+(-|$)/i.test(branch) ? "spec" : "hors-spec";
+  const isTaskBranch = /^(?:[^/]+\/)?spec-\d+-t\d+(-|$)/i.test(branch);
+  return hasLease || branch === "" || isTaskBranch || isFixBranch(branch) ? "spec" : "hors-spec";
+}
+
+function currentBranch() {
+  return git("branch", "--show-current").trim();
 }
 
 function currentLease() {
@@ -172,6 +189,15 @@ export function runChecks() {
     if (fs.existsSync("tests/holdout"))
       problems.push("scénarios cachés visibles dans un workspace de tâche : lance `node scripts/holdout.mjs hide`");
   } else notes.push("aucun bail pour ce workspace : périmètre non contrôlé");
+
+  // Un correctif sans test laisse le bug revenir : le test qui le reproduit fait partie du correctif.
+  if (isFixBranch(currentBranch())) {
+    notes.push(
+      "correctif de bug (branche spec-xxxx-fix-*) : pas de tâche de plan, voir « Référence » de .pr-summary.md",
+    );
+    if (!hasRegressionTest(files))
+      problems.push("correctif sans test de non-régression : ajoute un test `*.test.ts` qui reproduit le bug");
+  }
 
   try {
     execFileSync("node", ["scripts/check-contract.mjs"], { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
@@ -233,7 +259,7 @@ if (isMain) {
       }
       console.log("Pré-revue : OK");
     } else if (cmd === "level") console.log(level());
-    else if (cmd === "mode") console.log(workMode(currentLease() !== null, git("branch", "--show-current").trim()));
+    else if (cmd === "mode") console.log(workMode(currentLease() !== null, currentBranch()));
     else if (cmd === "brief") console.log(brief());
     else if (cmd === "kind") console.log(reviewKind(changedFiles()));
     else {

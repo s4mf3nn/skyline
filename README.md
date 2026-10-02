@@ -12,6 +12,7 @@ L'humain décide du **quoi** (spec et tests de contrat) et arbitre les fusions. 
 /new-spec ──► PR de spec ──► /plan ──► PR de plan ──► /implement T1 ┐
  (humain relit et fusionne)   (humain relit et fusionne)  /implement T2 ├─► /review ─► /ship ─► CI ─► /land
                                                           /implement T3 ┘   (boucle ≤ 3)        (humain arbitre)
+                          bug : issue ─► /fix (test qui échoue, puis correction) ─► /review ─► /ship ─► CI ─► /land
                                         vendredi : /retro ─► /learn ─► règle durable
 ```
 
@@ -35,6 +36,7 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 | Routage par risque | Étiquette `risk:*` selon les chemins ; niveau de revue et arbitrage humain en découlent | `.github/labeler.yml`, `.github/workflows/risk.yml`, `.github/CODEOWNERS`, `docs/factory/RISK.md` |
 | Gates de CI | Titre de PR, typage, lint, tests, contrat, scénarios cachés, mutation sur les fichiers modifiés, gitleaks, Semgrep ; rejoués sur `main` après chaque fusion | `.github/workflows/ci.yml`, `scripts/security-scan.mjs` |
 | Fusion sans merge queue | `main` verte, checks verts, confirmation humaine sur `risk:high` et `contract-change`, squash | `/land`, `/resolve`, subagent `conflict-resolver` |
+| Correction de bug | Un bug se corrige contre la spec existante, avec le test qui le reproduit ; une spec fausse s'amende avant | `/fix`, `scripts/pre-review.mjs`, `docs/factory/WORKFLOW.md` |
 | Boucle d'amélioration | Un incident devient un lint, un test ou un script avant de devenir une consigne | `/retro`, `/learn`, `docs/factory/{LEARNINGS,METRICS,HOTSPOTS}.md` |
 | Documentation de bibliothèques | Context7 à version épinglée, précédé d'un cache local | `.mcp.json`, `docs/factory/CONTEXT7.md`, `docs/factory/libs-cache.md` |
 | Sobriété en tokens | Extraits de plan, sortie filtrée, niveaux de revue, modèles par commande | `docs/factory/TOKENS.md`, `scripts/token-report.mjs` |

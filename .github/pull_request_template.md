@@ -1,9 +1,10 @@
-<!-- Titre : type(spec-xxxx): description   ex. feat(spec-0001): create short link ; hors spec (outillage) : fix(factory): description -->
+<!-- Titre : type(spec-xxxx): description   ex. feat(spec-0001): create short link ; correctif de bug : fix(spec-0001): description ; hors spec (outillage) : fix(factory): description -->
 
 ## Référence
 <!-- Hors spec (amélioration du boilerplate) : écrire « Hors spec : <objet> » et supprimer les lignes ci-dessous -->
 - Spec : `specs/SPEC-XXXX-.../spec.md`
 - Tâche : T#
+<!-- Correctif de bug (/fix) : remplacer la ligne « Tâche » par « Correctif : Fixes #<issue> » et citer le critère ou le cas limite non tenu -->
 - Critères d'acceptation couverts : CA1, CA2
 
 ## Intention
@@ -32,5 +33,6 @@ Aucune | nom, version, justification
 ## Checklist
 - [ ] `pnpm verify` vert en local
 - [ ] Seul `.skip` retiré dans `tests/acceptance/`
+- [ ] Correctif de bug : test de non-régression ajouté, vu en échec avant la correction
 - [ ] Aucune modification hors périmètre non justifiée
 - [ ] Revue locale `OK` sur le dernier état du code

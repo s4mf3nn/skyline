@@ -34,6 +34,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Setup / archivage** : scripts lancés par Conductor à la création et à l'archivage d'un workspace (`scripts/conductor-setup.sh`, `scripts/conductor-archive.sh`). Le setup installe les dépendances, relie le `.env` et crée la base dédiée s'il y en a une ; l'archivage libère les baux et supprime cette base.
 - **Base** : la branche de référence, `origin/main`. Tous les contrôles comparent la branche de la tâche à la base (variable `BASE_REF` pour en changer).
 - **Branche de tâche** : branche du workspace, renommée `spec-xxxx-t#-<slug>` au début de `/implement`. Une branche par tâche, une PR par branche.
+- **Branche de correctif** : branche d'un correctif de bug, renommée `spec-xxxx-fix-<issue>-<slug>` par `/fix`. La pré-revue y exige un test de non-régression.
 - **`.env` / `.env.local`** : variables d'environnement, hors git. Le `.env` vit dans le dépôt principal et est relié dans chaque workspace ; `.env.local` est écrit par le setup pour ce qui est propre au workspace (l'adresse de sa base). Les agents n'ont pas le droit de les lire.
 - **Port** : chaque workspace reçoit le sien (`$CONDUCTOR_PORT`), pour que plusieurs serveurs locaux tournent en même temps.
 - **Permissions de l'agent** : liste des commandes autorisées sans confirmation et des actions refusées (`.claude/settings.json`). Sont refusés : le push forcé, `--no-verify`, la lecture des `.env`.
@@ -182,6 +183,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | `/new-spec <besoin>` | Rédige la spec, les tests de contrat en `describe.skip` et les scénarios cachés, après avoir posé ses questions ; les fait relire (`spec-reviewer`) et ouvre la PR de spec | L'humain relit et fusionne la PR de spec |
 | `/plan <SPEC>` | Découpe la spec en tâches (subagent `planner`) et ouvre la PR de plan | L'humain relit et fusionne la PR de plan |
 | `/implement <SPEC> <T#>` | Implémente une tâche : bail, tests, code, vérification, revue, puis `/ship` | L'agent enchaîne seul |
+| `/fix <issue \| description>` | Corrige un bug sur une spec livrée : classement (code ou spec en cause), bail, test qui reproduit le bug, correction, vérification, revue, puis `/ship` | L'agent enchaîne seul ; il s'arrête si c'est la spec qui est en cause |
 | `/review` | Pré-revue par script puis revue adversariale (`reviewer`, ou `spec-reviewer` pour une PR de spec) ; enregistre le verdict | L'agent corrige si besoin |
 | `/ship` | Vérifie, contrôle la revue, pousse et ouvre la PR | La CI, puis l'humain |
 | `/resolve` | Rebase sur `main` ; résout un petit conflit ou demande de régénérer | `/ship` pour repousser |

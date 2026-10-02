@@ -13,6 +13,26 @@
 8. **Archivage** du workspace : le bail est libéré (et la base dédiée supprimée, s'il y en a une) automatiquement.
 9. On passe au groupe suivant du plan.
 
+## Correction d'un bug
+
+Un bug sur du code livré ne passe ni par `/new-spec` ni par `/plan` : `/fix <numéro d'issue | description>` dans un workspace dédié. L'agent lit l'issue (ou la crée avec l'étiquette `bug`), retrouve la spec concernée, puis classe le bug avant d'écrire quoi que ce soit :
+
+| Cas | Suite |
+|---|---|
+| Le code ne respecte pas la spec (critère, cas limite ou contrat d'interface non tenu) | Correctif : bail `SPEC-XXXX-FIX-<issue>`, branche `spec-xxxx-fix-<issue>-<slug>`, test qui reproduit le bug puis correction |
+| La spec est fausse, muette ou contradictoire | L'agent s'arrête. Tu amendes la spec, son test de contrat et ses scénarios cachés par `/new-spec` (PR `contract-change`), puis tu relances un correctif ou une tâche |
+| Le bug est dans l'outillage | Correctif hors spec (`fix(factory): ...`), avec son test |
+
+Règles du correctif :
+
+- **Le test d'abord.** Le test qui reproduit le bug est écrit à côté du code, jamais dans `tests/acceptance/` ni `tests/holdout/` (immuables), et il doit échouer avant la correction. La pré-revue (`scripts/pre-review.mjs check`) refuse une branche `spec-xxxx-fix-*` sans fichier `*.test.ts` dans le diff.
+- **Petit.** Un correctif reste dans une feature, sans migration ni changement d'interface partagée, et sans refactoring au passage. Au-delà, c'est une spec ou une tâche.
+- **Mêmes barrières qu'une tâche.** Scénarios cachés retirés du workspace, périmètre contrôlé par le bail, `pnpm verify`, revue locale (le relecteur vérifie que le test reproduit bien le bug de l'issue), `/ship`, CI, `/land`.
+- **Trace.** Commit et PR en `fix(spec-xxxx): ...` ; « Référence » de la PR cite la spec, le critère non tenu et `Fixes #<issue>`, ce qui ferme l'issue à la fusion.
+- **Ensuite.** Chaque issue `bug` compte dans les défauts échappés (`METRICS.md`). Si le bug révèle une classe de défauts, `/fix` propose un `/learn` ; `/retro` relève les features corrigées plus d'une fois.
+
+Si un scénario caché échoue en CI sur la PR du correctif, la procédure « En cas d'échec » ci-dessous s'applique telle quelle.
+
 ## Scénarios cachés
 
 Les tests de contrat sont visibles de l'agent producteur : il peut les faire passer sans satisfaire l'intention (valeurs codées en dur, cas particulier). Les scénarios cachés ferment ce trou.
@@ -34,7 +54,7 @@ Petit et local : `/resolve`, le subagent tente la résolution. Gros, ou sur une 
 
 ## Boucle d'amélioration
 
-Chaque vendredi, 20 minutes : relire les PR rejetées, les verdicts `BLOQUANT`, les bugs et `HOTSPOTS.md`, puis `/learn` sur chaque problème récurrent. Mettre à jour `METRICS.md`. `/retro` prépare tout ça : métriques, problèmes récurrents et `/learn` à lancer.
+Chaque vendredi, 20 minutes : relire les PR rejetées, les verdicts `BLOQUANT`, les bugs (issues `bug` et PR `fix(spec-…)`) et `HOTSPOTS.md`, puis `/learn` sur chaque problème récurrent. Mettre à jour `METRICS.md`. `/retro` prépare tout ça : métriques, problèmes récurrents et `/learn` à lancer.
 
 ## Roadmap d'autonomie
 

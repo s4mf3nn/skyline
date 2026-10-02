@@ -2,7 +2,7 @@
 // Scénarios cachés (`tests/holdout/SPEC-XXXX.test.ts`) : écrits avec la spec, validés par l'humain, jamais vus par
 // l'agent producteur. Ils vérifient que l'implémentation satisfait l'intention, pas seulement les tests visibles.
 // Usage :
-//   node scripts/holdout.mjs hide            retire tests/holdout de ce workspace (sparse-checkout), au début de /implement
+//   node scripts/holdout.mjs hide            retire tests/holdout de ce workspace (sparse-checkout), au début de /implement et de /fix
 //   node scripts/holdout.mjs list            scénarios actifs : ceux dont le test de contrat n'a plus de `.skip`
 //   node scripts/holdout.mjs run [--details] joue les scénarios actifs (code 1 si l'un échoue)
 // Sans `--details`, la sortie se limite à un décompte par spec : le détail d'un échec est réservé à l'humain,

@@ -13,11 +13,11 @@ La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
 - `pnpm test` : tests unitaires et d'acceptation
 - `pnpm verify` : typage, lint, tests avec couverture et contrôle de contrat. **Doit être vert avant de rendre la main.**
 - `pnpm gen` : régénère les fichiers `*.gen.ts` (ne jamais les éditer à la main)
-- `/implement`, `/review`, `/ship`, `/resolve`, `/land`, `/retro`, `/learn`, `/plan`, `/new-spec` : commandes de la factory (`.claude/commands/`)
+- `/implement`, `/fix`, `/review`, `/ship`, `/resolve`, `/land`, `/retro`, `/learn`, `/plan`, `/new-spec` : commandes de la factory (`.claude/commands/`)
 
 ## Règles de la factory (non négociables)
 
-1. **On ne code jamais sans spec.** Toute tâche référence une spec `specs/SPEC-XXXX-*/spec.md` et une tâche de son `plan.md`. Si on te demande de coder sans spec, propose d'abord `/new-spec`. Exception : une amélioration du boilerplate ou de l'outillage (`scripts/`, `.claude/`, `.github/`, `docs/factory/`, config) n'a pas de spec ; `/ship` la traite en mode hors spec (scope `factory`, voir `docs/factory/WORKFLOW.md`). Les autres règles (vérification, revue locale, pas de contournement) restent applicables.
+1. **On ne code jamais sans spec.** Toute tâche référence une spec `specs/SPEC-XXXX-*/spec.md` et une tâche de son `plan.md`. Si on te demande de coder sans spec, propose d'abord `/new-spec`. Un correctif de bug (`/fix`) référence la spec existante et une issue `bug`, sans tâche de plan : il rétablit ce que la spec dit déjà et apporte le test qui reproduit le bug ; si c'est la spec qui est fausse ou muette, on l'amende d'abord (`/new-spec`). Autre exception : une amélioration du boilerplate ou de l'outillage (`scripts/`, `.claude/`, `.github/`, `docs/factory/`, config) n'a pas de spec ; `/ship` la traite en mode hors spec (scope `factory`, voir `docs/factory/WORKFLOW.md`). Les autres règles (vérification, revue locale, pas de contournement) restent applicables.
 2. **Périmètre déclaré.** Chaque tâche liste les chemins qu'elle a le droit de modifier. Si tu dois toucher un fichier hors périmètre, tu t'arrêtes et tu le signales au lieu de le faire.
 3. **Bail.** Au démarrage d'une tâche, pose un bail sur ton périmètre avec `node scripts/lease.mjs acquire <TASK_ID> <chemins...>`. Si l'acquisition échoue, un autre agent travaille sur ces fichiers : tu t'arrêtes et tu le signales.
 4. **Tests de contrat immuables.** Les fichiers `tests/acceptance/*.test.ts` sont écrits et validés par l'humain dans la PR de spec. Tu as seulement le droit de retirer `.skip` sur le `describe` de ta spec. Toute autre modification est bloquée par la CI (`scripts/check-contract.mjs`). Les scénarios cachés (`tests/holdout/`) sont retirés de ton workspace par `/implement` : tu ne les lis pas, tu ne les modifies pas et tu ne cherches pas à les obtenir autrement.
@@ -37,7 +37,7 @@ La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
 - Migrations préfixées par timestamp, une migration par tâche au maximum.
 - **Langues** : commentaires en français ; messages d'erreur, codes d'erreur (`NOT_FOUND`), identifiants (variables, fonctions, types), noms de tests (`describe` / `it`) et messages de log en anglais. Commits et titre de PR : type et scope Conventional Commits inchangés, description en français. Sorties CLI des scripts : en français. Ces règles valent pour le code nouveau ou modifié ; le code existant n'est pas réécrit pour elles.
 - **Lisibilité humaine d'abord** : fonctions courtes qui font une seule chose, noms explicites, abstractions simples. Pas d'astuce, pas de code « malin » (chaînes d'opérateurs denses, métaprogrammation, génériques complexes, one-liners obscurs), pas d'abstraction anticipée : on factorise à partir de la troisième répétition. Les commentaires expliquent le *pourquoi*, pas le *comment*. En cas de doute entre court et clair, choisis clair.
-- Commits et titre de PR en Conventional Commits avec la spec en scope : `feat(spec-0001): <description>`.
+- Commits et titre de PR en Conventional Commits avec la spec en scope : `feat(spec-0001): <description>` (`fix(spec-0001): <description>` pour un correctif de bug).
 
 ## Sécurité propre au domaine
 

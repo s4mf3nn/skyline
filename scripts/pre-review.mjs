@@ -196,7 +196,9 @@ export function runChecks() {
       "correctif de bug (branche spec-xxxx-fix-*) : pas de tâche de plan, voir « Référence » de .pr-summary.md",
     );
     if (!hasRegressionTest(files))
-      problems.push("correctif sans test de non-régression : ajoute un test `*.test.ts` qui reproduit le bug");
+      problems.push(
+        "correctif sans test de non-régression : ajoute un test `*.test.ts` ou `*.test.tsx` qui reproduit le bug",
+      );
   }
 
   try {
@@ -225,7 +227,7 @@ const LEVEL_HELP = {
   standard:
     "risque élevé hors review:full ou moyen : revue complète ; Context7 seulement pour une API absente de docs/factory/libs-cache.md.",
   light:
-    "risque faible : spec, tests, cas limites, sécurité des routes et des entrées, honnêteté du résumé ; pas de Context7 sauf bibliothèque nouvelle.",
+    "risque faible : spec, tests, cas limites, sécurité des points d'entrée et des entrées, honnêteté du résumé ; pas de Context7 sauf bibliothèque nouvelle.",
 };
 
 function brief() {

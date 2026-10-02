@@ -15,10 +15,10 @@ Ce qui doit être vrai une fois la spec livrée, en deux ou trois phrases, du po
 ## Cas limites
 - Entrée vide, invalide, trop longue
 - Doublons, concurrence
-- Dépendance indisponible (base, cache)
+- Dépendance indisponible (base, cache, réseau)
 
 ## Contrat d'interface
-Entrées et sorties exactes de l'interface publique (pour une API HTTP : méthode, chemin, corps, codes de statut, format d'erreur).
+Entrées et sorties exactes de l'interface publique (pour une API HTTP : méthode, chemin, corps, codes de statut, format d'erreur ; pour une application web ou mobile : écran, actions de l'utilisateur, états affichés ; pour une CLI : arguments, sorties, codes de retour).
 
 ## Hors périmètre
 Ce que cette spec ne fait volontairement pas.

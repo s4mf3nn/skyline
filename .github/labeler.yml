@@ -4,6 +4,7 @@
   - changed-files:
       - any-glob-to-any-file:
           # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
+          # Les chemins sous src/ sont des valeurs par défaut (API avec base) : à adapter au type d'application.
           - "src/db/migrations/**"
           - "src/features/auth/**"
           - "src/config/**"

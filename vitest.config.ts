@@ -9,13 +9,13 @@ const holdout = process.env.HOLDOUT === "1";
 
 export default defineConfig({
   test: {
-    include: holdout ? ["tests/holdout/**/*.test.ts"] : ["src/**/*.test.ts", "tests/**/*.test.ts"],
+    include: holdout ? ["tests/holdout/**/*.test.{ts,tsx}"] : ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
     exclude: holdout ? configDefaults.exclude : [...configDefaults.exclude, "tests/holdout/**"],
     coverage: {
       provider: "v8",
-      include: ["src/**/*.ts"],
-      // Ajouter ici les points d'entrée qu'aucun test ne charge (ex. src/server.ts) et les migrations.
-      exclude: ["src/**/*.test.ts", "src/**/*.gen.ts"],
+      include: ["src/**/*.{ts,tsx}"],
+      // Ajouter ici ce qu'aucun test ne charge : point d'entrée (ex. src/server.ts, src/main.tsx), migrations.
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.gen.ts"],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
   },

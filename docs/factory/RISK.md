@@ -12,6 +12,8 @@ La source technique est `.github/labeler.yml` (lue par la CI et par `scripts/pre
 | Moyen | `service.ts`, `repo.ts`, `src/db/schema/`, `package.json` | Logique métier et dépendances | Revue humaine rapide : spec, tests, résumé |
 | Faible | Tout le reste, diff < 400 lignes | | Auto-merge possible en phase 3 (voir `WORKFLOW.md`) |
 
+Les chemins applicatifs de ce tableau (`src/db/`, `src/config/`, `service.ts`, `repo.ts`) sont des valeurs par défaut pensées pour une API avec base de données ; un chemin absent du projet est sans effet. Adapte-les au type d'application de l'ADR-0001. Exemple pour une application web ou mobile : configuration de build et de publication, stockage de session et navigation protégée en élevé ; état partagé et appels réseau en moyen.
+
 ## Contrôles automatiques avant ta lecture
 
 Toute PR a passé `pnpm verify`, une revue locale `OK` du subagent `reviewer` (tracée dans le corps de la PR avec le modèle utilisé, contrôlée par le job `review-trace`) et les gates de CI, dont les scénarios cachés quand la spec est entièrement implémentée. La revue ne remplace pas ta lecture sur `risk:high` : elle la prépare.

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Scénarios cachés (`tests/holdout/SPEC-XXXX.test.ts`) : écrits avec la spec, validés par l'humain, jamais vus par
-// l'agent producteur. Ils vérifient que l'implémentation satisfait l'intention, pas seulement les tests visibles.
+// Scénarios cachés (`tests/holdout/SPEC-XXXX.test.ts`, ou `.test.tsx` quand ils rendent une interface) : écrits avec
+// la spec, validés par l'humain, jamais vus par l'agent producteur. Ils vérifient que l'implémentation satisfait
+// l'intention, pas seulement les tests visibles.
 // Usage :
 //   node scripts/holdout.mjs hide            retire tests/holdout de ce workspace (sparse-checkout), au début de /implement et de /fix
 //   node scripts/holdout.mjs list            scénarios actifs : ceux dont le test de contrat n'a plus de `.skip`
@@ -15,11 +16,19 @@ import { pathToFileURL } from "node:url";
 
 export const HOLDOUT_DIR = "tests/holdout";
 const ACCEPTANCE_DIR = "tests/acceptance";
-const FILE = /^(SPEC-\d{4})\.test\.ts$/;
+const FILE = /^(SPEC-\d{4})\.test\.tsx?$/;
+const TEST_EXTENSIONS = [".test.ts", ".test.tsx"];
 
 /** Identifiant de spec d'un fichier de scénarios (`SPEC-0003.test.ts`), ou null. */
 export function specOf(file) {
   return FILE.exec(path.basename(file))?.[1] ?? null;
+}
+
+/** Texte du test de contrat d'une spec, quelle que soit son extension, ou null s'il n'existe pas. */
+function readAcceptance(dir, spec) {
+  const candidates = TEST_EXTENSIONS.map((extension) => path.join(dir, ACCEPTANCE_DIR, `${spec}${extension}`));
+  const file = candidates.find((candidate) => fs.existsSync(candidate));
+  return file === undefined ? null : fs.readFileSync(file, "utf8");
 }
 
 /** Les scénarios d'une spec sont joués quand son test de contrat existe et n'a plus aucun `.skip`. */
@@ -53,14 +62,11 @@ export function holdouts(dir = process.cwd()) {
     .readdirSync(at(HOLDOUT_DIR))
     .filter((f) => FILE.test(f))
     .sort()
-    .map((f) => {
-      const acceptance = at(path.join(ACCEPTANCE_DIR, f));
-      return {
-        spec: specOf(f),
-        file: path.join(HOLDOUT_DIR, f),
-        active: isActive(fs.existsSync(acceptance) ? fs.readFileSync(acceptance, "utf8") : null),
-      };
-    });
+    .map((f) => ({
+      spec: specOf(f),
+      file: path.join(HOLDOUT_DIR, f),
+      active: isActive(readAcceptance(dir, specOf(f))),
+    }));
 }
 
 function hide() {

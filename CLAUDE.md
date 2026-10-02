@@ -5,11 +5,11 @@ Ce fichier est lu par chaque agent au démarrage de chaque workspace Conductor. 
 ## Le projet
 
 <!-- À compléter : deux ou trois phrases sur ce que fait le produit et pour qui. -->
-La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
+Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont décrits dans `docs/adr/0001-stack.md`.
 
 ## Commandes
 
-- `pnpm dev` : serveur local sur `$PORT` (Conductor fournit `$CONDUCTOR_PORT`)
+- `pnpm dev` : lance l'application en local selon la stack (serveur, bundler, simulateur) ; si elle écoute sur un port, c'est `$PORT` (Conductor fournit `$CONDUCTOR_PORT`)
 - `pnpm test` : tests unitaires et d'acceptation
 - `pnpm verify` : typage, lint, tests avec couverture et contrôle de contrat. **Doit être vert avant de rendre la main.**
 - `pnpm gen` : régénère les fichiers `*.gen.ts` (ne jamais les éditer à la main)
@@ -30,11 +30,11 @@ La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
 
 <!-- À ajuster après l'ADR-0001 : garder ce qui s'applique à la stack retenue. -->
 - TypeScript strict, pas de `any`, pas de `// @ts-ignore`, pas de désactivation de règle Biome.
-- Organisation **par feature** : `src/features/<feature>/{routes,service,repo,schema}.ts` et tests à côté (`*.test.ts`).
-- **Aucun registre central édité à la main.** Chaque feature exporte `routes` depuis `routes.ts` ; `src/routes.gen.ts` est généré par `pnpm gen`. C'est ce qui évite les conflits entre agents.
-- Validation des entrées à la frontière (HTTP, CLI, message), jamais plus loin.
-- Erreurs métier typées (`src/shared/errors.ts`), jamais de `throw new Error("...")` brut dans une route.
-- Migrations préfixées par timestamp, une migration par tâche au maximum.
+- Organisation **par feature** : `src/features/<feature>/` avec son point d'entrée `index.ts` et les tests à côté (`*.test.ts`, `*.test.tsx`). Le découpage interne d'une feature dépend du type d'application et est fixé par l'ADR-0001 (ex. API : `{routes,service,repo,schema}.ts` ; web ou mobile : `{screens,components,hooks,service}` ; CLI : `{command,service}.ts`).
+- **Aucun registre central édité à la main.** Chaque feature exporte `feature` depuis son `index.ts` ; `src/features.gen.ts` est généré par `pnpm gen`. C'est ce qui évite les conflits entre agents.
+- Validation des entrées à la frontière (requête HTTP, formulaire, deep link, argument de CLI, message), jamais plus loin.
+- Erreurs métier typées (`src/shared/errors.ts`), jamais de `throw new Error("...")` brut dans un point d'entrée (route, écran, commande).
+- Si le projet a une persistance : migrations préfixées par timestamp, une migration par tâche au maximum.
 - **Langues** : commentaires en français ; messages d'erreur, codes d'erreur (`NOT_FOUND`), identifiants (variables, fonctions, types), noms de tests (`describe` / `it`) et messages de log en anglais. Commits et titre de PR : type et scope Conventional Commits inchangés, description en français. Sorties CLI des scripts : en français. Ces règles valent pour le code nouveau ou modifié ; le code existant n'est pas réécrit pour elles.
 - **Lisibilité humaine d'abord** : fonctions courtes qui font une seule chose, noms explicites, abstractions simples. Pas d'astuce, pas de code « malin » (chaînes d'opérateurs denses, métaprogrammation, génériques complexes, one-liners obscurs), pas d'abstraction anticipée : on factorise à partir de la troisième répétition. Les commentaires expliquent le *pourquoi*, pas le *comment*. En cas de doute entre court et clair, choisis clair.
 - Commits et titre de PR en Conventional Commits avec la spec en scope : `feat(spec-0001): <description>` (`fix(spec-0001): <description>` pour un correctif de bug).
@@ -42,7 +42,7 @@ La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
 ## Sécurité propre au domaine
 
 <!-- À compléter : une phrase qui résume les règles et nomme les zones qui déclenchent la lecture du détail. -->
-Détail et zones à risque élevé : `docs/factory/DOMAIN-SECURITY.md` (à lire avant toute tâche sur une entrée utilisateur, une route d'écriture ou une zone à risque élevé) et `docs/factory/RISK.md`.
+Détail et zones à risque élevé : `docs/factory/DOMAIN-SECURITY.md` (à lire avant toute tâche sur une entrée utilisateur, une écriture exposée (route, formulaire, commande) ou une zone à risque élevé) et `docs/factory/RISK.md`.
 
 ## Contexte à charger
 

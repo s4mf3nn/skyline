@@ -1,5 +1,5 @@
 {
-  "//": "Tests de contrat et sc\u00e9narios cach\u00e9s : ils utilisent Response.json() typ\u00e9 par DOM (any). DOM reste interdit dans le code serveur (tsconfig.json).",
+  "//": "Tests de contrat et sc\u00e9narios cach\u00e9s : ils utilisent Response.json() typ\u00e9 par DOM (any). DOM reste absent du code applicatif par d\u00e9faut (tsconfig.json) : un projet web ou mobile l'ajoute, ou \u00e9tend le preset de son framework, dans SPEC-0000.",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM"]

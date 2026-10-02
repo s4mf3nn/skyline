@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "echo \"pnpm dev : à définir par SPEC-0000 (bootstrap), voir docs/adr/0001-stack.md\" && exit 1",
-    "gen": "node scripts/gen-routes.mjs",
+    "gen": "node scripts/gen-features.mjs",
     "typecheck": "pnpm gen && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "lint": "biome check .",
     "test": "pnpm gen && vitest run",

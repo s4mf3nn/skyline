@@ -1,6 +1,6 @@
 # Boilerplate de software factory IA
 
-Socle réutilisable pour développer un projet avec des agents Claude Code en parallèle (workspaces Conductor), sous contrôle humain. Il ne contient aucun code applicatif : seulement le processus, ses garde-fous et l'outillage TypeScript qui les fait tenir.
+Socle réutilisable pour développer un projet avec des agents Claude Code en parallèle (workspaces Conductor), sous contrôle humain. Il ne contient aucun code applicatif : seulement le processus, ses garde-fous et l'outillage TypeScript qui les fait tenir. Il ne présume pas du type d'application (API ou service, application web, application mobile, CLI, bibliothèque) : ce choix se fait dans l'ADR-0001 et se pose avec SPEC-0000.
 
 Extrait d'un projet réel (service de raccourcissement d'URL), dont il reprend les scripts et leurs tests tels quels.
 
@@ -29,7 +29,7 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 | Plan en tâches | 3 à 5 tâches par spec, groupes parallèles, périmètre en chemins | subagent `planner`, `/plan`, `scripts/plan-gate.mjs`, `scripts/split-plan.mjs` |
 | Baux de périmètre | Deux workspaces ne modifient jamais les mêmes chemins | `scripts/lease.mjs` (état dans `.factory/` du dépôt principal, hors git) |
 | Suivi visuel | Une issue par spec et par tâche, statut dérivé des PR, Kanban via GitHub Project | `scripts/board.mjs`, `.github/workflows/board.yml`, `docs/factory/BOARD.md` |
-| Aucun registre central | Ajouter une feature ne touche aucun fichier partagé | `scripts/gen-routes.mjs` (`pnpm gen`) |
+| Aucun registre central | Ajouter une feature ne touche aucun fichier partagé | `scripts/gen-features.mjs` (`pnpm gen`) |
 | Vérification unique | Typage, lint, tests, couverture 80 %, contrat en une commande | `pnpm verify`, `pnpm verify:quiet` |
 | Revue adversariale locale | Relecteur à contexte vierge, sur un autre modèle que le producteur au niveau `full` (`review:full`) ; verdict lié au `patch-id` du diff ; push refusé sans revue `OK` à jour | subagent `reviewer`, `/review`, `scripts/pre-review.mjs`, `scripts/review-gate.mjs`, `lefthook.yml` |
 | Trace de revue en CI | Le corps de la PR porte un verdict qui correspond au diff | `.github/workflows/review-trace.yml` |
@@ -53,7 +53,7 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 ## Démarrer un nouveau projet
 
 1. Crée le dépôt à partir de ce boilerplate : `gh repo create <nom> --template <toi>/software-factory-boilerplate --private --clone`, ou copie ce dossier puis `git init -b main`.
-2. Personnalise. Le plus simple : lance `/init-project` dans Claude Code, il te pose les questions (nom, propriétaire, phase d'autonomie 1, 2 ou 3, Postgres, interface web, stack) puis applique tout. À la main : `node scripts/init-factory.mjs <nom-du-projet> <propriétaire-github> [--phase 1|2|3] [--description '<phrase>']`. Le script remplace les jetons, renomme le paquet, déplace ce guide dans `docs/factory/BOILERPLATE.md`, installe le README du projet et se supprime.
+2. Personnalise. Le plus simple : lance `/init-project` dans Claude Code, il te pose les questions (nom, propriétaire, phase d'autonomie 1, 2 ou 3, type d'application, Postgres, stack) puis applique tout. À la main : `node scripts/init-factory.mjs <nom-du-projet> <propriétaire-github> [--phase 1|2|3] [--description '<phrase>']`. Le script remplace les jetons, renomme le paquet, déplace ce guide dans `docs/factory/BOILERPLATE.md`, installe le README du projet et se supprime.
 3. Complète les fichiers de la liste « À personnaliser » ci-dessous, dont `docs/adr/0001-stack.md`, `specs/SPEC-0000-bootstrap/spec.md` et son test de contrat `tests/acceptance/SPEC-0000.test.ts`. Fais-le **dans ce commit initial** : une fois le fichier de contrat sur `main`, le modifier demande le label `contract-change`.
 4. Commite et pousse sur `main` **avant** `pnpm install` : `git add -A && git commit -m "chore(factory): bootstrap software factory" && git push -u origin main`. Une fois les hooks installés, le `pre-push` refuse tout push sans revue enregistrée, y compris sur `main`, et il a besoin d'un `origin/main` existant. Si tu as déjà lancé `pnpm install`, la sortie prévue est `node scripts/review-gate.mjs waive "commit initial"` (réservée à l'humain).
 5. Applique les « Réglages GitHub » ci-dessous.
@@ -66,13 +66,14 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 | Fichier | Quoi |
 |---|---|
 | `CLAUDE.md` | Sections « Le projet », « Conventions de code » (selon la stack) et « Sécurité propre au domaine » |
-| `docs/adr/0001-stack.md` | Les choix laissés ouverts : framework, validation, persistance, interface |
+| `docs/adr/0001-stack.md` | Les choix laissés ouverts : type d'application, framework, validation, persistance, tests d'interface, découpage d'une feature |
 | `specs/SPEC-0000-bootstrap/spec.md`, `tests/acceptance/SPEC-0000.test.ts` | Critères et assertions du socle, puis statut `VALIDÉE` |
 | `docs/factory/DOMAIN-SECURITY.md` | Les règles de sécurité du domaine |
 | `docs/factory/RISK.md`, `.github/labeler.yml`, `.github/CODEOWNERS` | Les zones sensibles du domaine, dans les trois fichiers à la fois |
 | `.claude/settings.json` | `enabledPlugins` et les connecteurs refusés dépendent du poste (voir `docs/factory/TOKENS.md`) |
 | `package.json` | Le script `dev`, posé par SPEC-0000 |
-| `vitest.config.ts`, `.github/workflows/ci.yml` | Points d'entrée exclus de la couverture et de la mutation ; services de CI |
+| `tsconfig.json`, `tsconfig.test.json` | `jsx`, `lib` et `types` selon le type d'application (voir « Options ») |
+| `vitest.config.ts`, `.github/workflows/ci.yml` | Environnement de test ; points d'entrée exclus de la couverture et de la mutation ; services de CI |
 | `.env.example` | À créer : variables attendues, avec des clés factices `test-key` ou `key-<nom>` (convention de `.gitleaks.toml`) |
 | `docs/factory/WORKFLOW.md` | La roadmap d'autonomie (proposition à ajuster) ; la phase de départ est fixée par `--phase` |
 
@@ -115,9 +116,18 @@ volumes:
   pgdata:
 ```
 
-**Interface web dans le même dépôt.** Ajoute un paquet `web/` et un `pnpm-workspace.yaml`, enchaîne `pnpm --filter web <script>` dans `typecheck` et `test:coverage`, ajoute un build à la CI et classe `web/**` en `risk:medium` (chemins d'authentification et `index.html` en `risk:high`).
+**Application web ou mobile.** Rien n'est préinstallé : SPEC-0000 pose le framework choisi dans l'ADR-0001. À prévoir dans cette spec :
 
-**Sans routes.** `scripts/gen-routes.mjs` suppose des features qui exportent `routes` depuis `src/features/<feature>/routes.ts`. Pour un autre mode de montage, adapte le script et son test en gardant la règle : aucun registre édité à la main.
+- `tsconfig.json` : l'option `jsx`, et la `lib` ou le preset du framework. `types: ["node"]` et l'absence de `DOM` sont les valeurs par défaut du socle, pas une règle.
+- `vitest.config.ts` : l'environnement de test (ex. `jsdom`) et ce qui sort de la couverture (point d'entrée, écrans sans logique si l'ADR le décide). Les fichiers `.tsx` sont déjà pris en compte par les tests, la couverture et la mutation.
+- `package.json` : le script `dev` (bundler, simulateur) ; `.gitignore` : les dossiers générés par le framework (Biome suit `.gitignore`).
+- Tests de contrat et scénarios cachés : ils passent par l'interface rendue, en `SPEC-XXXX.test.tsx`.
+- Tests d'interface hors de portée de Vitest (ex. rendu React Native) : le lanceur ajouté est une nouvelle dépendance à justifier, et `pnpm verify` doit l'enchaîner.
+- `docs/factory/RISK.md`, `.github/labeler.yml`, `docs/factory/DOMAIN-SECURITY.md` : les zones et règles par défaut visent une API.
+
+**Plusieurs applications dans le même dépôt** (ex. API et interface web ou mobile). Ajoute un paquet par application (`web/`, `mobile/`) et un `pnpm-workspace.yaml`, enchaîne `pnpm --filter <paquet> <script>` dans `typecheck` et `test:coverage`, ajoute un build à la CI et classe `<paquet>/**` en `risk:medium` (chemins d'authentification et point d'entrée en `risk:high`).
+
+**Montage des features.** `scripts/gen-features.mjs` liste dans `src/features.gen.ts` les features qui exportent `feature` depuis `src/features/<feature>/index.ts` (ou `index.tsx`). Ce qu'est une `feature` (routes HTTP, écrans, commandes de CLI) est fixé par SPEC-0000. Une feature sans `index.ts` est ignorée : si le framework monte déjà les features lui-même (routage par fichiers), la liste générée reste vide. Pour un autre mode de montage, adapte le script et son test en gardant la règle : aucun registre édité à la main.
 
 ## Adopter la factory dans un projet existant
 

@@ -36,7 +36,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Branche de tâche** : branche du workspace, renommée `spec-xxxx-t#-<slug>` au début de `/implement`. Une branche par tâche, une PR par branche.
 - **Branche de correctif** : branche d'un correctif de bug, renommée `spec-xxxx-fix-<issue>-<slug>` par `/fix`. La pré-revue y exige un test de non-régression.
 - **`.env` / `.env.local`** : variables d'environnement, hors git. Le `.env` vit dans le dépôt principal et est relié dans chaque workspace ; `.env.local` est écrit par le setup pour ce qui est propre au workspace (l'adresse de sa base). Les agents n'ont pas le droit de les lire.
-- **Port** : chaque workspace reçoit le sien (`$CONDUCTOR_PORT`), pour que plusieurs serveurs locaux tournent en même temps.
+- **Port** : chaque workspace reçoit le sien (`$CONDUCTOR_PORT`), pour que plusieurs applications locales (serveur d'API, serveur de développement web ou mobile) tournent en même temps.
 - **Permissions de l'agent** : liste des commandes autorisées sans confirmation et des actions refusées (`.claude/settings.json`). Sont refusés : le push forcé, `--no-verify`, la lecture des `.env`.
 - **Hook d'agent** : commande lancée automatiquement après une action de l'agent. La factory en a un : le formatage par Biome après chaque édition de fichier.
 - **MCP** : protocole par lequel un agent accède à des outils externes. La factory n'en garde qu'un pour le projet (Context7) et refuse les autres connecteurs, qui alourdissent le contexte.
@@ -93,11 +93,11 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
   - *Usages* : le `planner` consulte les baux actifs avant de former les groupes ; la pré-revue s'en sert pour vérifier que le diff reste dans le périmètre. Sans bail, elle signale « périmètre non contrôlé » et ce contrôle revient au relecteur.
   - *Autres commandes* : `list` (baux actifs, fait foi pour le parallélisme), `check <chemins>` (qui tient ces chemins ?), `release <TASK_ID>` (libération manuelle, pour un bail resté orphelin), `release-workspace <chemin>` (appelée par l'archivage).
   - *Limite* : le bail est une convention entre agents, pas un verrou du système de fichiers. Il ne protège que si chaque tâche le pose, et seulement entre workspaces d'un même dépôt principal.
-- **Recoupement** : deux chemins se recoupent s'ils sont identiques ou si l'un est un dossier parent de l'autre. Un bail sur `src/features/links` bloque donc `src/features/links/routes.ts`, et un bail sur `src` bloque tout le dossier.
+- **Recoupement** : deux chemins se recoupent s'ils sont identiques ou si l'un est un dossier parent de l'autre. Un bail sur `src/features/links` bloque donc `src/features/links/index.ts`, et un bail sur `src` bloque tout le dossier.
 - **Migration** : changement de schéma de base de données. Zone à risque élevé, qui a ses propres règles : préfixe par timestamp (deux agents ne produisent pas le même numéro), une migration par tâche au plus, et aucun conflit résolu automatiquement.
 - **Feature** : dossier `src/features/<feature>/` qui regroupe tout le code d'une fonctionnalité, tests compris. L'organisation par feature donne des périmètres disjoints.
-- **Registre central** : fichier que chaque nouvelle fonctionnalité devrait modifier (liste de routes, index). La factory l'interdit : c'est une source de conflits entre agents.
-- **Fichier généré** : fichier `*.gen.ts` produit par `pnpm gen` à la place d'un registre central, ignoré par git et jamais édité à la main (`scripts/gen-routes.mjs`).
+- **Registre central** : fichier que chaque nouvelle fonctionnalité devrait modifier (liste de routes, d'écrans ou de commandes). La factory l'interdit : c'est une source de conflits entre agents.
+- **Fichier généré** : fichier `*.gen.ts` produit par `pnpm gen` à la place d'un registre central, ignoré par git et jamais édité à la main (`scripts/gen-features.mjs`). Il liste les features qui exportent `feature` depuis leur `index.ts`.
 - **Conflit** : désaccord entre la branche d'une tâche et `main` au rebase. Petit et local, il est résolu par `/resolve` ; sinon la tâche est régénérée.
 - **`RÉGÉNÉRER`** : réponse du `conflict-resolver` quand le conflit est trop gros, touche une migration ou oppose deux intentions incompatibles. On jette la branche et on relance la tâche depuis `main` à jour.
 - **Hotspot** : fichier qui revient dans le journal des conflits (`HOTSPOTS.md`). À la troisième fois, il doit être supprimé par un changement d'architecture.
@@ -204,7 +204,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | `review-gate.mjs` | Enregistrement et contrôle du verdict, trace dans la PR |
 | `security-scan.mjs` | Semgrep et gitleaks, en local comme en CI |
 | `verify-quiet.mjs` | `pnpm verify` à sortie filtrée |
-| `gen-routes.mjs` | Fichier généré qui remplace le registre central |
+| `gen-features.mjs` | Fichier généré qui remplace le registre central |
 | `token-report.mjs` | Mesure de la consommation de tokens |
 | `conductor-setup.sh`, `conductor-archive.sh` | Préparation et nettoyage d'un workspace |
 

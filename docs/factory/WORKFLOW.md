@@ -25,7 +25,7 @@ Un bug sur du code livré ne passe ni par `/new-spec` ni par `/plan` : `/fix <nu
 
 Règles du correctif :
 
-- **Le test d'abord.** Le test qui reproduit le bug est écrit à côté du code, jamais dans `tests/acceptance/` ni `tests/holdout/` (immuables), et il doit échouer avant la correction. La pré-revue (`scripts/pre-review.mjs check`) refuse une branche `spec-xxxx-fix-*` sans fichier `*.test.ts` dans le diff.
+- **Le test d'abord.** Le test qui reproduit le bug est écrit à côté du code, jamais dans `tests/acceptance/` ni `tests/holdout/` (immuables), et il doit échouer avant la correction. La pré-revue (`scripts/pre-review.mjs check`) refuse une branche `spec-xxxx-fix-*` sans fichier `*.test.ts` ou `*.test.tsx` dans le diff.
 - **Petit.** Un correctif reste dans une feature, sans migration ni changement d'interface partagée, et sans refactoring au passage. Au-delà, c'est une spec ou une tâche.
 - **Mêmes barrières qu'une tâche.** Scénarios cachés retirés du workspace, périmètre contrôlé par le bail, `pnpm verify`, revue locale (le relecteur vérifie que le test reproduit bien le bug de l'issue), `/ship`, CI, `/land`.
 - **Trace.** Commit et PR en `fix(spec-xxxx): ...` ; « Référence » de la PR cite la spec, le critère non tenu et `Fixes #<issue>`, ce qui ferme l'issue à la fusion.
@@ -37,7 +37,7 @@ Si un scénario caché échoue en CI sur la PR du correctif, la procédure « En
 
 Les tests de contrat sont visibles de l'agent producteur : il peut les faire passer sans satisfaire l'intention (valeurs codées en dur, cas particulier). Les scénarios cachés ferment ce trou.
 
-- **Écriture** : `/new-spec` écrit `tests/holdout/SPEC-XXXX.test.ts` (2 à 4 parcours de bout en bout, autres données que les tests de contrat). Tu les valides dans la PR de spec. Ensuite ils sont immuables, comme le contrat (`scripts/check-contract.mjs`, label `contract-change`).
+- **Écriture** : `/new-spec` écrit `tests/holdout/SPEC-XXXX.test.ts` (ou `.test.tsx` ; 2 à 4 parcours de bout en bout, autres données que les tests de contrat). Tu les valides dans la PR de spec. Ensuite ils sont immuables, comme le contrat (`scripts/check-contract.mjs`, label `contract-change`).
 - **Invisibilité** : `/implement` commence par `node scripts/holdout.mjs hide`, qui retire le dossier du workspace (sparse-checkout, propre au workspace). `pnpm verify` ne les joue pas, et la pré-revue refuse un workspace de tâche où ils sont visibles. C'est une barrière contre l'accident, pas contre un agent qui chercherait à tricher : l'historique git les contient toujours.
 - **Exécution** : en CI, étape « Scénarios cachés » du job `gates`. Les scénarios d'une spec ne sont joués que lorsque son test de contrat n'a plus aucun `.skip`. Les logs ne donnent qu'un décompte par spec.
 - **En cas d'échec** : lance toi-même `node scripts/holdout.mjs run --details` sur la branche de la PR, dans le dépôt principal (pas dans le workspace de la tâche). Ne donne pas le scénario à l'agent. Soit l'implémentation est trop étroite : relance la tâche en nommant le critère de la spec qui n'est pas tenu, ou précise la spec. Soit le scénario exigeait plus que la spec : corrige-le dans une PR `contract-change`.

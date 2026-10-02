@@ -15,10 +15,12 @@ Imposé par la factory (déjà en place dans le dépôt) :
 - Structure par feature avec montage automatique via un fichier généré (`pnpm gen`).
 
 À décider pour ce projet :
-- Framework HTTP ou d'interface : <à compléter>
+- Type d'application : <API ou service, application web, application mobile, CLI, bibliothèque, ou plusieurs>
+- Framework (HTTP, interface web ou mobile, CLI) : <à compléter>
 - Validation des entrées : <à compléter>
 - Persistance et migrations : <à compléter, ou « aucune »>
-- Interface web : <à compléter, ou « aucune »>
+- Tests d'interface (rendu de composants, bout en bout) : <à compléter, ou « aucun »>
+- Découpage interne d'une feature (fichiers de `src/features/<feature>/`) : <à compléter>
 
 ## Conséquences
 - Aucun fichier central n'est édité à la main pour ajouter une feature.

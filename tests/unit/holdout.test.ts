@@ -68,6 +68,7 @@ describe("scripts/holdout.mjs", () => {
   it("reads the spec id from a scenario file name", () => {
     expect(mod.specOf("tests/holdout/SPEC-0003.test.ts")).toBe("SPEC-0003");
     expect(mod.specOf("/abs/tests/holdout/SPEC-0012.test.ts")).toBe("SPEC-0012");
+    expect(mod.specOf("tests/holdout/SPEC-0004.test.tsx")).toBe("SPEC-0004");
     expect(mod.specOf("tests/holdout/helpers.ts")).toBeNull();
   });
 
@@ -120,6 +121,24 @@ describe("scripts/holdout.mjs", () => {
       ["SPEC-0001", true],
       ["SPEC-0002", false],
       ["SPEC-0003", false],
+    ]);
+  });
+
+  it("pairs a .tsx scenario file with its contract test whatever the extension of each", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "holdout-tsx-"));
+    dirs.push(dir);
+    write(dir, {
+      "tests/holdout/SPEC-0001.test.tsx": "",
+      "tests/holdout/SPEC-0002.test.ts": "",
+      "tests/holdout/SPEC-0003.test.tsx": "",
+      "tests/acceptance/SPEC-0001.test.tsx": 'describe("x", () => {});',
+      "tests/acceptance/SPEC-0002.test.tsx": 'describe("x", () => {});',
+      "tests/acceptance/SPEC-0003.test.ts": 'describe.skip("x", () => {});',
+    });
+    expect(mod.holdouts(dir).map((h) => [h.file, h.active])).toEqual([
+      ["tests/holdout/SPEC-0001.test.tsx", true],
+      ["tests/holdout/SPEC-0002.test.ts", true],
+      ["tests/holdout/SPEC-0003.test.tsx", false],
     ]);
   });
 

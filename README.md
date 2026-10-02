@@ -123,7 +123,6 @@ Copie `.claude/`, `.conductor/`, `.github/`, `.mcp.json`, `.gitleaks.toml`, `lef
 
 - Les scénarios cachés sont retirés du workspace, pas de l'historique git : la barrière arrête l'accident (une recherche, un `pnpm test`), pas un agent qui irait les chercher. Deux règles `deny` de `.claude/settings.json` ferment les chemins les plus directs.
 - Le relecteur de risque élevé change de modèle, pas de famille de modèles : les erreurs communes à tous les modèles d'un même éditeur ne sont pas couvertes.
-
 - Outillage lié à TypeScript, pnpm, Biome et Vitest. Les scripts de la factory (`scripts/*.mjs`) n'ont besoin que de Node et de git ; pour une autre stack, il faut réécrire `pnpm verify`, la CI et le hook Biome de `.claude/settings.json`.
 - Le rapport de tokens lit les transcripts locaux de Claude Code (`~/.claude/projects/`) : il dépend de leur format et du nom du dossier du dépôt.
 - Les baux reposent sur les variables `CONDUCTOR_ROOT_PATH` et `CONDUCTOR_WORKSPACE_PATH` : hors Conductor, ils se replient sur le dossier courant et ne protègent plus rien entre deux clones.

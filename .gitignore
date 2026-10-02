@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+reports/
+.stryker-tmp/
+.env
+.env.local
+.pr-summary.md
+.factory/
+src/routes.gen.ts
+.context/

@@ -1,0 +1,28 @@
+# Étiquetage automatique du risque selon les chemins touchés (source : docs/factory/RISK.md)
+# Lu aussi par scripts/pre-review.mjs pour choisir le niveau de revue : garder le format `- "glob"` sous chaque étiquette.
+"risk:high":
+  - changed-files:
+      - any-glob-to-any-file:
+          # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
+          - "src/db/migrations/**"
+          - "src/features/auth/**"
+          - "src/config/**"
+          # La factory elle-même
+          - ".github/**"
+          - ".claude/**"
+          - "CLAUDE.md"
+          - "scripts/**"
+          - "docker-compose.yml"
+
+"risk:medium":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/features/**/service.ts"
+          - "src/features/**/repo.ts"
+          - "src/db/schema/**"
+          - "package.json"
+
+"contract":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/acceptance/**"

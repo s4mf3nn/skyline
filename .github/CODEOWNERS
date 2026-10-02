@@ -1,0 +1,12 @@
+# Propriétaire des chemins sensibles ci-dessous (zones `risk:high` de docs/factory/RISK.md).
+# Avec la règle "Require review from Code Owners", ces chemins ne fusionnent jamais sans toi.
+# Ajoute ici les zones sensibles du domaine (voir docs/factory/DOMAIN-SECURITY.md).
+/src/db/migrations/          @{{GITHUB_OWNER}}
+/src/features/auth/          @{{GITHUB_OWNER}}
+/src/config/                 @{{GITHUB_OWNER}}
+/tests/acceptance/           @{{GITHUB_OWNER}}
+/specs/                      @{{GITHUB_OWNER}}
+/.github/                    @{{GITHUB_OWNER}}
+/scripts/                    @{{GITHUB_OWNER}}
+/CLAUDE.md                   @{{GITHUB_OWNER}}
+/.claude/                    @{{GITHUB_OWNER}}

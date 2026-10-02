@@ -1,0 +1,13 @@
+title = "{{PROJECT_NAME}}"
+
+[extend]
+useDefault = true
+
+# Clés d'API factices des tests. Autorisées seulement dans un fichier de test ET si elles suivent la convention
+# `key-<nom>` ou `test-key` (voir .env.example). Tout autre secret dans un test, ou toute clé dans `src/`, reste détecté.
+[[allowlists]]
+description = "Clés d'API factices des tests (convention key-<nom> / test-key)"
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''^(test-key|key-[a-z0-9]+)$''']
+paths = ['''(^|/)tests/''', '''\.test\.ts$''']

@@ -1,0 +1,15 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+[scripts]
+setup = "./scripts/conductor-setup.sh"
+archive = "./scripts/conductor-archive.sh"
+run_mode = "concurrent"
+
+[scripts.run.dev]
+command = "PORT=$CONDUCTOR_PORT pnpm dev"
+default = true
+icon = "play"
+
+[scripts.run.verify]
+command = "pnpm verify"
+icon = "check"

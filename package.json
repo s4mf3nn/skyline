@@ -1,0 +1,39 @@
+{
+  "name": "software-factory-boilerplate",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "echo \"pnpm dev : à définir par SPEC-0000 (bootstrap), voir docs/adr/0001-stack.md\" && exit 1",
+    "gen": "node scripts/gen-routes.mjs",
+    "typecheck": "pnpm gen && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "lint": "biome check .",
+    "test": "pnpm gen && vitest run",
+    "test:coverage": "pnpm gen && vitest run --coverage",
+    "verify": "pnpm gen && pnpm typecheck && pnpm lint && pnpm test:coverage && node scripts/check-contract.mjs",
+    "verify:quiet": "node scripts/verify-quiet.mjs",
+    "tokens": "node scripts/token-report.mjs",
+    "prepare": "lefthook install || true"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
+    "@types/node": "^22.20.4",
+    "@vitest/coverage-v8": "^4.1.11",
+    "lefthook": "^2.1.15",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "lefthook"
+    ]
+  }
+}

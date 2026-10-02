@@ -1,0 +1,63 @@
+# CLAUDE.md : {{PROJECT_NAME}}
+
+Ce fichier est lu par chaque agent au démarrage de chaque workspace Conductor. Il décrit le projet, les conventions et les règles de la software factory. Il doit rester court : les détails vivent dans `docs/`.
+
+## Le projet
+
+<!-- À compléter : deux ou trois phrases sur ce que fait le produit et pour qui. -->
+La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
+
+## Commandes
+
+- `pnpm dev` : serveur local sur `$PORT` (Conductor fournit `$CONDUCTOR_PORT`)
+- `pnpm test` : tests unitaires et d'acceptation
+- `pnpm verify` : typage, lint, tests avec couverture et contrôle de contrat. **Doit être vert avant de rendre la main.**
+- `pnpm gen` : régénère les fichiers `*.gen.ts` (ne jamais les éditer à la main)
+- `/implement`, `/review`, `/ship`, `/resolve`, `/land`, `/retro`, `/learn`, `/plan`, `/new-spec` : commandes de la factory (`.claude/commands/`)
+
+## Règles de la factory (non négociables)
+
+1. **On ne code jamais sans spec.** Toute tâche référence une spec `specs/SPEC-XXXX-*/spec.md` et une tâche de son `plan.md`. Si on te demande de coder sans spec, propose d'abord `/new-spec`.
+2. **Périmètre déclaré.** Chaque tâche liste les chemins qu'elle a le droit de modifier. Si tu dois toucher un fichier hors périmètre, tu t'arrêtes et tu le signales au lieu de le faire.
+3. **Bail.** Au démarrage d'une tâche, pose un bail sur ton périmètre avec `node scripts/lease.mjs acquire <TASK_ID> <chemins...>`. Si l'acquisition échoue, un autre agent travaille sur ces fichiers : tu t'arrêtes et tu le signales.
+4. **Tests de contrat immuables.** Les fichiers `tests/acceptance/*.test.ts` sont écrits et validés par l'humain dans la PR de spec. Tu as seulement le droit de retirer `.skip` sur le `describe` de ta spec. Toute autre modification est bloquée par la CI (`scripts/check-contract.mjs`).
+5. **Condition de sortie.** Tu ne rends la main que lorsque `pnpm verify` est vert, que la revue locale (`/review`, subagent `reviewer`) est `OK` sur le dernier état du code, et que tu as rédigé le résumé de PR au format de `.github/pull_request_template.md`. Le hook `pre-push` refuse un push sans revue à jour.
+6. **Petit et jetable.** Si la tâche dépasse ton contexte ou que tu tournes en rond, arrête-toi et propose un redécoupage plutôt que de forcer.
+7. **Pas de nouvelle dépendance** sans la mentionner explicitement dans le résumé de PR avec sa justification.
+8. **Pas de contournement des contrôles.** Jamais de `--no-verify`, jamais de `node scripts/review-gate.mjs waive` (réservé à l'humain). Si le relecteur n'est pas `OK` après 3 passages, tu t'arrêtes et tu proposes un redécoupage.
+
+## Conventions de code
+
+<!-- À ajuster après l'ADR-0001 : garder ce qui s'applique à la stack retenue. -->
+- TypeScript strict, pas de `any`, pas de `// @ts-ignore`, pas de désactivation de règle Biome.
+- Organisation **par feature** : `src/features/<feature>/{routes,service,repo,schema}.ts` et tests à côté (`*.test.ts`).
+- **Aucun registre central édité à la main.** Chaque feature exporte `routes` depuis `routes.ts` ; `src/routes.gen.ts` est généré par `pnpm gen`. C'est ce qui évite les conflits entre agents.
+- Validation des entrées à la frontière (HTTP, CLI, message), jamais plus loin.
+- Erreurs métier typées (`src/shared/errors.ts`), jamais de `throw new Error("...")` brut dans une route.
+- Migrations préfixées par timestamp, une migration par tâche au maximum.
+- Commits et titre de PR en Conventional Commits avec la spec en scope : `feat(spec-0001): <description>`.
+
+## Sécurité propre au domaine
+
+<!-- À compléter : une phrase qui résume les règles et nomme les zones qui déclenchent la lecture du détail. -->
+Détail et zones à risque élevé : `docs/factory/DOMAIN-SECURITY.md` (à lire avant toute tâche sur une entrée utilisateur, une route d'écriture ou une zone à risque élevé) et `docs/factory/RISK.md`.
+
+## Contexte à charger
+
+Ne lis que ce dont la tâche a besoin : ce fichier, la spec, le plan, les fichiers de ton périmètre, et au besoin `docs/adr/`.
+
+## Documentation des bibliothèques (Context7)
+
+Avant d'écrire ou de relire du code qui utilise une API de bibliothèque, applique `docs/factory/CONTEXT7.md` : cache `docs/factory/libs-cache.md` d'abord, code existant ensuite, Context7 (version épinglée) seulement pour ce qui est nouveau. Pas de Context7 pour la logique métier. Liste les bibliothèques consultées (et `(cache)` le cas échéant) dans le résumé de PR ; si Context7 est indisponible, dis-le dans le résumé.
+
+## Sobriété en tokens
+
+Règles courtes ; détail et raisons dans `docs/factory/TOKENS.md`.
+
+- Pour une tâche, lis `node scripts/split-plan.mjs task <SPEC-XXXX> <T#>` et pas `plan.md` ni `spec.md` en entier.
+- Pendant la boucle de développement, lance les tests et le typage ciblés ; `pnpm verify:quiet` seulement avant de commiter.
+- Fais les lectures et commandes indépendantes en parallèle, et ne relis pas un fichier que tu viens d'éditer.
+
+## Règles apprises
+
+Les règles issues de la boucle d'amélioration sont consignées dans `docs/factory/LEARNINGS.md`. Lis la section « Règles actives » avant de coder.

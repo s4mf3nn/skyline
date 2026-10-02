@@ -1,0 +1,56 @@
+{
+  "enabledMcpjsonServers": ["context7"],
+  "enabledPlugins": {
+    "superpowers@superpowers-marketplace": false
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(node scripts/*)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git fetch *)",
+      "Bash(git rebase *)",
+      "Bash(git branch -m *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push -u origin HEAD)",
+      "Bash(git push --force-with-lease*)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh issue list *)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git * --no-verify*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "mcp__claude_ai_Gmail",
+      "mcp__claude_ai_Google_Calendar",
+      "mcp__claude_ai_Google_Drive",
+      "mcp__claude_ai_Claude_Docs",
+      "mcp__claude-in-chrome"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm exec biome check --write --no-errors-on-unmatched \"$CLAUDE_PROJECT_DIR\"/src \"$CLAUDE_PROJECT_DIR\"/tests >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

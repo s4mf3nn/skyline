@@ -1,0 +1,91 @@
+name: gates
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          requireScope: true
+
+  gates:
+    runs-on: ubuntu-latest
+    # Base de données : décommenter si le projet utilise Postgres (voir docs/factory/BOILERPLATE.md, « Options »).
+    # services:
+    #   postgres:
+    #     image: postgres:17
+    #     env:
+    #       POSTGRES_PASSWORD: postgres
+    #       POSTGRES_DB: app_ci
+    #     ports: ["5432:5432"]
+    #     options: >-
+    #       --health-cmd "pg_isready -U postgres" --health-interval 2s --health-retries 20
+    # env:
+    #   DATABASE_URL: postgres://postgres:postgres@localhost:5432/app_ci
+    #   # Valeurs factices non secrètes pour les tests d'acceptation.
+    #   API_KEYS: ci-test-key
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run --if-present gen
+      - run: pnpm run --if-present db:migrate
+      - name: Typage
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Tests et couverture
+        run: pnpm test:coverage
+      - name: Contrat des tests d'acceptation
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: node scripts/check-contract.mjs
+      - name: Mutation testing sur les fichiers modifiés
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: |
+          # :(glob) pour que `**` inclue aussi les fichiers directement sous src/ (src/app.ts).
+          # Un point d'entrée qu'aucun test ne charge (ici src/server.ts) est exclu : ses mutants seraient NoCoverage.
+          FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF"...HEAD -- ':(glob)src/**/*.ts' \
+            | grep -v -E '(\.(test|gen)\.ts|^src/server\.ts)$' | paste -sd, - || true)
+          if [ -n "$FILES" ]; then pnpm exec stryker run --mutate "$FILES"; else echo "Rien à muter"; fi
+
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # gitleaks commente la PR quand il détecte une fuite
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Semgrep
+        run: |
+          pipx install semgrep
+          node scripts/security-scan.mjs semgrep

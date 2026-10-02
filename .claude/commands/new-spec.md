@@ -1,6 +1,8 @@
 ---
 description: Rédiger une nouvelle spec contrat, ses tests d'acceptation et ses scénarios cachés à partir d'un besoin
 argument-hint: <description du besoin>
+model: opus
+effort: medium
 ---
 
 Besoin exprimé : $ARGUMENTS

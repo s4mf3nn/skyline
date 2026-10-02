@@ -2,7 +2,7 @@
 // Pré-revue déterministe, sans modèle : ce qu'un script sait vérifier ne doit pas coûter une passe du relecteur.
 // Usage :
 //   node scripts/pre-review.mjs check   contrôles déterministes (code 1 s'il y a une violation)
-//   node scripts/pre-review.mjs level   niveau de revue : full | standard | light (selon .github/labeler.yml)
+//   node scripts/pre-review.mjs level   niveau de revue : full | standard | light (selon .github/labeler.yml : `review:full`, `risk:high`/`risk:medium`)
 //   node scripts/pre-review.mjs mode    travail de spec ou hors spec (bail du workspace, branche spec-xxxx-t#-* ou spec-xxxx-fix-*)
 //   node scripts/pre-review.mjs brief   niveau, contrôles, fichiers et diff filtré, pour le subagent `reviewer`
 //   node scripts/pre-review.mjs kind    relecteur à lancer : spec (`spec-reviewer`) | code (`reviewer`)
@@ -59,14 +59,14 @@ export function labelGlobs(labelerText, label) {
   return globs;
 }
 
-/** `full` si un fichier est en risque élevé, `standard` si moyen, sinon `light`. */
+/** `full` si un fichier est en zone `review:full`, `standard` s'il est en risque élevé ou moyen, sinon `light`. */
 export function reviewLevel(files, labelerText) {
   const match = (label) => {
     const globs = labelGlobs(labelerText, label);
     return files.some((f) => globs.some((g) => globMatch(g, f)));
   };
-  if (match("risk:high")) return "full";
-  if (match("risk:medium")) return "standard";
+  if (match("review:full")) return "full";
+  if (match("risk:high") || match("risk:medium")) return "standard";
   return "light";
 }
 
@@ -221,8 +221,9 @@ function level() {
 }
 
 const LEVEL_HELP = {
-  full: "zone à risque élevé : revue complète (tous les points de la procédure).",
-  standard: "risque moyen : revue complète ; Context7 seulement pour une API absente de docs/factory/libs-cache.md.",
+  full: "zone review:full : revue complète (tous les points de la procédure).",
+  standard:
+    "risque élevé hors review:full ou moyen : revue complète ; Context7 seulement pour une API absente de docs/factory/libs-cache.md.",
   light:
     "risque faible : spec, tests, cas limites, sécurité des routes et des entrées, honnêteté du résumé ; pas de Context7 sauf bibliothèque nouvelle.",
 };

@@ -31,7 +31,7 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 | Suivi visuel | Une issue par spec et par tâche, statut dérivé des PR, Kanban via GitHub Project | `scripts/board.mjs`, `.github/workflows/board.yml`, `docs/factory/BOARD.md` |
 | Aucun registre central | Ajouter une feature ne touche aucun fichier partagé | `scripts/gen-routes.mjs` (`pnpm gen`) |
 | Vérification unique | Typage, lint, tests, couverture 80 %, contrat en une commande | `pnpm verify`, `pnpm verify:quiet` |
-| Revue adversariale locale | Relecteur à contexte vierge, sur un autre modèle que le producteur en risque élevé ; verdict lié au `patch-id` du diff ; push refusé sans revue `OK` à jour | subagent `reviewer`, `/review`, `scripts/pre-review.mjs`, `scripts/review-gate.mjs`, `lefthook.yml` |
+| Revue adversariale locale | Relecteur à contexte vierge, sur un autre modèle que le producteur au niveau `full` (`review:full`) ; verdict lié au `patch-id` du diff ; push refusé sans revue `OK` à jour | subagent `reviewer`, `/review`, `scripts/pre-review.mjs`, `scripts/review-gate.mjs`, `lefthook.yml` |
 | Trace de revue en CI | Le corps de la PR porte un verdict qui correspond au diff | `.github/workflows/review-trace.yml` |
 | Routage par risque | Étiquette `risk:*` selon les chemins ; niveau de revue et arbitrage humain en découlent | `.github/labeler.yml`, `.github/workflows/risk.yml`, `.github/CODEOWNERS`, `docs/factory/RISK.md` |
 | Gates de CI | Titre de PR, typage, lint, tests, contrat, scénarios cachés, mutation sur les fichiers modifiés, gitleaks, Semgrep ; rejoués sur `main` après chaque fusion | `.github/workflows/ci.yml`, `scripts/security-scan.mjs` |
@@ -84,6 +84,7 @@ Les étiquettes doivent exister avant la première PR (`gh pr edit --add-label` 
 gh label create "risk:high" --color d73a4a --description "Zone à risque élevé : revue humaine obligatoire"
 gh label create "risk:medium" --color fbca04 --description "Risque moyen : revue humaine allégée"
 gh label create "risk:low" --color 0e8a16 --description "Risque faible"
+gh label create "review:full" --color 8f1a8f --description "Relecteur sur Opus : auth, migrations, config, docker-compose.yml"
 gh label create "contract" --color 5319e7 --description "Tests d'acceptation / spec contrat"
 gh label create "contract-change" --color b60205 --description "Modification d'un test de contrat : validation humaine requise"
 ```
@@ -125,7 +126,7 @@ Copie `.claude/`, `.conductor/`, `.github/`, `.mcp.json`, `.gitleaks.toml`, `lef
 ## Limites connues
 
 - Les scénarios cachés sont retirés du workspace, pas de l'historique git : la barrière arrête l'accident (une recherche, un `pnpm test`), pas un agent qui irait les chercher. Deux règles `deny` de `.claude/settings.json` ferment les chemins les plus directs.
-- Le relecteur de risque élevé change de modèle, pas de famille de modèles : les erreurs communes à tous les modèles d'un même éditeur ne sont pas couvertes.
+- Le relecteur au niveau `full` change de modèle, pas de famille de modèles : les erreurs communes à tous les modèles d'un même éditeur ne sont pas couvertes.
 - Outillage lié à TypeScript, pnpm, Biome et Vitest. Les scripts de la factory (`scripts/*.mjs`) n'ont besoin que de Node et de git ; pour une autre stack, il faut réécrire `pnpm verify`, la CI et le hook Biome de `.claude/settings.json`.
 - Le rapport de tokens lit les transcripts locaux de Claude Code (`~/.claude/projects/`) : il dépend de leur format et du nom du dossier du dépôt.
 - Les baux reposent sur les variables `CONDUCTOR_ROOT_PATH` et `CONDUCTOR_WORKSPACE_PATH` : hors Conductor, ils se replient sur le dossier courant et ne protègent plus rien entre deux clones.

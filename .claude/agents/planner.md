@@ -2,7 +2,7 @@
 name: planner
 description: Découpe une spec validée en tâches parallélisables avec périmètre déclaré. À utiliser après validation d'une spec et avant tout dispatch d'agent.
 tools: Read, Grep, Glob, Bash, mcp__context7__resolve-library-id, mcp__context7__query-docs
-model: sonnet
+model: opus
 effort: medium
 ---
 

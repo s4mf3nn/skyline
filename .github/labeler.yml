@@ -14,6 +14,17 @@
           - "scripts/**"
           - "docker-compose.yml"
 
+# Niveau de revue `full` (relecteur sur Opus, coûteux) : réservé au code applicatif sensible. Distinct de `risk:high`,
+# qui impose la revue humaine : l'outillage de la factory est risque élevé sans déclencher Opus (lu par scripts/pre-review.mjs).
+"review:full":
+  - changed-files:
+      - any-glob-to-any-file:
+          # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
+          - "src/db/migrations/**"
+          - "src/features/auth/**"
+          - "src/config/**"
+          - "docker-compose.yml"
+
 "risk:medium":
   - changed-files:
       - any-glob-to-any-file:

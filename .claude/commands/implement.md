@@ -1,6 +1,8 @@
 ---
 description: Implémenter une tâche d'un plan dans ce workspace, la relire et ouvrir la PR
 argument-hint: <SPEC-XXXX> <T#>
+model: sonnet
+effort: medium
 ---
 
 Tâche : $ARGUMENTS

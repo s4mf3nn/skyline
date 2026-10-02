@@ -18,6 +18,11 @@ interface PreReview {
 const mod = (await import(pathToFileURL(path.resolve("scripts/pre-review.mjs")).href)) as PreReview;
 
 const labeler = `# commentaire
+"review:full":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/features/redirect/**"
+
 "risk:high":
   - changed-files:
       - any-glob-to-any-file:
@@ -136,6 +141,7 @@ describe("scripts/pre-review.mjs", () => {
   it("déduit le niveau de revue du fichier le plus risqué", () => {
     expect(mod.reviewLevel(["README.md", "src/features/redirect/routes.ts"], labeler)).toBe("full");
     expect(mod.reviewLevel(["README.md", "web/src/App.tsx"], labeler)).toBe("standard");
+    expect(mod.reviewLevel(["scripts/gen.mjs"], labeler)).toBe("standard");
     expect(mod.reviewLevel(["docs/a.md"], labeler)).toBe("light");
     expect(mod.reviewLevel([], labeler)).toBe("light");
   });

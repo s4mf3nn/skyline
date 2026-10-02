@@ -7,6 +7,7 @@ interface PreReview {
   workMode(hasLease: boolean, branch: string): string;
   labelGlobs(text: string, label: string): string[];
   reviewLevel(files: string[], labeler: string): string;
+  reviewKind(files: string[]): string;
   inPerimeter(file: string, paths: string[]): boolean;
   addedDependencies(before: string | null, after: string | null): string[];
   summarySection(text: string, title: string): string | null;
@@ -117,6 +118,20 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.reviewLevel(["README.md", "web/src/App.tsx"], labeler)).toBe("standard");
     expect(mod.reviewLevel(["docs/a.md"], labeler)).toBe("light");
     expect(mod.reviewLevel([], labeler)).toBe("light");
+  });
+
+  it("picks the spec reviewer when the diff only holds specs, contract tests and hidden scenarios", () => {
+    const spec = [
+      "specs/SPEC-0003-export/spec.md",
+      "tests/acceptance/SPEC-0003.test.ts",
+      "tests/holdout/SPEC-0003.test.ts",
+    ];
+    expect(mod.reviewKind(spec)).toBe("spec");
+    expect(mod.reviewKind(["specs/SPEC-0003-export/spec.md"])).toBe("spec");
+    expect(mod.reviewKind([...spec, "src/features/export/routes.ts"])).toBe("code");
+    expect(mod.reviewKind(["specs/SPEC-0003-export/plan.md"])).toBe("code");
+    expect(mod.reviewKind(["specs/_template/extra/spec.md"])).toBe("code");
+    expect(mod.reviewKind([])).toBe("code");
   });
 
   it("contrôle le périmètre par fichier ou dossier", () => {

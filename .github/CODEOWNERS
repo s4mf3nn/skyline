@@ -5,6 +5,7 @@
 /src/features/auth/          @{{GITHUB_OWNER}}
 /src/config/                 @{{GITHUB_OWNER}}
 /tests/acceptance/           @{{GITHUB_OWNER}}
+/tests/holdout/              @{{GITHUB_OWNER}}
 /specs/                      @{{GITHUB_OWNER}}
 /.github/                    @{{GITHUB_OWNER}}
 /scripts/                    @{{GITHUB_OWNER}}

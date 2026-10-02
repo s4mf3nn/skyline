@@ -13,6 +13,7 @@
     "lint": "biome check .",
     "test": "pnpm gen && vitest run",
     "test:coverage": "pnpm gen && vitest run --coverage",
+    "test:holdout": "pnpm gen && node scripts/holdout.mjs run",
     "verify": "pnpm gen && pnpm typecheck && pnpm lint && pnpm test:coverage && node scripts/check-contract.mjs",
     "verify:quiet": "node scripts/verify-quiet.mjs",
     "tokens": "node scripts/token-report.mjs",

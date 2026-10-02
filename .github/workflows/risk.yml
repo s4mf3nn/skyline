@@ -31,5 +31,6 @@ jobs:
           elif ! echo "$LABELS" | grep -q 'risk:medium'; then
             gh pr edit "$PR" --add-label "risk:low"
             # Phase 3 de la roadmap uniquement : décommenter pour activer l'auto-merge sur risque faible
+            # (prérequis dans docs/factory/WORKFLOW.md : scénarios cachés sur les specs, `gates` vert sur main)
             # gh pr merge "$PR" --auto --squash
           fi

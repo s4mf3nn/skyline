@@ -25,7 +25,7 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 | 13 | Connecteurs claude.ai (Gmail, Calendar, Drive, Docs) et claude-in-chrome refusés pour le projet par des règles `permissions.deny` ; context7 et Conductor restent. Pour utiliser Chrome sur une tâche d'interface, retire `mcp__claude-in-chrome` de `deny` | `.claude/settings.json` (`permissions.deny`) |
 | 14 | Plugins généralistes désactivés pour le projet (la factory a ses propres commandes) | `.claude/settings.json` (`enabledPlugins`) |
 | 15 | `CLAUDE.md` court : sécurité du domaine et procédure Context7 dans `docs/factory/` (lues à la demande) | `CLAUDE.md`, `DOMAIN-SECURITY.md`, `CONTEXT7.md` |
-| 16 | Haiku + effort bas pour les commandes mécaniques (`retro`, `resolve`, `ship` ; **pas `land`**, qui porte les barrières de merge et reste sur le modèle par défaut) ; Sonnet (effort moyen) pour `planner`, `reviewer` et `conflict-resolver` | `.claude/commands/{retro,resolve,ship}.md`, `.claude/agents/` |
+| 16 | Haiku + effort bas pour les commandes mécaniques (`retro`, `resolve`, `ship` ; **pas `land`**, qui porte les barrières de merge et reste sur le modèle par défaut) ; Sonnet (effort moyen) pour `planner`, `spec-reviewer`, `reviewer` et `conflict-resolver` ; au niveau `full` seulement, le relecteur passe sur Opus si le producteur n'y est pas (voir `/review`) | `.claude/commands/{retro,resolve,ship,review}.md`, `.claude/agents/` |
 | 17 | Plans de 3 à 5 tâches, préambule court, titres exacts pour le script | `planner.md`, `/plan` |
 | 18 | Mesure : `pnpm tokens`, colonnes dans `METRICS.md`, étape dans `/retro` | `scripts/token-report.mjs`, `METRICS.md`, `retro.md` |
 

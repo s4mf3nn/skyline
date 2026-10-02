@@ -11,3 +11,9 @@ Source : <Context7 `/org/projet/version`, ou fichier de `node_modules`> le AAAA-
 ```
 
 <!-- Les entrées commencent ici. -->
+
+## vitest 4.1.11
+Source : Context7 `/vitest-dev/vitest/v4.1.6` (version la plus proche disponible) le 2026-10-02, formes confirmées par exécution en 4.1.11.
+- `test.exclude` : étendre avec `[...configDefaults.exclude, "<glob>"]` (`configDefaults` vient de `vitest/config`) ; le remplacer seul retire les exclusions par défaut.
+- Rapport JSON : `vitest run <fichiers> --reporter=json --outputFile=<chemin>` ; format Jest (`testResults[].name`, `.status`, `.message`, `.assertionResults[].status|fullName|failureMessages`).
+

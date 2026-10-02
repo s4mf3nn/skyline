@@ -23,15 +23,17 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 |---|---|---|
 | Spec contrat | Pas de code sans spec ; critères numérotés `CA#` | `specs/_template/spec.md`, `/new-spec` |
 | Tests de contrat immuables | Un agent ne peut que retirer `.skip` ; le reste demande le label `contract-change` | `tests/acceptance/`, `scripts/check-contract.mjs` |
+| Scénarios cachés | L'implémentation satisfait l'intention, pas seulement les tests qu'elle voit : parcours écrits avec la spec, retirés du workspace du producteur, joués en CI | `tests/holdout/`, `scripts/holdout.mjs`, `/new-spec`, `/implement` |
+| Relecture de spec | Critères testables et tests qui les vérifient, avant la lecture humaine | subagent `spec-reviewer`, `/new-spec`, `/review` |
 | Plan en tâches | 3 à 5 tâches par spec, groupes parallèles, périmètre en chemins | subagent `planner`, `/plan`, `scripts/plan-gate.mjs`, `scripts/split-plan.mjs` |
 | Baux de périmètre | Deux workspaces ne modifient jamais les mêmes chemins | `scripts/lease.mjs` (état dans `.factory/` du dépôt principal, hors git) |
 | Aucun registre central | Ajouter une feature ne touche aucun fichier partagé | `scripts/gen-routes.mjs` (`pnpm gen`) |
 | Vérification unique | Typage, lint, tests, couverture 80 %, contrat en une commande | `pnpm verify`, `pnpm verify:quiet` |
-| Revue adversariale locale | Relecteur à contexte vierge ; verdict lié au `patch-id` du diff ; push refusé sans revue `OK` à jour | subagent `reviewer`, `/review`, `scripts/pre-review.mjs`, `scripts/review-gate.mjs`, `lefthook.yml` |
+| Revue adversariale locale | Relecteur à contexte vierge, sur un autre modèle que le producteur en risque élevé ; verdict lié au `patch-id` du diff ; push refusé sans revue `OK` à jour | subagent `reviewer`, `/review`, `scripts/pre-review.mjs`, `scripts/review-gate.mjs`, `lefthook.yml` |
 | Trace de revue en CI | Le corps de la PR porte un verdict qui correspond au diff | `.github/workflows/review-trace.yml` |
 | Routage par risque | Étiquette `risk:*` selon les chemins ; niveau de revue et arbitrage humain en découlent | `.github/labeler.yml`, `.github/workflows/risk.yml`, `.github/CODEOWNERS`, `docs/factory/RISK.md` |
-| Gates de CI | Titre de PR, typage, lint, tests, contrat, mutation sur les fichiers modifiés, gitleaks, Semgrep | `.github/workflows/ci.yml`, `scripts/security-scan.mjs` |
-| Fusion sans merge queue | Checks verts, confirmation humaine sur `risk:high` et `contract-change`, squash | `/land`, `/resolve`, subagent `conflict-resolver` |
+| Gates de CI | Titre de PR, typage, lint, tests, contrat, scénarios cachés, mutation sur les fichiers modifiés, gitleaks, Semgrep ; rejoués sur `main` après chaque fusion | `.github/workflows/ci.yml`, `scripts/security-scan.mjs` |
+| Fusion sans merge queue | `main` verte, checks verts, confirmation humaine sur `risk:high` et `contract-change`, squash | `/land`, `/resolve`, subagent `conflict-resolver` |
 | Boucle d'amélioration | Un incident devient un lint, un test ou un script avant de devenir une consigne | `/retro`, `/learn`, `docs/factory/{LEARNINGS,METRICS,HOTSPOTS}.md` |
 | Documentation de bibliothèques | Context7 à version épinglée, précédé d'un cache local | `.mcp.json`, `docs/factory/CONTEXT7.md`, `docs/factory/libs-cache.md` |
 | Sobriété en tokens | Extraits de plan, sortie filtrée, niveaux de revue, modèles par commande | `docs/factory/TOKENS.md`, `scripts/token-report.mjs` |
@@ -115,9 +117,12 @@ volumes:
 
 ## Adopter la factory dans un projet existant
 
-Copie `.claude/`, `.conductor/`, `.github/`, `.mcp.json`, `.gitleaks.toml`, `lefthook.yml`, `commitlint.config.js`, `scripts/`, `tests/unit/`, `docs/factory/`, `docs/adr/_template.md`, `specs/_template/` et `CLAUDE.md`. Reprends de `package.json` les scripts `gen`, `typecheck`, `lint`, `test:coverage`, `verify`, `verify:quiet`, `tokens`, `prepare` et les dépendances de développement, et de `.gitignore` les entrées `.pr-summary.md`, `.factory/`, `.context/`. Crée `tests/acceptance/` et un `tsconfig.test.json` qui l'inclut. Les scripts supposent `origin/main` comme base (`BASE_REF` pour en changer) et `pnpm verify` comme commande de vérification.
+Copie `.claude/`, `.conductor/`, `.github/`, `.mcp.json`, `.gitleaks.toml`, `lefthook.yml`, `commitlint.config.js`, `scripts/`, `tests/unit/`, `docs/factory/`, `docs/adr/_template.md`, `specs/_template/` et `CLAUDE.md`. Reprends de `package.json` les scripts `gen`, `typecheck`, `lint`, `test:coverage`, `verify`, `verify:quiet`, `tokens`, `prepare` et les dépendances de développement, et de `.gitignore` les entrées `.pr-summary.md`, `.factory/`, `.context/`. Crée `tests/acceptance/`, `tests/holdout/` et un `tsconfig.test.json` qui les inclut, et reprends de `vitest.config.ts` l'exclusion de `tests/holdout` (variable `HOLDOUT`). Les scripts supposent `origin/main` comme base (`BASE_REF` pour en changer) et `pnpm verify` comme commande de vérification.
 
 ## Limites connues
+
+- Les scénarios cachés sont retirés du workspace, pas de l'historique git : la barrière arrête l'accident (une recherche, un `pnpm test`), pas un agent qui irait les chercher. Deux règles `deny` de `.claude/settings.json` ferment les chemins les plus directs.
+- Le relecteur de risque élevé change de modèle, pas de famille de modèles : les erreurs communes à tous les modèles d'un même éditeur ne sont pas couvertes.
 
 - Outillage lié à TypeScript, pnpm, Biome et Vitest. Les scripts de la factory (`scripts/*.mjs`) n'ont besoin que de Node et de git ; pour une autre stack, il faut réécrire `pnpm verify`, la CI et le hook Biome de `.claude/settings.json`.
 - Le rapport de tokens lit les transcripts locaux de Claude Code (`~/.claude/projects/`) : il dépend de leur format et du nom du dossier du dépôt.

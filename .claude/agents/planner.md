@@ -12,7 +12,7 @@ Entrée : le chemin d'une spec `specs/SPEC-XXXX-*/spec.md` validée par un humai
 
 Procédure :
 1. Lis la spec, `CLAUDE.md`, `docs/factory/RISK.md` et `docs/factory/HOTSPOTS.md`.
-2. Explore le code en lecture seule pour identifier les fichiers réellement concernés. Si le découpage dépend d'une API de bibliothèque (fichiers générés, migrations, conventions de config), vérifie-la dans Context7 à la version épinglée.
+2. Explore le code en lecture seule pour identifier les fichiers réellement concernés. Si le découpage dépend d'une API de bibliothèque (fichiers générés, migrations, conventions de config), vérifie-la dans Context7 à la version épinglée. Ne lis pas `tests/holdout/` (scénarios cachés) : rien de leur contenu ne doit passer dans le plan, et ce dossier n'entre dans aucun périmètre.
 3. Découpe en tâches qu'un agent peut finir dans un contexte propre (idéalement moins de 300 lignes de diff chacune), mais **vise 3 à 5 tâches par spec** : chaque tâche repaie le démarrage, la revue et la PR. Fusionne les micro-tâches voisines (même périmètre ou périmètres disjoints sans interface partagée) tant que le total reste sous ~300 lignes ; ne découpe plus fin que pour séparer des zones de risque différentes ou pour paralléliser réellement.
 4. Pour chaque tâche, déclare un périmètre sous forme de **chemins** (fichiers ou dossiers, pas de globs).
 5. Consulte les baux actifs avec `node scripts/lease.mjs list`.

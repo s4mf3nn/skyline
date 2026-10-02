@@ -5,8 +5,10 @@
 //   node scripts/pre-review.mjs level   niveau de revue : full | standard | light (selon .github/labeler.yml)
 //   node scripts/pre-review.mjs mode    travail de spec ou hors spec (bail du workspace ou branche spec-xxxx-t#-*)
 //   node scripts/pre-review.mjs brief   niveau, contrôles, fichiers et diff filtré, pour le subagent `reviewer`
-// Contrôles : fichiers modifiés dans le périmètre du bail, tests de contrat (check-contract), dépendances ajoutées
-// et déclarées dans .pr-summary.md, section « Documentation consultée (Context7) » remplie.
+//   node scripts/pre-review.mjs kind    relecteur à lancer : spec (`spec-reviewer`) | code (`reviewer`)
+// Contrôles : fichiers modifiés dans le périmètre du bail, scénarios cachés retirés du workspace de tâche, tests de
+// contrat (check-contract), dépendances ajoutées et déclarées dans .pr-summary.md, section « Documentation consultée
+// (Context7) » remplie.
 // Variables : BASE_REF (défaut origin/main), CONDUCTOR_ROOT_PATH et CONDUCTOR_WORKSPACE_PATH (baux).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -18,8 +20,8 @@ const git = (...args) =>
   execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 });
 const norm = (p) => p.replace(/^\.\//, "").replace(/\/+$/, "");
 
-/** Fichiers exclus du diff montré au relecteur : générés, lockfiles, contrat (vérifié par check-contract). */
-export const DIFF_EXCLUDES = ["pnpm-lock.yaml", "*.gen.ts", "tests/acceptance"];
+/** Fichiers exclus du diff montré au relecteur : générés, lockfiles, contrat et scénarios cachés (check-contract). */
+export const DIFF_EXCLUDES = ["pnpm-lock.yaml", "*.gen.ts", "tests/acceptance", "tests/holdout"];
 
 /** Le fichier correspond-il au glob du labeler (`**`, `*`) ? Sans RegExp dynamique ; les globs viennent du dépôt (`labeler.yml`), pas d'une entrée utilisateur. */
 export function globMatch(glob, file, g = 0, f = 0) {
@@ -66,6 +68,13 @@ export function reviewLevel(files, labelerText) {
   if (match("risk:high")) return "full";
   if (match("risk:medium")) return "standard";
   return "light";
+}
+
+const SPEC_FILE = /^(specs\/[^/]+\/spec\.md|tests\/(acceptance|holdout)\/.+)$/;
+
+/** `spec` si le diff ne contient que des specs, des tests de contrat et des scénarios cachés ; sinon `code`. */
+export function reviewKind(files) {
+  return files.length > 0 && files.every((f) => SPEC_FILE.test(f)) ? "spec" : "code";
 }
 
 /** Le fichier est-il sous l'un des chemins du périmètre (fichier ou dossier) ? */
@@ -160,13 +169,15 @@ export function runChecks() {
     const perimeter = leases.flatMap((l) => l.paths);
     for (const f of files)
       if (!inPerimeter(f, perimeter)) problems.push(`hors périmètre (${perimeter.join(", ")}) : ${f}`);
+    if (fs.existsSync("tests/holdout"))
+      problems.push("scénarios cachés visibles dans un workspace de tâche : lance `node scripts/holdout.mjs hide`");
   } else notes.push("aucun bail pour ce workspace : périmètre non contrôlé");
 
   try {
     execFileSync("node", ["scripts/check-contract.mjs"], { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
   } catch (e) {
     problems.push(
-      `tests de contrat modifiés autrement que par le retrait de .skip : ${String(e.stderr ?? e.message).trim()}`,
+      `contrat modifié (tests d'acceptation hors retrait de .skip, ou scénarios cachés) : ${String(e.stderr ?? e.message).trim()}`,
     );
   }
 
@@ -224,8 +235,9 @@ if (isMain) {
     } else if (cmd === "level") console.log(level());
     else if (cmd === "mode") console.log(workMode(currentLease() !== null, git("branch", "--show-current").trim()));
     else if (cmd === "brief") console.log(brief());
+    else if (cmd === "kind") console.log(reviewKind(changedFiles()));
     else {
-      console.error("Usage : node scripts/pre-review.mjs check | level | mode | brief");
+      console.error("Usage : node scripts/pre-review.mjs check | level | mode | brief | kind");
       process.exit(2);
     }
   } catch (e) {

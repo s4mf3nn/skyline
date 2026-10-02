@@ -2,6 +2,9 @@ name: gates
 
 on:
   pull_request:
+  # Après chaque fusion : deux PR vertes séparément peuvent casser main ensemble (pas de merge queue).
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -9,7 +12,8 @@ permissions:
 
 concurrency:
   group: gates-${{ github.ref }}
-  cancel-in-progress: true
+  # Pas d'annulation d'un run en cours sur main (GitHub ne garde qu'un run en attente par groupe : /land lit le dernier).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pr-title:
@@ -62,6 +66,9 @@ jobs:
           BASE_REF: origin/${{ github.base_ref }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: node scripts/check-contract.mjs
+      - name: Scénarios cachés
+        # Décompte seul dans les logs : le détail d'un échec est réservé à l'humain (voir docs/factory/WORKFLOW.md).
+        run: node scripts/holdout.mjs run
       - name: Mutation testing sur les fichiers modifiés
         if: github.event_name == 'pull_request'
         env:

@@ -20,8 +20,9 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Humain** : auteur ou valideur des specs et des tests de contrat, relecteur des PR selon le risque, seul à fusionner, à poser le label `contract-change` et à écarter une revue (`waive`).
 - **Agent** : session Claude Code qui exécute une commande de la factory dans un workspace. Il n'a aucune mémoire d'une tâche à l'autre : tout ce qu'il sait vient de `CLAUDE.md`, de la spec, du plan et du code.
 - **Agent producteur** : l'agent qui implémente une tâche (`/implement`).
-- **Subagent** : agent secondaire lancé par un agent, avec son propre contexte, ses outils et son modèle. La factory en définit trois (`.claude/agents/`) : `planner`, `reviewer`, `conflict-resolver`.
+- **Subagent** : agent secondaire lancé par un agent, avec son propre contexte, ses outils et son modèle. La factory en définit quatre (`.claude/agents/`) : `planner`, `spec-reviewer`, `reviewer`, `conflict-resolver`.
 - **Planner** : subagent « chef d'atelier ». Il découpe une spec en tâches et ne code jamais.
+- **Spec-reviewer** : subagent relecteur adversarial d'une PR de spec. Il cherche les critères non testables, les tests qui ne vérifient pas leur critère ou qui dépendent de l'implémentation, avant la lecture humaine.
 - **Reviewer** : subagent relecteur adversarial. Il cherche ce qui est faux dans un diff, sans le contexte de l'agent producteur.
 - **Conflict-resolver** : subagent qui résout un conflit de rebase petit et local, ou répond `RÉGÉNÉRER`.
 
@@ -56,8 +57,9 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Test de contrat** (ou test d'acceptation) : fichier `tests/acceptance/SPEC-XXXX.test.ts`, un `it` par critère d'acceptation, qui ne dépend que de l'interface publique. Écrit avec la spec, validé par l'humain.
 - **`describe.skip`** : état initial d'un test de contrat. L'agent qui implémente la spec retire `.skip` ; c'est la seule modification qui lui est permise.
 - **Contrat immuable** : règle selon laquelle un test de contrat fusionné ne change plus. `scripts/check-contract.mjs` refuse toute autre modification ou suppression, en local et en CI.
-- **`contract-change`** : label posé par l'humain sur une PR pour autoriser une modification de test de contrat.
-- **PR de spec** : PR qui ne contient que la spec et son test de contrat. Relue et fusionnée par l'humain avant tout plan.
+- **Scénario caché** (holdout) : parcours de bout en bout écrit avec la spec dans `tests/holdout/SPEC-XXXX.test.ts`, validé par l'humain, que l'agent producteur ne voit jamais. Il vérifie que l'implémentation satisfait l'intention et pas seulement les tests visibles. Retiré du workspace par `scripts/holdout.mjs hide`, joué en CI quand le test de contrat de la spec n'a plus de `.skip`, immuable comme le contrat. Le détail d'un échec est réservé à l'humain.
+- **`contract-change`** : label posé par l'humain sur une PR pour autoriser une modification de test de contrat ou de scénario caché.
+- **PR de spec** : PR qui ne contient que la spec, son test de contrat et ses scénarios cachés. Relue par le `spec-reviewer`, puis relue et fusionnée par l'humain avant tout plan.
 - **SPEC-0000 (bootstrap)** : première spec d'un projet, qui pose le socle technique. Exécutée seule, par un seul agent, avant toute autre.
 - **ADR** : compte rendu de décision d'architecture (`docs/adr/`). Explique un choix technique durable et ce que les agents doivent respecter. L'ADR-0001 fixe la stack.
 
@@ -114,11 +116,12 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 
 ## 7. La revue
 
-- **Revue adversariale** : relecture dont l'objectif est de trouver ce qui est faux, pas de valider. Faite par le `reviewer` dans un contexte vierge, jamais par l'agent qui a écrit le code.
+- **Revue adversariale** : relecture dont l'objectif est de trouver ce qui est faux, pas de valider. Faite par le `reviewer` (ou le `spec-reviewer` pour une PR de spec, choix fait par `scripts/pre-review.mjs kind`) dans un contexte vierge, jamais par l'agent qui a écrit le code.
 - **Revue locale** : la revue a lieu dans le workspace, avant le push. Il n'y a pas de revue par agent en CI, donc pas de clé d'API en CI.
 - **Pré-revue** : contrôles par script, sans modèle, faits avant la revue : périmètre, contrat, dépendances déclarées, section Context7 remplie (`scripts/pre-review.mjs check`). Une violation se corrige avant de lancer le relecteur et ne compte pas comme un passage.
 - **Brief** : ce que reçoit le relecteur : niveau de revue, résultat de la pré-revue, fichiers modifiés et diff filtré (sans lockfile, fichiers générés ni tests de contrat).
 - **Niveau de revue** : ampleur de la relecture, déduite des chemins touchés : `full` (risque élevé), `standard` (risque moyen), `light` (risque faible).
+- **Modèle du relecteur** : au niveau `full`, le relecteur tourne sur un autre modèle que celui du producteur, parce qu'un modèle qui relit son propre code répète ses erreurs au lieu de les voir. Le modèle utilisé est tracé dans le bloc « Revue locale » ; `review-gate.mjs record` refuse un verdict `full` sans `--model`, mais ne vérifie pas que le modèle diffère de celui du producteur. Les deux modèles restent de la même famille : la décorrélation est partielle.
 - **Verdict** : première ligne de la réponse du relecteur. `BLOQUANT` s'il y a au moins un point bloquant, sinon `CHANGEMENTS` s'il y a au moins un point à corriger, sinon `OK`.
 - **Bloquants / À corriger / Points d'incertitude** : les trois rubriques du relecteur. Les deux premières doivent être traitées par l'agent ; la troisième est destinée à l'humain et n'empêche pas un `OK`.
 - **Passage** : un tour de revue. Trois au maximum ; au-delà, l'agent s'arrête et propose un redécoupage.
@@ -133,14 +136,14 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 
 - **Zone de risque** : ensemble de chemins classés selon ce qu'une erreur y coûterait (`RISK.md`). Élevé : sécurité du domaine, authentification, migrations, configuration, et la factory elle-même. Moyen : logique métier, schéma, dépendances. Faible : le reste.
 - **Labels de risque** : `risk:high`, `risk:medium`, `risk:low`, posés par la CI d'après `.github/labeler.yml`. Ce même fichier fixe le niveau de revue.
-- **Label `contract`** : posé automatiquement quand une PR touche `tests/acceptance/`.
+- **Label `contract`** : posé automatiquement quand une PR touche `tests/acceptance/` ou `tests/holdout/`.
 - **Code owners** : `.github/CODEOWNERS` désigne l'humain propriétaire des chemins à risque élevé.
 - **Sécurité propre au domaine** : règles de sécurité spécifiques au produit (`DOMAIN-SECURITY.md`), lues par l'agent et le relecteur sur les zones concernées.
-- **Gates** : contrôles de CI qu'une PR doit passer : `pr-title`, `gates` (typage, lint, tests, contrat, mutation), `security` (gitleaks, Semgrep), `review-trace`.
+- **Gates** : contrôles de CI qu'une PR doit passer : `pr-title`, `gates` (typage, lint, tests, contrat, scénarios cachés, mutation), `security` (gitleaks, Semgrep), `review-trace`. `gates` et `security` tournent aussi sur `main` après chaque fusion.
 - **gitleaks / Semgrep** : détection de secrets dans les commits, et analyse statique de sécurité. Lancés au `pre-push` (avertissement si l'outil est absent) et en CI (`scripts/security-scan.mjs`).
 - **Clé factice** : valeur de test au format `test-key` ou `key-<nom>`, seule forme autorisée dans les fichiers de test par `.gitleaks.toml`.
 - **Arbitrage** : lecture humaine d'une PR, dans cet ordre : la spec, les tests, le résumé et le verdict, puis le code aux endroits signalés.
-- **`/land`** : commande de fusion, une PR à la fois : checks verts, confirmation explicite sur `risk:high` ou `contract-change`, squash-merge. Elle remplace la merge queue.
+- **`/land`** : commande de fusion, une PR à la fois : `main` verte, checks verts, confirmation explicite sur `risk:high` ou `contract-change`, squash-merge. Elle remplace la merge queue.
 - **Merge queue / ruleset** : mécanismes de GitHub qui imposent des règles de fusion côté serveur (checks requis, file d'attente). Absents du plan Free sur un dépôt privé : la factory s'en passe, et ses barrières sont alors `/land` et le hook `pre-push`, qui reposent sur la discipline et non sur le serveur.
 - **Squash-merge** : fusion d'une PR en un seul commit sur `main`.
 - **Auto-merge** : fusion sans intervention humaine des PR `risk:low`. Désactivé par défaut, prévu en dernière phase de la roadmap.
@@ -169,20 +172,20 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Contexte** : tout ce que l'agent relit à chaque tour (instructions, fichiers lus, sorties de commandes). C'est le premier poste de coût.
 - **Tour** : un appel au modèle. Le **contexte moyen par tour** est l'indicateur de sobriété suivi.
 - **Tokens pondérés** : total ramené à un équivalent de coût (voir les seuils ci-dessous).
-- **Modèle et effort par commande** : chaque commande et chaque subagent peut fixer son modèle et son niveau d'effort. Les commandes mécaniques (`/ship`, `/resolve`, `/retro`) tournent sur le modèle le moins coûteux ; les subagents sur un modèle intermédiaire ; `/land`, qui porte les barrières de fusion, reste sur le modèle par défaut.
+- **Modèle et effort par commande** : chaque commande et chaque subagent peut fixer son modèle et son niveau d'effort. Les commandes mécaniques (`/ship`, `/resolve`, `/retro`) tournent sur le modèle le moins coûteux ; les subagents sur un modèle intermédiaire (le relecteur change de modèle en risque élevé) ; `/land`, qui porte les barrières de fusion, reste sur le modèle par défaut.
 - **Sobriété en tokens** : ensemble des mesures qui réduisent le contexte relu (`TOKENS.md`) : extrait de tâche, sortie filtrée, pré-revue par script, niveaux de revue, modèle moins coûteux pour les commandes mécaniques.
 
 ## Les commandes
 
 | Commande | Rôle | Qui agit ensuite |
 |---|---|---|
-| `/new-spec <besoin>` | Rédige la spec et les tests de contrat en `describe.skip`, après avoir posé ses questions | L'humain relit et fusionne la PR de spec |
+| `/new-spec <besoin>` | Rédige la spec, les tests de contrat en `describe.skip` et les scénarios cachés, après avoir posé ses questions ; les fait relire (`spec-reviewer`) et ouvre la PR de spec | L'humain relit et fusionne la PR de spec |
 | `/plan <SPEC>` | Découpe la spec en tâches (subagent `planner`) et ouvre la PR de plan | L'humain relit et fusionne la PR de plan |
 | `/implement <SPEC> <T#>` | Implémente une tâche : bail, tests, code, vérification, revue, puis `/ship` | L'agent enchaîne seul |
-| `/review` | Pré-revue par script puis revue adversariale ; enregistre le verdict | L'agent corrige si besoin |
+| `/review` | Pré-revue par script puis revue adversariale (`reviewer`, ou `spec-reviewer` pour une PR de spec) ; enregistre le verdict | L'agent corrige si besoin |
 | `/ship` | Vérifie, contrôle la revue, pousse et ouvre la PR | La CI, puis l'humain |
 | `/resolve` | Rebase sur `main` ; résout un petit conflit ou demande de régénérer | `/ship` pour repousser |
-| `/land <PR>` | Fusionne une PR après checks verts et confirmation selon le risque | L'humain archive le workspace |
+| `/land <PR>` | Fusionne une PR si `main` est verte, après checks verts et confirmation selon le risque | L'humain archive le workspace |
 | `/retro` | Prépare la boucle d'amélioration hebdomadaire | L'humain lance les `/learn` proposés |
 | `/learn <incident>` | Propose une règle durable, sous la forme la plus déterministe | L'humain valide avant application |
 
@@ -193,8 +196,9 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | `lease.mjs` | Baux de périmètre entre workspaces |
 | `plan-gate.mjs` | Le plan et la tâche sont-ils sur `origin/main` ? |
 | `split-plan.mjs` | Extrait d'une tâche et de ses critères |
-| `check-contract.mjs` | Tests de contrat modifiés seulement par le retrait de `.skip` |
-| `pre-review.mjs` | Pré-revue, niveau de revue, brief du relecteur |
+| `check-contract.mjs` | Tests de contrat modifiés seulement par le retrait de `.skip` ; scénarios cachés ni modifiés ni supprimés |
+| `holdout.mjs` | Scénarios cachés : retrait du workspace, exécution en CI avec décompte seul |
+| `pre-review.mjs` | Pré-revue, niveau de revue, choix du relecteur, brief du relecteur |
 | `review-gate.mjs` | Enregistrement et contrôle du verdict, trace dans la PR |
 | `security-scan.mjs` | Semgrep et gitleaks, en local comme en CI |
 | `verify-quiet.mjs` | `pnpm verify` à sortie filtrée |
@@ -227,7 +231,8 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | Tâches par spec | 3 à 5 | `.claude/agents/planner.md` |
 | Taille visée d'une tâche | moins de 300 lignes de diff | `.claude/agents/planner.md` |
 | Diff jugé trop gros pour une revue rapide | plus de 400 lignes (passe en `risk:medium`) | `.github/workflows/risk.yml` |
-| Passages de revue | 3 au maximum | `.claude/commands/implement.md` |
+| Passages de revue | 3 au maximum | `.claude/commands/implement.md`, `.claude/commands/new-spec.md` |
+| Scénarios cachés par spec | 2 à 4 | `.claude/commands/new-spec.md` |
 | Couverture minimale | 80 % (lignes, fonctions, branches, instructions) | `vitest.config.ts` |
 | Score de mutation minimal | 60 % | `stryker.config.json` |
 | Conflit résolu automatiquement | 40 lignes au plus, hors migration | `.claude/agents/conflict-resolver.md` |

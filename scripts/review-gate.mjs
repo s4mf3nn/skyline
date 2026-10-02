@@ -4,7 +4,7 @@
 // sans changement de contenu ne l'invalide pas, une nouvelle modification oui.
 // Stocké dans <workspace>/.context/review.json (hors git).
 // Usage :
-//   node scripts/review-gate.mjs record <OK|CHANGEMENTS|BLOQUANT> [--loops N]
+//   node scripts/review-gate.mjs record <OK|CHANGEMENTS|BLOQUANT> [--loops N] [--model <modèle du relecteur>]   (obligatoire en zone à risque élevé)
 //   node scripts/review-gate.mjs waive "<raison>"   (humain uniquement)
 //   node scripts/review-gate.mjs check              (utilisé par le hook pre-push)
 //   node scripts/review-gate.mjs section            (bloc Markdown pour le corps de la PR)
@@ -21,6 +21,15 @@ const file = path.join(sh("git rev-parse --show-toplevel"), ".context", "review.
 function fingerprint() {
   const out = execSync(`git diff ${base}...HEAD | git patch-id --stable`, { encoding: "utf8" }).trim();
   return out.split(/\s+/)[0] ?? "";
+}
+
+/** Niveau de revue du diff (`full` en zone à risque élevé). Inconnu si le script de pré-revue ne s'exécute pas. */
+function reviewLevel() {
+  try {
+    return sh("node scripts/pre-review.mjs level");
+  } catch {
+    return "inconnu";
+  }
 }
 
 function load() {
@@ -48,9 +57,13 @@ if (cmd === "record") {
   if (!VERDICTS.includes(verdict)) fail(`Verdict invalide. Attendu : ${VERDICTS.join(" | ")}`);
   const i = args.indexOf("--loops");
   const loops = i >= 0 ? Number(args[i + 1]) : 1;
+  const m = args.indexOf("--model");
+  const model = m >= 0 ? args[m + 1] : undefined;
   const patchId = fingerprint();
   if (!patchId) fail(`Diff vide par rapport à ${base} : rien à relire.`);
-  save({ verdict, patchId, loops, head: sh("git rev-parse HEAD"), at: new Date().toISOString() });
+  if (!model && reviewLevel() === "full")
+    fail("Zone à risque élevé : indique le modèle du relecteur (--model <modèle>), voir .claude/commands/review.md.");
+  save({ verdict, patchId, loops, model, head: sh("git rev-parse HEAD"), at: new Date().toISOString() });
   console.log(`Revue enregistrée : ${verdict} (patch-id ${patchId.slice(0, 12)}, ${loops} passage(s))`);
 } else if (cmd === "waive") {
   const reason = args.join(" ").trim();
@@ -74,6 +87,7 @@ if (cmd === "record") {
   if (!r) fail("Aucune revue locale enregistrée.");
   const lines = ["## Revue locale", `Verdict : ${r.verdict}`, `Patch-id : ${r.patchId}`];
   if (r.loops) lines.push(`Passages : ${r.loops}`);
+  if (r.model) lines.push(`Modèle du relecteur : ${r.model}`);
   if (r.reason) lines.push(`Raison de l'exception : ${r.reason}`);
   console.log(lines.join("\n"));
 } else if (cmd === "verify-pr") {

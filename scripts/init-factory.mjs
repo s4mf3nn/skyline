@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Personnalise le boilerplate pour un nouveau projet, puis se supprime (script à usage unique).
 // Usage :
-//   node scripts/init-factory.mjs <nom-du-projet> <propriétaire-github> [--phase 1|2|3] [--description "<phrase>"]
+//   node scripts/init-factory.mjs <nom-du-projet> <propriétaire-github> [--phase 1|2|3] [--description '<phrase>']
 // Lancé en général par la commande `/init-project`, qui pose les questions à ta place.
 // Effets :
 //   - remplace {{PROJECT_NAME}} et {{GITHUB_OWNER}} dans les fichiers de TOKEN_FILES ;
@@ -26,7 +26,8 @@ export const TOKEN_FILES = ["README.md", "CLAUDE.md", ".github/CODEOWNERS", ".gi
 const SELF = ["scripts/init-factory.mjs", "tests/unit/init-factory.test.ts", ".claude/commands/init-project.md"];
 const PHASES = ["1", "2", "3"];
 const PHASE_LINE = /Phase en cours : \d\./;
-const DESCRIPTION_PLACEHOLDER = "<!-- À compléter : une phrase sur le produit. -->";
+// Capture la fin de ligne pour fonctionner aussi avec un README en CRLF.
+const DESCRIPTION_PLACEHOLDER = /<!-- À compléter : une phrase sur le produit\. -->(\r?\n)/;
 
 /** Remplace chaque `{{CLÉ}}` de `values` dans `text`. */
 export function applyTokens(text, values) {
@@ -49,11 +50,14 @@ export function init(dir, name, owner, options = {}) {
   if (!PROJECT_NAME.test(name ?? "")) throw new Error(`Nom de projet invalide : "${name ?? ""}" (kebab-case attendu)`);
   if (!GITHUB_OWNER.test(owner ?? "")) throw new Error(`Propriétaire GitHub invalide : "${owner ?? ""}"`);
   if (!PHASES.includes(phase)) throw new Error(`Phase invalide : "${phase}" (1, 2 ou 3 attendu)`);
-  if (description?.includes("\n")) throw new Error("Description invalide : une seule ligne attendue");
+  if (description !== undefined && /[\r\n]/.test(description))
+    throw new Error("Description invalide : une seule ligne attendue");
   const at = (p) => path.join(dir, p);
   if (!fs.existsSync(at("README.project.md")))
     throw new Error("README.project.md absent : le dépôt est déjà initialisé.");
   // Contrôlé avant tout déplacement, pour ne jamais laisser un dépôt à moitié initialisé.
+  if (description && !DESCRIPTION_PLACEHOLDER.test(fs.readFileSync(at("README.project.md"), "utf8")))
+    throw new Error("README.project.md ne contient plus la ligne à compléter pour la description");
   const workflow = at("docs/factory/WORKFLOW.md");
   if (fs.existsSync(workflow) && !PHASE_LINE.test(fs.readFileSync(workflow, "utf8")))
     throw new Error('WORKFLOW.md ne contient pas la ligne "Phase en cours : N."');
@@ -66,7 +70,7 @@ export function init(dir, name, owner, options = {}) {
     // Fonction de remplacement : une chaîne interpréterait les motifs `$&`, `$$`... de la description.
     fs.writeFileSync(
       at("README.md"),
-      readme.replace(`${DESCRIPTION_PLACEHOLDER}\n`, () => `${description}\n\n`),
+      readme.replace(DESCRIPTION_PLACEHOLDER, (_match, eol) => `${description}${eol}${eol}`),
     );
   }
   if (fs.existsSync(workflow)) fs.writeFileSync(workflow, applyPhase(fs.readFileSync(workflow, "utf8"), phase));
@@ -87,16 +91,12 @@ export function init(dir, name, owner, options = {}) {
 const isMain =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
 if (isMain) {
-  let name;
-  let flags = {};
   try {
-    const parsed = parseArgs({
+    const { values: flags, positionals } = parseArgs({
       allowPositionals: true,
       options: { phase: { type: "string" }, description: { type: "string" } },
     });
-    flags = parsed.values;
-    let owner;
-    [name, owner] = parsed.positionals;
+    const [name, owner] = positionals;
     init(process.cwd(), name, owner, { phase: flags.phase, description: flags.description });
     console.log(
       `Factory initialisée pour ${name} (propriétaire : @${owner}, phase d'autonomie : ${flags.phase ?? "1"}).`,

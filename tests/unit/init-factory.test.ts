@@ -88,9 +88,9 @@ describe("scripts/init-factory.mjs", () => {
     expect(read(dir, "README.md")).toContain("Coût : 5 $& par mois, $$\n");
   });
 
-  it("rejects a multi-line description without touching files", () => {
+  it.each(["a\nb", "a\rb"])("rejects a multi-line description %j without touching files", (description) => {
     const dir = newRepo();
-    expect(() => mod.init(dir, "mon-projet", "moi", { description: "a\nb" })).toThrow(/Description invalide/);
+    expect(() => mod.init(dir, "mon-projet", "moi", { description })).toThrow(/Description invalide/);
     expect(read(dir, "README.md")).toBe("# Guide du boilerplate\n");
   });
 
@@ -98,6 +98,23 @@ describe("scripts/init-factory.mjs", () => {
     const dir = newRepo();
     fs.writeFileSync(path.join(dir, "docs/factory/WORKFLOW.md"), "rien\n");
     expect(() => mod.init(dir, "mon-projet", "moi", { phase: "2" })).toThrow(/Phase en cours/);
+    expect(read(dir, "README.md")).toBe("# Guide du boilerplate\n");
+  });
+
+  it("keeps CRLF line endings when inserting the description", () => {
+    const dir = newRepo();
+    fs.writeFileSync(
+      path.join(dir, "README.project.md"),
+      "# {{PROJECT_NAME}}\r\n<!-- À compléter : une phrase sur le produit. -->\r\nSuite.\r\n",
+    );
+    mod.init(dir, "mon-projet", "moi", { description: "Mon produit." });
+    expect(read(dir, "README.md")).toBe("# mon-projet\r\nMon produit.\r\n\r\nSuite.\r\n");
+  });
+
+  it("rejects a description when the README placeholder is missing, before moving anything", () => {
+    const dir = newRepo();
+    fs.writeFileSync(path.join(dir, "README.project.md"), "# {{PROJECT_NAME}}\n");
+    expect(() => mod.init(dir, "mon-projet", "moi", { description: "x" })).toThrow(/ligne à compléter/);
     expect(read(dir, "README.md")).toBe("# Guide du boilerplate\n");
   });
 

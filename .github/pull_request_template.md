@@ -1,6 +1,7 @@
-<!-- Titre : type(spec-xxxx): description   ex. feat(spec-0001): create short link -->
+<!-- Titre : type(spec-xxxx): description   ex. feat(spec-0001): create short link ; hors spec (outillage) : fix(factory): description -->
 
 ## Référence
+<!-- Hors spec (amélioration du boilerplate) : écrire « Hors spec : <objet> » et supprimer les lignes ci-dessous -->
 - Spec : `specs/SPEC-XXXX-.../spec.md`
 - Tâche : T#
 - Critères d'acceptation couverts : CA1, CA2

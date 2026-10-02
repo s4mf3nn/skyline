@@ -42,7 +42,7 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 - Node ≥ 22.12 et pnpm 10 (version épinglée dans `package.json`)
 - `gh` authentifié, un dépôt GitHub
 - Claude Code et Conductor
-- Recommandé en local : `semgrep` (`pipx install semgrep`) et `gitleaks` (`brew install gitleaks`). Absents, le `pre-push` avertit et la CI fait le scan.
+- Recommandé en local : `semgrep` (`pipx install semgrep==1.179.0`, version alignée sur la CI) et `gitleaks` (`brew install gitleaks`). Absents, le `pre-push` avertit et la CI fait le scan.
 - Optionnel : Docker, pour une base Postgres par workspace
 
 ## Démarrer un nouveau projet

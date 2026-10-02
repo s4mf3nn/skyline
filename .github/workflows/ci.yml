@@ -87,5 +87,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Semgrep
         run: |
-          pipx install semgrep
+          pipx install semgrep==1.179.0
           node scripts/security-scan.mjs semgrep

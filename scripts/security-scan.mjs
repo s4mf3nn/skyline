@@ -16,7 +16,7 @@ const base = process.env.BASE_REF ?? "origin/main";
 export const TOOLS = {
   semgrep: {
     args: ["scan", "--config", "auto", "--error", "--exclude", "tests"],
-    install: "pipx install semgrep",
+    install: "pipx install semgrep==1.179.0",
   },
   gitleaks: {
     // La config `.gitleaks.toml` à la racine est lue automatiquement.

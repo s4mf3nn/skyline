@@ -4,12 +4,14 @@ model: haiku
 effort: low
 ---
 
-1. `git status --porcelain` doit être vide et `.pr-summary.md` doit exister. Sinon, arrête-toi. La section « Documentation consultée (Context7) » doit aussi être remplie (une bibliothèque par ligne, ou `Aucune`, ou la mention que Context7 était indisponible) : si elle est vide ou encore au texte du template, arrête-toi.
+1. Détermine le mode avec `node scripts/pre-review.mjs mode` (`spec` si le workspace a un bail, si HEAD est détaché ou si la branche suit `[préfixe/]spec-xxxx-t#-*`, sinon `hors-spec` : amélioration du boilerplate ou de l'outillage). Ne le déduis jamais de la présence de `.pr-summary.md`.
+   - `spec` : `git status --porcelain` doit être vide et `.pr-summary.md` doit exister. Sinon, arrête-toi. La section « Documentation consultée (Context7) » doit aussi être remplie (une bibliothèque par ligne, ou `Aucune`, ou la mention que Context7 était indisponible) : si elle est vide ou encore au texte du template, arrête-toi.
+   - `hors-spec` : l'absence de spec ne bloque pas. S'il reste des changements non commités, commite-les (Conventional Commits avec le scope `factory`, ex. `fix(factory): ...`, lignes du corps de 100 caractères au plus). S'il n'y a ni changement ni commit en avance sur `origin/main`, arrête-toi (rien à pousser). Si `.pr-summary.md` est absent, crée-le en français à partir de `.github/pull_request_template.md` : « Référence » = `Hors spec : amélioration du boilerplate`, « Intention », « Fichiers touchés » (d'après `git diff --name-only origin/main...HEAD`), « Décisions prises » et « Points d'incertitude » rédigés d'après le diff, « Documentation consultée (Context7) » = `Aucune` (ou les bibliothèques réellement consultées), « Nouvelles dépendances » = `Aucune`. Si `.pr-summary.md` existe déjà, vérifie que « Documentation consultée (Context7) » est remplie. Laisse le bloc « Revue locale » au template (rempli à l'étape 4).
 2. Lance `pnpm verify:quiet`. S'il échoue, arrête-toi.
 3. `node scripts/review-gate.mjs check` :
    - s'il échoue parce que la revue est absente ou périmée, lance `/review` ;
    - si le verdict n'est pas `OK`, arrête-toi et dis-moi pourquoi. Ne corrige pas ici : la boucle de correction est dans `/implement`.
 4. Remplace dans `.pr-summary.md` le bloc « ## Revue locale » par la sortie de `node scripts/review-gate.mjs section`.
 5. Pousse : `git push -u origin HEAD`. Le hook `pre-push` revérifie la revue. Jamais de `--no-verify`. Si le push est refusé en non-fast-forward après un `/resolve`, utilise `git push --force-with-lease`, jamais `--force`.
-6. Crée la PR : `gh pr create --base main --title "<type(spec-xxxx): description>" --body-file .pr-summary.md`. Le titre suit les Conventional Commits avec la spec en scope.
+6. Crée la PR : `gh pr create --base main --title "<type(spec-xxxx|factory): description>" --body-file .pr-summary.md`. Le titre suit les Conventional Commits avec la spec en scope (`type(spec-xxxx): description`), ou `factory` en mode `hors-spec` (`type(factory): description`).
 7. Affiche l'URL de la PR et rappelle que les labels de risque sont posés par la CI.

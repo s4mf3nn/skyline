@@ -17,7 +17,7 @@ La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
 
 ## Règles de la factory (non négociables)
 
-1. **On ne code jamais sans spec.** Toute tâche référence une spec `specs/SPEC-XXXX-*/spec.md` et une tâche de son `plan.md`. Si on te demande de coder sans spec, propose d'abord `/new-spec`.
+1. **On ne code jamais sans spec.** Toute tâche référence une spec `specs/SPEC-XXXX-*/spec.md` et une tâche de son `plan.md`. Si on te demande de coder sans spec, propose d'abord `/new-spec`. Exception : une amélioration du boilerplate ou de l'outillage (`scripts/`, `.claude/`, `.github/`, `docs/factory/`, config) n'a pas de spec ; `/ship` la traite en mode hors spec (scope `factory`, voir `docs/factory/WORKFLOW.md`). Les autres règles (vérification, revue locale, pas de contournement) restent applicables.
 2. **Périmètre déclaré.** Chaque tâche liste les chemins qu'elle a le droit de modifier. Si tu dois toucher un fichier hors périmètre, tu t'arrêtes et tu le signales au lieu de le faire.
 3. **Bail.** Au démarrage d'une tâche, pose un bail sur ton périmètre avec `node scripts/lease.mjs acquire <TASK_ID> <chemins...>`. Si l'acquisition échoue, un autre agent travaille sur ces fichiers : tu t'arrêtes et tu le signales.
 4. **Tests de contrat immuables.** Les fichiers `tests/acceptance/*.test.ts` sont écrits et validés par l'humain dans la PR de spec. Tu as seulement le droit de retirer `.skip` sur le `describe` de ta spec. Toute autre modification est bloquée par la CI (`scripts/check-contract.mjs`).

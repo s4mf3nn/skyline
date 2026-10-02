@@ -3,7 +3,8 @@ import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 interface PreReview {
-  globToRegExp(glob: string): RegExp;
+  globMatch(glob: string, file: string): boolean;
+  workMode(hasLease: boolean, branch: string): string;
   labelGlobs(text: string, label: string): string[];
   reviewLevel(files: string[], labeler: string): string;
   inPerimeter(file: string, paths: string[]): boolean;
@@ -35,13 +36,74 @@ const labeler = `# commentaire
 
 describe("scripts/pre-review.mjs", () => {
   it("convertit les globs du labeler", () => {
-    const g = (glob: string, file: string) => mod.globToRegExp(glob).test(file);
+    const g = (glob: string, file: string) => mod.globMatch(glob, file);
     expect(g("src/features/**/service.ts", "src/features/links/service.ts")).toBe(true);
     expect(g("src/features/**/service.ts", "src/features/service.ts")).toBe(true);
     expect(g("src/features/**/service.ts", "src/features/links/repo.ts")).toBe(false);
     expect(g("web/**", "web/src/App.tsx")).toBe(true);
     expect(g("web/index.html", "web/indexXhtml")).toBe(false);
     expect(g("*.md", "a/b.md")).toBe(false);
+  });
+
+  it("couvre les cas limites des globs", () => {
+    const g = (glob: string, file: string) => mod.globMatch(glob, file);
+    expect(g("**/x.ts", "x.ts")).toBe(true);
+    expect(g("**/x.ts", "a/b/x.ts")).toBe(true);
+    expect(g("**/x.ts", "a/bx.ts")).toBe(false);
+    expect(g("a/**b", "a/c/d/b")).toBe(true);
+    expect(g("a*b", "axxb")).toBe(true);
+    expect(g("a*b", "a/b")).toBe(false);
+    expect(g("src/*", "src/a/b")).toBe(false);
+    expect(g("a.b", "aXb")).toBe(false);
+    expect(g("a+(b)[c]", "a+(b)[c]")).toBe(true);
+    expect(g("", "")).toBe(true);
+    expect(g("", "a")).toBe(false);
+    expect(g("a", "ab")).toBe(false);
+    expect(g("**/**/**/x", `${"a/".repeat(40)}y`)).toBe(false);
+  });
+
+  it("équivaut à l'ancienne conversion par RegExp (test différentiel)", () => {
+    const legacy = (glob: string, file: string) => {
+      let re = "";
+      for (let i = 0; i < glob.length; i++) {
+        const c = glob[i] as string;
+        if (c === "*" && glob[i + 1] === "*") {
+          if (glob[i + 2] === "/") {
+            re += "(?:.*/)?";
+            i += 2;
+          } else {
+            re += ".*";
+            i += 1;
+          }
+        } else if (c === "*") re += "[^/]*";
+        else re += c.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+      }
+      return new RegExp(`^${re}$`).test(file);
+    };
+    const words = (alphabet: string[], max: number): string[] => {
+      let all = [""];
+      let layer = [""];
+      for (let n = 0; n < max; n++) {
+        layer = layer.flatMap((w) => alphabet.map((c) => w + c));
+        all = all.concat(layer);
+      }
+      return all;
+    };
+    const globs = words(["a", ".", "/", "*"], 5);
+    const files = words(["a", ".", "/"], 4);
+    const mismatches = globs.flatMap((glob) =>
+      files.filter((file) => mod.globMatch(glob, file) !== legacy(glob, file)).map((file) => `${glob} ~ ${file}`),
+    );
+    expect(mismatches).toEqual([]);
+  });
+
+  it("distingue le travail de spec de l'outillage", () => {
+    expect(mod.workMode(true, "main")).toBe("spec");
+    expect(mod.workMode(false, "spec-0001-t2-create-link")).toBe("spec");
+    expect(mod.workMode(false, "s4mf3nn/dgp95")).toBe("hors-spec");
+    expect(mod.workMode(false, "s4mf3nn/spec-0001-t2-x")).toBe("spec");
+    expect(mod.workMode(false, "")).toBe("spec");
+    expect(mod.workMode(false, "respec-0001-t2")).toBe("hors-spec");
   });
 
   it("lit les globs d'une étiquette", () => {

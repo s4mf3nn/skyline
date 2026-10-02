@@ -37,6 +37,12 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/${DB_NAME}
 ENV
 fi
 
+# Ressource de données d'un autre fournisseur (branche de base hébergée, instance locale...) :
+# le projet fournit scripts/workspace-data.sh, appelé avec « setup » (voir docs/adr/0001-stack.md)
+if [ -x scripts/workspace-data.sh ]; then
+  WORKSPACE_NAME="$WS_NAME" PROJECT_NAME="$PROJECT" ./scripts/workspace-data.sh setup
+fi
+
 # Migrations et fichiers générés (tolérant tant que le bootstrap n'est pas fait)
 pnpm run --if-present db:migrate
 pnpm run --if-present gen

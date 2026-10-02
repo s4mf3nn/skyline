@@ -96,7 +96,9 @@ gh label create "contract-change" --color b60205 --description "Modification d'u
 
 ## Options
 
-**Postgres, une base par workspace.** Ajoute ce `docker-compose.yml` à la racine : le setup Conductor crée alors la base `<projet>_<workspace>`, écrit `DATABASE_URL` dans `.env.local`, et l'archivage la supprime. Décommente aussi le bloc `services` de `.github/workflows/ci.yml` et ajoute un script `db:migrate` (appelé s'il existe).
+**Ressource de données par workspace.** Des agents travaillent en parallèle : chacun a besoin de sa propre ressource de données, créée au setup du workspace et supprimée à son archivage. Le mécanisme est une décision de l'ADR-0001 (section Implications) : Postgres local en Docker (ci-dessous, le seul que les scripts de la factory savent créer), branche d'une base hébergée (ex. Neon), instance locale d'un service (ex. Supabase), ou aucune ressource. Pour tout mécanisme autre que Docker, le projet fournit un script exécutable `scripts/workspace-data.sh`, appelé s'il existe par le setup (`setup`) et par l'archivage (`archive`) Conductor, avec les variables `WORKSPACE_NAME` et `PROJECT_NAME` (identifiants en minuscules et underscores). `setup` crée la ressource (ex. une branche de base hébergée) et ajoute ses variables à `.env.local` sans l'écraser ; `archive` la supprime (son code de retour est ignoré). Les deux sont idempotents. Ce script est écrit par SPEC-0000 d'après l'ADR-0001 : ne code aucun fournisseur en dur dans les scripts de la factory.
+
+**Postgres en Docker, une base par workspace.** Ajoute ce `docker-compose.yml` à la racine : le setup Conductor crée alors la base `<projet>_<workspace>`, écrit `DATABASE_URL` dans `.env.local`, et l'archivage la supprime. Décommente aussi le bloc `services` de `.github/workflows/ci.yml` et ajoute un script `db:migrate` (appelé s'il existe).
 
 ```yaml
 services:

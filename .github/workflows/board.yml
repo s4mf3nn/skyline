@@ -1,0 +1,38 @@
+name: board
+
+# Synchronise les issues (une par spec et par tâche) et, si configuré, le GitHub Project.
+# Toujours lu depuis main : le tableau reflète le plan fusionné et l'état des PR.
+on:
+  push:
+    branches: [main]
+    paths: ["specs/**"]
+  # pull_request_target : le YAML et les secrets viennent de main, jamais de la branche d'une PR
+  # (le job n'exécute que le code de main, aucun code de la PR n'est extrait).
+  pull_request_target:
+    types: [opened, reopened, closed, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: board
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - name: Synchroniser le tableau
+        env:
+          # PROJECT_TOKEN (PAT avec la portée `project`) n'est requis que pour le GitHub Project ;
+          # sans lui, les issues et leurs étiquettes de statut sont tout de même tenues à jour.
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || github.token }}
+          BOARD_PROJECT: ${{ vars.BOARD_PROJECT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/board.mjs sync

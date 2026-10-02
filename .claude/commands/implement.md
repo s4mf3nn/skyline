@@ -11,7 +11,7 @@ Tâche : $ARGUMENTS
 3. Renomme la branche : `git branch -m spec-xxxx-t#-<slug>`.
 4. Si la tâche couvre des critères d'acceptation, retire le `.skip` du `describe` concerné dans `tests/acceptance/` et ne touche à rien d'autre dans ce fichier.
 5. Avant d'écrire du code qui appelle une bibliothèque ou qui la configure, applique `docs/factory/CONTEXT7.md` (cache `docs/factory/libs-cache.md` d'abord, Context7 à la version épinglée seulement pour une API nouvelle) et alimente le cache. Garde la liste des bibliothèques consultées pour le résumé de PR.
-   Écris ensuite les tests unitaires, puis le code, en restant strictement dans le périmètre.
+   Écris ensuite les tests unitaires, puis le code, en restant strictement dans le périmètre. Écris les commentaires en français ; messages d'erreur, codes d'erreur, identifiants, noms de tests et logs en anglais ; privilégie un code simple et lisible, sans astuce (voir « Conventions de code » dans `CLAUDE.md`).
 6. Pendant la boucle, lance seulement les contrôles ciblés (`pnpm exec vitest run <fichiers>`, `pnpm exec tsc --noEmit`). Avant de commiter, boucle jusqu'à ce que `pnpm verify:quiet` (qui lance `pnpm verify`, sortie filtrée, log complet dans `.context/verify.log`) soit vert. Crée (ou écrase) `.pr-summary.md` avec au minimum la section « Documentation consultée (Context7) » remplie (et « Nouvelles dépendances » si tu en ajoutes : `/review` le contrôle par script) : le relecteur la compare au diff. Puis commite (Conventional Commits, spec en scope).
 7. Revue adversariale, au maximum 3 passages :
    - lance `/review` (pré-revue par script, puis subagent `reviewer`, contexte vierge). Si la pré-revue signale des violations, corrige-les, commite et relance `/review` : ce n'est pas un passage.

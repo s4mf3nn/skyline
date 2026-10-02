@@ -35,6 +35,8 @@ La stack et ses raisons sont décrites dans `docs/adr/0001-stack.md`.
 - Validation des entrées à la frontière (HTTP, CLI, message), jamais plus loin.
 - Erreurs métier typées (`src/shared/errors.ts`), jamais de `throw new Error("...")` brut dans une route.
 - Migrations préfixées par timestamp, une migration par tâche au maximum.
+- **Langues** : commentaires en français ; messages d'erreur, codes d'erreur (`NOT_FOUND`), identifiants (variables, fonctions, types), noms de tests (`describe` / `it`) et messages de log en anglais. Commits et titre de PR : type et scope Conventional Commits inchangés, description en français. Sorties CLI des scripts : en français. Ces règles valent pour le code nouveau ou modifié ; le code existant n'est pas réécrit pour elles.
+- **Lisibilité humaine d'abord** : fonctions courtes qui font une seule chose, noms explicites, abstractions simples. Pas d'astuce, pas de code « malin » (chaînes d'opérateurs denses, métaprogrammation, génériques complexes, one-liners obscurs), pas d'abstraction anticipée : on factorise à partir de la troisième répétition. Les commentaires expliquent le *pourquoi*, pas le *comment*. En cas de doute entre court et clair, choisis clair.
 - Commits et titre de PR en Conventional Commits avec la spec en scope : `feat(spec-0001): <description>`.
 
 ## Sécurité propre au domaine

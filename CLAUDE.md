@@ -23,7 +23,7 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 4. **Tests de contrat immuables.** Les fichiers `tests/acceptance/*.test.ts` sont écrits et validés par l'humain dans la PR de spec. Tu as seulement le droit de retirer `.skip` sur le `describe` de ta spec. Toute autre modification est bloquée par la CI (`scripts/check-contract.mjs`). Les scénarios cachés (`tests/holdout/`) sont retirés de ton workspace par `/implement` : tu ne les lis pas, tu ne les modifies pas et tu ne cherches pas à les obtenir autrement.
 5. **Condition de sortie.** Tu ne rends la main que lorsque `pnpm verify` est vert, que la revue locale (`/review`, subagent `reviewer`, ou `spec-reviewer` pour une PR de spec) est `OK` sur le dernier état du code, et que tu as rédigé le résumé de PR au format de `.github/pull_request_template.md`. Le hook `pre-push` refuse un push sans revue à jour.
 6. **Petit et jetable.** Si la tâche dépasse ton contexte ou que tu tournes en rond, arrête-toi et propose un redécoupage plutôt que de forcer.
-7. **Pas de nouvelle dépendance** sans la mentionner explicitement dans le résumé de PR avec sa justification.
+7. **Pas de nouvelle dépendance** sans la mentionner explicitement dans le résumé de PR avec sa justification. Une technologie `imposée` ou `choisie` du tableau de `docs/adr/0001-stack.md` est pré-autorisée : la justification est « ADR-0001 ». Une technologie `imposée` ne se remplace jamais sans nouvelle ADR.
 8. **Pas de contournement des contrôles.** Jamais de `--no-verify`, jamais de `node scripts/review-gate.mjs waive` (réservé à l'humain). Si le relecteur n'est pas `OK` après 3 passages, tu t'arrêtes et tu proposes un redécoupage.
 
 ## Conventions de code

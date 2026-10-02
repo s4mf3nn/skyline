@@ -1,7 +1,7 @@
 # ADR-XXXX : <décision>
 
 Date : AAAA-MM-JJ
-Statut : proposée | acceptée | remplacée par ADR-YYYY
+Statut : proposée | acceptée | remplacée par ADR-YYYY (une ADR qui en remplace une autre le dit dans son contexte, et l'ancienne passe à `remplacée par`)
 
 ## Contexte
 La situation et les contraintes qui imposent une décision.

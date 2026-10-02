@@ -66,7 +66,7 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 | Fichier | Quoi |
 |---|---|
 | `CLAUDE.md` | Sections « Le projet », « Conventions de code » (selon la stack) et « Sécurité propre au domaine » |
-| `docs/adr/0001-stack.md` | Les choix laissés ouverts : type d'application, framework, validation, persistance, tests d'interface, découpage d'une feature |
+| `docs/adr/0001-stack.md` | Type d'application, tableau des technologies (imposées, choisies, à décider) et section Implications (runtime, tests, données, secrets, déploiement) |
 | `specs/SPEC-0000-bootstrap/spec.md`, `tests/acceptance/SPEC-0000.test.ts` | Critères et assertions du socle, puis statut `VALIDÉE` |
 | `docs/factory/DOMAIN-SECURITY.md` | Les règles de sécurité du domaine |
 | `docs/factory/RISK.md`, `.github/labeler.yml`, `.github/CODEOWNERS` | Les zones sensibles du domaine, dans les trois fichiers à la fois |
@@ -123,6 +123,7 @@ volumes:
 - `package.json` : le script `dev` (bundler, simulateur) ; `.gitignore` : les dossiers générés par le framework (Biome suit `.gitignore`).
 - Tests de contrat et scénarios cachés : ils passent par l'interface rendue, en `SPEC-XXXX.test.tsx`.
 - Tests d'interface hors de portée de Vitest (ex. rendu React Native) : le lanceur ajouté est une nouvelle dépendance à justifier, et `pnpm verify` doit l'enchaîner.
+- Tailwind est imposé par la factory pour toute interface (NativeWind pour React Native) ; il est consigné dans l'ADR-0001, et SPEC-0000 le pose.
 - `docs/factory/RISK.md`, `.github/labeler.yml`, `docs/factory/DOMAIN-SECURITY.md` : les zones et règles par défaut visent une API.
 
 **Plusieurs applications dans le même dépôt** (ex. API et interface web ou mobile). Ajoute un paquet par application (`web/`, `mobile/`) et un `pnpm-workspace.yaml`, enchaîne `pnpm --filter <paquet> <script>` dans `typecheck` et `test:coverage`, ajoute un build à la CI et classe `<paquet>/**` en `risk:medium` (chemins d'authentification et point d'entrée en `risk:high`).

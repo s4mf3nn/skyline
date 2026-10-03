@@ -9,7 +9,7 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 
 ## Commandes
 
-- `pnpm dev` : lance l'application en local selon la stack (serveur, bundler, simulateur) ; si elle écoute sur un port, c'est `$PORT` (Conductor fournit `$CONDUCTOR_PORT`)
+- `pnpm dev` : lance l'application en local selon la stack (serveur, bundler, simulateur) ; si elle écoute sur un port, c'est `$PORT` (Conductor fournit `$CONDUCTOR_PORT`), puis `$PORT+1`... pour les serveurs suivants, jamais un port en dur
 - `pnpm test` : tests unitaires et d'acceptation
 - `pnpm verify` : typage, lint, tests avec couverture et contrôle de contrat. **Doit être vert avant de rendre la main.**
 - `pnpm gen` : régénère les fichiers `*.gen.ts` (ne jamais les éditer à la main)

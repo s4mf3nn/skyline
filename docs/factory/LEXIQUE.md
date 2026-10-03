@@ -56,9 +56,11 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Écrans** : section de la spec d'une interface : pour chaque écran, sa maquette, ses états (chargement, vide, erreur, succès, accès refusé), les actions et leur effet. Chaque état a son test.
 - **Maquette** : image ou export fourni par l'humain, rangé dans `specs/SPEC-XXXX-*/maquettes/` avec la spec. Elle fixe la disposition ; la spec fait foi en cas d'écart.
 - **`UI.md`** : conventions communes à tous les écrans (tokens de style, composants de base, états standard, accessibilité), remplies par SPEC-0000 et lues par le relecteur sur un diff `.tsx`.
-- **Service tiers** (ou port) : interface du projet devant un service externe (email, stockage d'objets, notifications, traceur d'événements, suivi des erreurs), avec son implémentation réelle et son faux, dans `src/shared/<service>/`. Liste dans l'ADR-0001 (« Services tiers »).
+- **Service tiers** (ou port) : interface du projet devant un service externe (email, stockage d'objets, notifications, file de messages, traceur d'événements, suivi des erreurs), avec son implémentation réelle et son faux, dans `src/shared/<service>/`. Liste dans l'ADR-0001 (« Services tiers »).
 - **Horloge factice** : faux de l'interface `Clock`, que les tests avancent pour vérifier une expiration ou une tâche planifiée sans attendre.
 - **Tâche planifiée** : traitement déclenché par le temps (rappel, purge), déclaré par une feature dans son `feature` et branché sur le planificateur du runtime par le point d'entrée.
+- **Consommateur** : traitement déclenché par un message d'une file (envoi d'une notification), déclaré par une feature dans son `feature` (`consumers`) et branché sur la file du runtime par le point d'entrée. Le message est publié par le service « file » (`src/shared/queue/`, faux en test). Une file livre au moins une fois : le consommateur est idempotent.
+- **Canal temps réel** : WebSocket ou événements envoyés par le serveur. Il signale seulement qu'il y a du nouveau ; l'état se lit par l'API, qui reste la seule interface testée par le contrat. Service « diffusion » (`src/shared/realtime/`, faux en test), ligne « Temps réel » de l'ADR-0001.
 - **Faux** : implémentation en mémoire d'un service que les tests ne peuvent pas appeler pour de vrai (service tiers, horloge, API du navigateur ou de l'appareil). Les tests de contrat le passent à l'application et vérifient par lui ce qui a été envoyé.
 - **Questions ouvertes** : section de la spec où l'agent consigne ce qui est ambigu. Elle doit être vide avant le statut `VALIDÉE` : un agent ne suppose rien sur les règles métier, il demande.
 - **Risque estimé** : niveau annoncé par la spec (faible, moyen, élevé), repris tâche par tâche dans le plan. C'est une prévision ; le niveau qui fait foi sur une PR est le label posé par la CI d'après les chemins réellement touchés.
@@ -69,7 +71,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Scénario caché** (holdout) : parcours de bout en bout écrit avec la spec dans `tests/holdout/SPEC-XXXX.test.ts`, validé par l'humain, que l'agent producteur ne voit jamais. Il vérifie que l'implémentation satisfait l'intention et pas seulement les tests visibles. Retiré du workspace par `scripts/holdout.mjs hide`, joué en CI quand le test de contrat de la spec n'a plus de `.skip`, immuable comme le contrat. Le détail d'un échec est réservé à l'humain.
 - **`contract-change`** : label posé par l'humain sur une PR pour autoriser une modification de test de contrat ou de scénario caché.
 - **PR de spec** : PR qui ne contient que la spec, son test de contrat et ses scénarios cachés. Relue par le `spec-reviewer`, puis relue et fusionnée par l'humain avant tout plan.
-- **SPEC-0000 (bootstrap)** : première spec d'un projet, qui pose le socle technique (applications, tests, faux des services). Exécutée seule, par un seul agent, avant toute autre.
+- **SPEC-0000 (bootstrap)** : première spec d'un projet, qui pose le socle technique (applications, tests, faux des services). Exécutée seule, avant toute autre, une tâche à la fois : son plan a une tâche par groupe, chacune par un agent neuf.
 - **SPEC-0001 (livraison)** : deuxième spec du socle : livraison, retour arrière et tests sur cible réelle. Elle suit SPEC-0000, en parallèle des premières specs métier.
 - **Cadrage** : documents qui précèdent les specs et qu'elles ne contredisent pas : `docs/PRODUCT.md` (problème, hypothèses, rôles, parcours, données personnelles, KPI et événements produit), `docs/DOMAIN.md` (vocabulaire, invariants, cycles de vie) et `specs/ROADMAP.md`. Rédigés par `/roadmap`, relus par le `spec-reviewer`, fusionnés par l'humain dans une **PR de cadrage**.
 - **Roadmap des specs** : `specs/ROADMAP.md`, suite ordonnée de tranches verticales, chacune une spec, avec ses dépendances.
@@ -94,7 +96,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **PR de tâche** : PR ouverte par `/ship` à la fin d'une tâche. Une spec donne donc une PR de spec, une PR de plan, puis une PR par tâche.
 - **Prompt de tâche** : la ligne `/implement SPEC-XXXX T#` que l'humain colle dans un nouveau workspace pour lancer une tâche. `/plan` les fournit, à utiliser après fusion de la PR de plan.
 - **Petit et jetable** : principe de dimensionnement. Une tâche tient dans le contexte d'un agent, un workspace ne sert qu'à une tâche, et une branche qui pose problème se jette et se régénère plutôt que de se réparer longuement.
-- **Contrôle du plan** : `scripts/plan-gate.mjs` vérifie qu'un plan `PRÊT` et la tâche demandée sont sur `origin/main` avant toute implémentation, et que les specs dont elle dépend sont livrées (`deps`, au début de `/plan`).
+- **Contrôle du plan** : `scripts/plan-gate.mjs` vérifie qu'un plan `PRÊT` et la tâche demandée sont sur `origin/main` avant toute implémentation, et que les specs dont elle dépend sont livrées (`deps`, au début de `/plan`). `lint` contrôle le plan local avant sa PR : celui de SPEC-0000 a une tâche par groupe.
 - **Redécoupage** : réponse prévue quand une tâche dépasse le contexte de l'agent ou que la revue ne converge pas. On refait le plan plutôt que de forcer.
 
 ## 5. Le parallélisme
@@ -112,6 +114,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Test de concurrence** : test qui lance plusieurs requêtes en même temps par l'interface publique, sur la vraie ressource de données, puis vérifie qu'un invariant tient. Il prouve que la règle est garantie par la base (contrainte, transaction) et pas par le code.
 - **Feature** : dossier `src/features/<feature>/` qui regroupe tout le code d'une fonctionnalité, tests compris. L'organisation par feature donne des périmètres disjoints.
 - **Registre central** : fichier que chaque nouvelle fonctionnalité devrait modifier (liste de routes, d'écrans ou de commandes). La factory l'interdit : c'est une source de conflits entre agents.
+- **Route fine** : fichier d'un dossier de routage par fichiers (ex. `app/` d'Expo Router) qui ne fait que réexporter l'écran de sa feature. Le dossier est déclaré dans `factory.routeDirs` de `package.json` (et ce qui n'est pas une route, layouts et fichiers spéciaux, dans `factory.routeIgnore`), et `scripts/pre-review.mjs check` refuse une route qui contient de la logique. Les layouts lisent le registre généré au lieu de lister les écrans à la main.
 - **Fichier généré** : fichier `*.gen.ts` produit par `pnpm gen` à la place d'un registre central, ignoré par git et jamais édité à la main (`scripts/gen-features.mjs`). Il liste les features qui exportent `feature` depuis leur `index.ts` ; avec `--entry` et `--out`, un registre par runtime (ex. serveur et client) ; avec `--reexport`, la surface publique d'une bibliothèque.
 - **Conflit** : désaccord entre la branche d'une tâche et `main` au rebase. Petit et local, il est résolu par `/resolve` ; sinon la tâche est régénérée.
 - **`RÉGÉNÉRER`** : réponse du `conflict-resolver` quand le conflit est trop gros, touche une migration ou oppose deux intentions incompatibles. On jette la branche et on relance la tâche depuis `main` à jour.
@@ -155,6 +158,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Label `contract`** : posé automatiquement quand une PR touche `tests/acceptance/` ou `tests/holdout/`.
 - **Code owners** : `.github/CODEOWNERS` désigne l'humain propriétaire des chemins à risque élevé.
 - **Livraison** : mise à disposition des utilisateurs (déploiement, publication sur un store ou un registre de paquets). Workflow `release` lancé à la main par l'humain, depuis un commit de `main` dont `gates` est vert, avec l'approbation et les secrets de l'environnement `production` ; la commande `pnpm release` est posée par SPEC-0001. Les migrations restent compatibles avec la version précédente du code, et le retour arrière est écrit dans l'ADR-0001.
+- **Client installé** : application que l'utilisateur installe et met à jour à son rythme (mobile, bureau, CLI). Les versions déjà installées appellent encore l'ancienne API : elle n'évolue que par ajout, et une version sous la version minimale prise en charge reçoit `CLIENT_OUTDATED` (SPEC-0001, CA7). Ligne « Clients installés » de l'ADR-0001.
 - **Observabilité** : remontée des erreurs de production à Sentry, imposé par la factory pour toute application qui s'exécute, par le service « suivi des erreurs » (`src/shared/monitoring/`), avec la version livrée et sans donnée personnelle. Posée par SPEC-0001.
 - **Sécurité propre au domaine** : règles de sécurité spécifiques au produit (`DOMAIN-SECURITY.md`), lues par l'agent et le relecteur sur les zones concernées.
 - **Gates** : contrôles de CI qu'une PR doit passer : `pr-title`, `gates` (typage, lint, tests, contrat, build, scénarios cachés, mutation), `e2e` (tests sur cible réelle, si le projet a un script `test:e2e`), `security` (gitleaks, Semgrep), `review-trace`. `gates` et `security` tournent aussi sur `main` après chaque fusion.
@@ -226,6 +230,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | `gen-features.mjs` | Fichier généré qui remplace le registre central |
 | `token-report.mjs` | Mesure de la consommation de tokens |
 | `conductor-setup.sh`, `conductor-archive.sh` | Préparation et nettoyage d'un workspace |
+| `ci-data.sh` | Ressource de données d'un run de CI, par le `workspace-data.sh` du projet |
 
 ## Les outils
 

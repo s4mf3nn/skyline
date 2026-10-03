@@ -1,6 +1,6 @@
 # Battletest du boilerplate sur trois formes de projet
 
-Date : 2026-10-02 (analyse), 2026-10-03 (lots 1 à 6). Base de l'analyse : `main` à `a589488`. Trace de décision, conservée comme `SPEC-CONTRAINTES-TECHNO.md` : les notes décrivent le boilerplate **avant** les lots.
+Date : 2026-10-02 (analyse), 2026-10-03 (lots 1 à 6 ; sections 9 et 10 : battletests suivants). Base de l'analyse : `main` à `a589488`. Trace de décision, conservée comme `SPEC-CONTRAINTES-TECHNO.md` : les notes décrivent le boilerplate **avant** les lots.
 
 Méthode : pour chaque forme, lecture du boilerplate comme si le projet démarrait demain, sondes sur les scripts de la factory, et vérification dans Context7 des deux points qui dépendent d'une bibliothèque.
 
@@ -239,3 +239,48 @@ Décisions :
 3. Socle en **deux specs**. Proposé pour les dépôts à plusieurs applications, appliqué à tous : une découpe conditionnelle aurait obligé `/init-project` à fusionner deux modèles, et livraison, cible réelle et observabilité concernent aussi un projet à une application.
 
 Limite : comme pour B et C, ces notes restent sur papier ; aucun socle Workers ni Neon n'a été monté.
+
+## 10. Troisième battletest (projet E) et lots 14 à 20
+
+Date : 2026-10-03 (analyse), 2026-10-04 (lots). Projet E, soumis par l'utilisateur : découverte de sorties sociales autour de soi (application Expo / React Native avec Expo Router, API Hono sur Cloudflare Workers, Neon, Drizzle, R2, Queues, notifications Expo Push, chat de sortie, géolocalisation, modération), brief en milestones M0 à M8. Même forme que B, cette fois après les lots 1 à 13. Hors objectif, par décision de l'utilisateur : les tests sur simulateur (limite acceptée) et les maquettes (fournies par l'humain).
+
+| Partie de E | Avant | Lots | Visée | Manque principal avant |
+|---|---|---|---|---|
+| Cadrage produit (M0) | 8 | | 8 | |
+| Pilotage des milestones | 8 | | 8 | |
+| Stack et socle (M1) | 6 | 18 | 8 | SPEC-0000 monte deux applications avec un seul agent |
+| Données et migrations | 7 | 17 | 8,5 | Aucune base en CI hors Postgres en Docker |
+| Auth et profil (M2) | 8 | | 8 | |
+| Events, cycle de vie, concurrence (M3) | 9 | | 9 | |
+| Découverte et géolocalisation (M4) | 8 | | 8 | |
+| Chat (M5) | 7 | 20 | 8 | Rien sur le temps réel |
+| Notifications (M6) | 7 | 15 | 8,5 | Consommateur de file sans convention |
+| Sécurité et modération (M7) | 8 | | 8 | |
+| Écrans mobiles | 6 | 14 | 8 | Routes hors des features, layouts centraux |
+| E2E mobile (M8) | 5 | | 5 | Simulateur non partageable entre workspaces (limite acceptée) |
+| Règle « feature complète » | 9 | | 9 | |
+| Sécurité transverse | 8 | | 8 | |
+| Livraison (Workers et stores) | 6 | 16 | 8 | Binaire publié sans retour arrière, versions installées ignorées |
+| Observabilité | 8 | | 8 | |
+| Parallélisme des agents | 7 | 14, 19 | 8 | Un seul port pour deux serveurs, layouts partagés |
+
+Lots livrés (un commit par lot) :
+
+| Lot | Contenu |
+|---|---|
+| 14. Routage par fichiers | Routes fines (réexport de l'écran de la feature), dossier déclaré dans `factory.routeDirs`, layouts et fichiers spéciaux dans `factory.routeIgnore`, contrôle par `pre-review.mjs check` ; layouts qui lisent le registre généré, posés par SPEC-0000 |
+| 15. Tâches asynchrones | Consommateurs déclarés par la feature (`consumers`), service « file » avec son faux, idempotence prouvée par le contrat, ligne « Files de messages » de l'ADR |
+| 16. Clients installés | Ligne « Clients installés » de l'ADR, version minimale refusée par l'API (`CLIENT_OUTDATED`, CA7 de SPEC-0001), retour arrière d'une application publiée, rappel par `/land` et `spec-reviewer` sur un changement de contrat |
+| 17. Ressource de données en CI | `scripts/ci-data.sh` appelle le `workspace-data.sh` du projet dans `gates` et `e2e`, avec un nom propre au run, puis supprime la ressource ; secret `WORKSPACE_DATA_TOKEN` |
+| 18. Socle séquentiel | Plan de SPEC-0000 : une tâche par groupe, un agent neuf par tâche ; `plan-gate.mjs lint` (avant la PR de plan) et `check` |
+| 19. Ports | `$PORT`, puis `$PORT+1`... dans l'ordre de l'ADR ; dix ports par workspace Conductor |
+| 20. Temps réel | Ligne « Temps réel » de l'ADR ; le canal signale, l'état se lit par l'API ; service « diffusion » avec son faux |
+
+Décisions :
+
+1. Lot 14 : le contrôle des routes fines est **déclaratif** (`factory.routeDirs`, `factory.routeIgnore`), comme `factory.contractRunners` : aucun nom de framework dans un script. Sans cette clé, aucun contrôle.
+2. Lot 16 : `CLIENT_OUTDATED` est posé par SPEC-0001 et non par une spec métier, parce qu'il doit exister avant la première version publiée : une version sans ce contrôle ne peut plus être refusée.
+3. Lot 17 : la CI réutilise le script du projet plutôt qu'un service Postgres, pour ne pas tester avec un pilote que la production n'utilise pas. Le service Postgres en Docker reste disponible (bloc commenté de `ci.yml`).
+4. Non retenus : couverture et mutation des écrans par un second lanceur (les routes sont vides et les écrans testés par le contrat), et parcours sur simulateur au-delà d'un parcours de fumée.
+
+Limite : comme pour B, C et D, ces notes restent sur papier ; aucun socle Expo ni Workers n'a été monté. Les deux faits dont dépendent les lots 14 et 19 ont été vérifiés dans la documentation : `Tabs.Screen` d'Expo Router (SDK 56) et les dix ports par workspace de Conductor.

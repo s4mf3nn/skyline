@@ -13,7 +13,7 @@ Poser le socle technique décrit dans `docs/adr/0001-stack.md` pour que toutes l
 - **CA1** : un point de santé observable répond, un par application du dépôt. Exemples : pour une API HTTP, `GET /health` répond `200` avec `{ "status": "ok" }` ; pour une application web ou mobile, l'écran d'accueil se rend avec son titre ; pour une CLI, `--version` sort avec le code `0` ; pour une bibliothèque, son point d'entrée exporte une fonction documentée par la spec.
 - **CA2** : `pnpm verify` passe sur un repo propre.
 - **CA3** : une feature ajoutée dans `src/features/<nom>/index.ts` est montée automatiquement après `pnpm gen`, sans modifier aucun autre fichier.
-- **CA4** : `pnpm dev` lance l'application en local (sur `$PORT` si elle écoute sur un port). Sans objet pour une bibliothèque.
+- **CA4** : `pnpm dev` lance l'application en local (sur `$PORT` si elle écoute sur un port ; avec plusieurs serveurs, `$PORT`, `$PORT+1`... dans l'ordre de l'ADR-0001, sans port en dur). Sans objet pour une bibliothèque.
 - **CA5** : chaque service de la ligne « Services tiers » de l'ADR-0001 (et l'horloge) a une interface et un faux dans `src/shared/` ; la fabrique de l'application les reçoit, et un test de contrat le montre en passant les faux.
 
 ## Contrat d'interface
@@ -30,9 +30,10 @@ boilerplate (`docs/factory/BOILERPLATE.md`), section « Options ». -->
 - [ ] `tsconfig.json` et `tsconfig.test.json` par runtime (`jsx`, `lib`, `types`)
 - [ ] Environnement de test par runtime (`vitest.config.ts`), points d'entrée exclus de la couverture et de la mutation
 - [ ] Isolation des tests sur la ressource de données, `concurrency` de `stryker.config.json`
-- [ ] `scripts/workspace-data.sh` si la ressource de données n'est pas Postgres en Docker ; `db:migrate`
+- [ ] `scripts/workspace-data.sh` si la ressource de données n'est pas Postgres en Docker (appelé aussi par la CI, secret `WORKSPACE_DATA_TOKEN`) ; `db:migrate`
 - [ ] Interfaces et faux des services tiers et de l'horloge (CA5)
 - [ ] `docs/factory/UI.md`, composants de base et tokens de style (interface seulement)
+- [ ] Routage par fichiers : dossier et fichiers hors routes déclarés dans `factory.routeDirs` et `factory.routeIgnore` de `package.json`, layouts qui lisent le registre généré (onglets, menu)
 - [ ] Point d'entrée de chaque application et dossier des migrations dans `.github/labeler.yml`, `RISK.md`, `CODEOWNERS`
 - [ ] `.env.example` avec des clés factices
 
@@ -40,7 +41,7 @@ boilerplate (`docs/factory/BOILERPLATE.md`), section « Options ». -->
 Toute fonctionnalité métier. La livraison et les tests sur cible réelle : SPEC-0001.
 
 ## Contraintes
-Cette spec est exécutée **seule**, par un unique agent, avant toute autre.
+Cette spec est exécutée **seule**, avant toute autre, **une tâche à la fois** : son plan a une tâche par groupe, chacune implémentée par un agent neuf après fusion de la précédente (`node scripts/plan-gate.mjs lint` et `check` le contrôlent). Une seule tâche suffit pour une application simple ; avec plusieurs applications, par exemple : outillage commun et disposition du dépôt, puis une tâche par application, puis CI et zones de risque.
 
 Avec une interface : elle remplit `docs/factory/UI.md` et pose les composants de base et les tokens de style qu'il cite.
 

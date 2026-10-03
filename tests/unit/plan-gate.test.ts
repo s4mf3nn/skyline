@@ -2,6 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 const script = path.resolve("scripts/plan-gate.mjs");
@@ -208,5 +209,55 @@ describe("scripts/plan-gate.mjs check", () => {
     const res = check(repo, ["SPEC-0002"], {}, copy);
     expect(res.code).toBe(1);
     expect(res.err).toContain("n'est pas sur origin/main");
+  });
+});
+
+const SEQUENTIAL = "# Plan\nStatut : PRÊT\n\n## Groupe 1\n### T1 : outillage\n\n## Groupe 2\n### T2 : api\n";
+const PARALLEL = "# Plan\nStatut : PRÊT\n\n## Groupe 1 (parallèle)\n### T1 : api\n### T2: mobile\n";
+
+describe("scripts/plan-gate.mjs, bootstrap plan", () => {
+  interface PlanGate {
+    tasksPerGroup(plan: string): number[];
+    sequentialProblem(spec: string, plan: string): string | null;
+  }
+  const load = async () => (await import(pathToFileURL(path.resolve("scripts/plan-gate.mjs")).href)) as PlanGate;
+
+  it("counts the tasks of each group, tasks before the first group together", async () => {
+    const mod = await load();
+    expect(mod.tasksPerGroup(SEQUENTIAL)).toEqual([1, 1]);
+    expect(mod.tasksPerGroup(PARALLEL)).toEqual([2]);
+    expect(mod.tasksPerGroup(PLAN)).toEqual([2]);
+    expect(mod.tasksPerGroup("# Plan\n#### T1 : pas une tâche\n")).toEqual([]);
+  });
+
+  it("requires one task per group for SPEC-0000 only", async () => {
+    const mod = await load();
+    expect(mod.sequentialProblem("SPEC-0000", SEQUENTIAL)).toBeNull();
+    expect(mod.sequentialProblem("SPEC-0000", PARALLEL)).toContain("une tâche à la fois");
+    expect(mod.sequentialProblem("SPEC-0000", PLAN)).toContain("hors de tout groupe");
+    expect(mod.sequentialProblem("SPEC-0002", PARALLEL)).toBeNull();
+  });
+
+  it("lint checks the local plan before its PR", () => {
+    const lint = (repo: string, spec: string) =>
+      spawnSync("node", [script, "lint", spec], { cwd: repo, encoding: "utf8", env: gitEnv });
+    const repo = newRepo({}, { "specs/SPEC-0000-bootstrap/plan.md": PARALLEL, "specs/SPEC-0002-a/plan.md": PARALLEL });
+    const bad = lint(repo, "SPEC-0000");
+    expect(bad.status).toBe(1);
+    expect(bad.stderr).toContain("specs/SPEC-0000-bootstrap/plan.md : le plan de SPEC-0000");
+    expect(lint(repo, "SPEC-0002").status).toBe(0);
+    expect(lint(repo, "SPEC-0009").status).toBe(1);
+    expect(lint(repo, "bad").stderr).toContain("Identifiant de spec invalide");
+    fs.writeFileSync(path.join(repo, "specs/SPEC-0000-bootstrap/plan.md"), SEQUENTIAL);
+    expect(lint(repo, "SPEC-0000").status).toBe(0);
+  });
+
+  it("check refuses a merged SPEC-0000 plan with parallel tasks", () => {
+    const repo = newRepo({ "specs/SPEC-0000-bootstrap/plan.md": PARALLEL });
+    const res = check(repo, ["SPEC-0000", "T1"]);
+    expect(res.code).toBe(1);
+    expect(res.err).toContain("une tâche à la fois");
+    const ok = newRepo({ "specs/SPEC-0000-bootstrap/plan.md": SEQUENTIAL });
+    expect(check(ok, ["SPEC-0000", "T2"]).code).toBe(0);
   });
 });

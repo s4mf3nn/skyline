@@ -5,6 +5,7 @@
 // Usage :
 //   node scripts/plan-gate.mjs check <SPEC-XXXX> [T#]   plan PRÊT (et tâche) sur la base, dépendances livrées
 //   node scripts/plan-gate.mjs deps <SPEC-XXXX>         dépendances livrées seulement (au début de /plan)
+//   node scripts/plan-gate.mjs lint <SPEC-XXXX>         plan local, avant sa PR : SPEC-0000 a une tâche par groupe
 // Dépendances : ligne `Dépend de : SPEC-XXXX, SPEC-YYYY` (ou `aucune`) de spec.md sur la base ; sans cette ligne, aucune.
 // Une spec est livrée quand elle a un contrat sur la base et qu'aucun de ses fichiers n'a plus de `.skip` : c'est la
 // fusion de sa tâche de clôture, le même signal que celui qui active ses scénarios cachés (scripts/holdout.mjs).
@@ -90,6 +91,41 @@ export function checkDependencies(spec, { requireSpec = false } = {}) {
   };
 }
 
+// Le socle fonde toutes les conventions et touche les fichiers communs : ses tâches s'enchaînent, une par groupe,
+// chacune partant d'un main qui contient la précédente. Un agent neuf par tâche garde chaque contexte petit.
+const BOOTSTRAP_SPEC = "SPEC-0000";
+
+/** Nombre de tâches (`### T# :`) de chaque groupe (`## Groupe`) ; celles d'avant le premier groupe comptent ensemble. */
+export function tasksPerGroup(plan) {
+  const counts = [0];
+  for (const line of plan.split("\n")) {
+    if (line.startsWith("## Groupe")) counts.push(0);
+    else if (/^### T\d+\s*:/.test(line)) counts[counts.length - 1] += 1;
+  }
+  return counts.filter((n) => n > 0);
+}
+
+/** Message si le plan de SPEC-0000 met plusieurs tâches dans un même groupe, sinon null. */
+export function sequentialProblem(spec, plan) {
+  if (spec !== BOOTSTRAP_SPEC || tasksPerGroup(plan).every((n) => n <= 1)) return null;
+  return `le plan de ${spec} met plusieurs tâches dans un même groupe (ou hors de tout groupe) : le socle s'exécute une tâche à la fois, un groupe « ## Groupe N » par tâche.`;
+}
+
+/** Contrôle le plan local, avant sa PR (`/plan`) : `{ ok, message }`. */
+export function lintPlan(spec) {
+  if (!SPEC_ID.test(spec ?? ""))
+    return { ok: false, message: `Identifiant de spec invalide : "${spec ?? ""}" (SPEC-XXXX attendu)` };
+  const paths = fs.existsSync("specs")
+    ? fs
+        .readdirSync("specs")
+        .map((folder) => `specs/${folder}/plan.md`)
+        .filter((p) => isSpecFile(p, spec, "plan.md") && fs.existsSync(p))
+    : [];
+  if (paths.length !== 1) return { ok: false, message: `${spec} : pas de plan.md unique dans specs/.` };
+  const problem = sequentialProblem(spec, fs.readFileSync(paths[0], "utf8"));
+  return problem ? { ok: false, message: `${paths[0]} : ${problem}` } : { ok: true, message: `${paths[0]} : OK.` };
+}
+
 /** Une ligne `### <task>` suivie de `:` (espaces tolérés) définit la tâche. */
 function hasTaskHeading(plan, task) {
   const prefix = `### ${task}`;
@@ -118,6 +154,8 @@ export function checkPlan(spec, task) {
   if (status !== "PRÊT") {
     return { ok: false, message: `Le plan ${paths[0]} sur ${base} n'est pas prêt (Statut : ${status ?? "absent"}).` };
   }
+  const sequential = sequentialProblem(spec, plan);
+  if (sequential) return { ok: false, message: `${paths[0]} sur ${base} : ${sequential}` };
   if (task !== undefined && !hasTaskHeading(plan, task)) {
     return { ok: false, message: `La tâche ${task} n'est pas définie dans ${paths[0]} sur ${base}.` };
   }
@@ -133,9 +171,14 @@ const isMain =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
 if (isMain) {
   const [cmd, spec, task] = process.argv.slice(2);
-  if (cmd !== "check" && cmd !== "deps") {
-    console.error("Usage : node scripts/plan-gate.mjs check <SPEC-XXXX> [T#] | deps <SPEC-XXXX>");
+  if (cmd !== "check" && cmd !== "deps" && cmd !== "lint") {
+    console.error("Usage : node scripts/plan-gate.mjs check <SPEC-XXXX> [T#] | deps <SPEC-XXXX> | lint <SPEC-XXXX>");
     process.exit(2);
+  }
+  if (cmd === "lint") {
+    const res = lintPlan(spec);
+    (res.ok ? console.log : console.error)(res.message);
+    process.exit(res.ok ? 0 : 1);
   }
   try {
     if (!process.env.PLAN_GATE_NO_FETCH) {

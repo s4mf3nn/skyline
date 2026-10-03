@@ -52,6 +52,13 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Ressource de données du run
+        # Sans effet tant que le projet n'a pas de scripts/workspace-data.sh (ex. branche d'une base hébergée, voir
+        # docs/adr/0001-stack.md). Même script que le setup Conductor : la CI teste avec le fournisseur et le pilote de
+        # la production. Ses variables (.env.local) passent aux étapes suivantes, masquées dans les logs.
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh setup
       - run: pnpm run --if-present gen
       - run: pnpm run --if-present db:migrate
       - name: Typage
@@ -87,6 +94,11 @@ jobs:
           FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF"...HEAD -- ':(glob)**/src/**/*.ts' ':(glob)**/src/**/*.tsx' \
             | grep -v -E '(\.(test|gen)\.tsx?|(^|/)src/server\.ts)$' | paste -sd, - || true)
           if [ -n "$FILES" ]; then pnpm exec stryker run --mutate "$FILES"; else echo "Rien à muter"; fi
+      - name: Suppression de la ressource de données du run
+        if: always()
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh archive
 
   e2e:
     # Tests sur cible réelle (navigateur, simulateur, paquet installé, binaire), en CI seulement : pas dans `pnpm verify`.
@@ -112,11 +124,22 @@ jobs:
           cache: pnpm
       - if: steps.e2e.outputs.present == 'true'
         run: pnpm install --frozen-lockfile
+      - name: Ressource de données du run
+        # Une par version de Node de la matrice ; sans effet sans scripts/workspace-data.sh (voir le job gates).
+        if: steps.e2e.outputs.present == 'true'
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh setup "e2e_node${{ matrix.node }}"
       - if: steps.e2e.outputs.present == 'true'
         run: pnpm run --if-present gen && pnpm run --if-present build
       - name: Tests sur cible réelle
         if: steps.e2e.outputs.present == 'true'
         run: pnpm test:e2e
+      - name: Suppression de la ressource de données du run
+        if: always() && steps.e2e.outputs.present == 'true'
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh archive
 
   security:
     runs-on: ubuntu-latest

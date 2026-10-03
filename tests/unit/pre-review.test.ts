@@ -3,11 +3,19 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
+interface RouteConfig {
+  dirs: string[];
+  ignore: string[];
+}
+
 interface PreReview {
   globMatch(glob: string, file: string): boolean;
   workMode(hasLease: boolean, branch: string): string;
   isFixBranch(branch: string): boolean;
   hasRegressionTest(files: string[]): boolean;
+  routeConfig(pkg: unknown): RouteConfig;
+  isRouteFile(file: string, routes: RouteConfig): boolean;
+  isThinRoute(text: string): boolean;
   labelGlobs(text: string, label: string): string[];
   labelNames(text: string): string[];
   deadZones(text: string, files: string[]): { label: string; glob: string }[];
@@ -134,6 +142,41 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.hasRegressionTest(["src/features/links/service.ts"])).toBe(false);
     expect(mod.hasRegressionTest(["tests/acceptance/SPEC-0001.test.ts"])).toBe(false);
     expect(mod.hasRegressionTest(["tests/holdout/SPEC-0001.test.ts"])).toBe(false);
+  });
+
+  it("reads the file-based routing declared in package.json", () => {
+    expect(mod.routeConfig({})).toEqual({ dirs: [], ignore: [] });
+    expect(mod.routeConfig({ factory: { contractRunners: {} } })).toEqual({ dirs: [], ignore: [] });
+    expect(mod.routeConfig({ factory: { routeDirs: ["mobile/app"], routeIgnore: ["_layout.tsx"] } })).toEqual({
+      dirs: ["mobile/app"],
+      ignore: ["_layout.tsx"],
+    });
+    expect(() => mod.routeConfig({ factory: { routeDirs: "mobile/app" } })).toThrow(/factory.routeDirs/);
+    expect(() => mod.routeConfig({ factory: { routeIgnore: [1] } })).toThrow(/factory.routeIgnore/);
+  });
+
+  it("treats only screens of a route directory as routes, not ignored files or tests", () => {
+    const routes = { dirs: ["mobile/app"], ignore: ["_layout.tsx", "+*"] };
+    expect(mod.isRouteFile("mobile/app/(tabs)/explore.tsx", routes)).toBe(true);
+    expect(mod.isRouteFile("mobile/app/events/[id].tsx", routes)).toBe(true);
+    expect(mod.isRouteFile("mobile/app/(tabs)/_layout.tsx", routes)).toBe(false);
+    expect(mod.isRouteFile("mobile/app/+not-found.tsx", routes)).toBe(false);
+    expect(mod.isRouteFile("mobile/app/events/id.test.tsx", routes)).toBe(false);
+    expect(mod.isRouteFile("mobile/app/icon.png", routes)).toBe(false);
+    expect(mod.isRouteFile("mobile/src/features/events/screens/EventScreen.tsx", routes)).toBe(false);
+    expect(mod.isRouteFile("mobile/app/(tabs)/explore.tsx", { dirs: [], ignore: [] })).toBe(false);
+    // Sans `routeIgnore`, un layout est contrôlé comme une route : rien n'est supposé du framework.
+    expect(mod.isRouteFile("web/app/layout.tsx", { dirs: ["web/app"], ignore: [] })).toBe(true);
+    expect(mod.isRouteFile("web/app/layout.tsx", { dirs: ["web/app"], ignore: ["layout.tsx"] })).toBe(false);
+  });
+
+  it("accepts a route that only re-exports a screen and rejects one with logic", () => {
+    expect(mod.isThinRoute('export { default } from "@/features/events/screens/EventScreen";\n')).toBe(true);
+    expect(mod.isThinRoute("// Écran d'une sortie\nexport { default } from '../../src/features/events';")).toBe(true);
+    expect(mod.isThinRoute("")).toBe(true);
+    expect(mod.isThinRoute('import { View } from "react-native";\nexport default function A() {}')).toBe(false);
+    expect(mod.isThinRoute('export { default } from "./x";\nconst a = 1;')).toBe(false);
+    expect(mod.isThinRoute("export default function Screen() { return null; }")).toBe(false);
   });
 
   it("lit les globs d'une étiquette", () => {

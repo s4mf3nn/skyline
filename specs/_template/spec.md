@@ -21,6 +21,8 @@ Qui agit dans cette spec, et pour chaque action exposée (route, écran, command
 - Doublons, concurrence
 - Dépendance indisponible (base, cache, réseau, service tiers : simulée par son faux)
 - Temps : expiration, échéance, changement de jour ou de fuseau (horloge factice)
+- Temps réel : signal perdu ou connexion coupée (l'état se retrouve par l'API)
+- Message d'une file reçu deux fois, ou consommateur en échec (consommateur idempotent, erreur remontée)
 
 ## Contrat d'interface
 Entrées et sorties exactes de l'interface publique (pour une API HTTP : méthode, chemin, corps, codes de statut, format d'erreur ; pour une application web ou mobile : voir « Écrans » ; pour une CLI : arguments, sorties, codes de retour ; pour une bibliothèque : fonctions et types exportés par le point d'entrée du paquet, erreurs levées).

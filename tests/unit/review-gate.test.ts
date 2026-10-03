@@ -109,4 +109,23 @@ describe("scripts/review-gate.mjs", () => {
     git(repo, "commit", "-q", "-m", "more");
     expect(gate(repo, "check").err).toContain("Le code a changé");
   });
+
+  it("keeps every pass in the journal, rejections included", () => {
+    const repo = newRepo();
+    gate(repo, "record", "BLOQUANT", "--blocking", "2", "--to-fix", "1");
+    gate(repo, "record", "OK");
+    const lines = fs
+      .readFileSync(path.join(repo, ".context/review-log.jsonl"), "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l));
+    expect(lines.map((l) => [l.pass, l.verdict])).toEqual([
+      [1, "BLOQUANT"],
+      [2, "OK"],
+    ]);
+    expect(lines[0]).toMatchObject({ blocking: 2, toFix: 1, branch: "main" });
+    const comment = gate(repo, "journal").out;
+    expect(comment).toContain("| 1 | BLOQUANT |");
+    expect(comment).toContain("| 2 | OK |");
+  });
 });

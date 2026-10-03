@@ -4,7 +4,7 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 
 ## Mesure de référence
 
-À faire après les premières tâches avec `pnpm tokens` (transcripts locaux de tous les workspaces, subagents compris), puis chaque semaine avec `pnpm tokens --since <date>` ; les valeurs vont dans `METRICS.md`. Repère du projet d'origine, avant ces mesures : environ 60 500 tokens de contexte relus par tour.
+À faire après les premières tâches avec `pnpm tokens` (transcripts locaux de tous les workspaces, subagents compris), puis chaque semaine avec `pnpm tokens --since <date>` ; les valeurs vont dans `METRICS.md`. `pnpm tokens` affiche aussi la moyenne par jour actif (`--json` pour la ventilation par jour) ; `pnpm dashboard` la met en graphique à côté des rejets du relecteur. Repère du projet d'origine, avant ces mesures : environ 60 500 tokens de contexte relus par tour.
 
 ## Mesures
 

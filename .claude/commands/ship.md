@@ -15,4 +15,5 @@ effort: low
 4. Remplace dans `.pr-summary.md` le bloc « ## Revue locale » par la sortie de `node scripts/review-gate.mjs section`.
 5. Pousse : `git push -u origin HEAD`. Le hook `pre-push` revérifie la revue. Jamais de `--no-verify`. Si le push est refusé en non-fast-forward après un `/resolve`, utilise `git push --force-with-lease`, jamais `--force`.
 6. Crée la PR : `gh pr create --base main --title "<type(spec-xxxx|factory): description>" --body-file .pr-summary.md`. Le titre suit les Conventional Commits avec la spec en scope (`type(spec-xxxx): description`, `fix(spec-xxxx): description` pour un correctif de `/fix`), ou `factory` en mode `hors-spec` hors PR de spec (`type(factory): description`).
-7. Affiche l'URL de la PR et rappelle que les labels de risque sont posés par la CI.
+7. Publie le journal des revues en commentaire de la PR : `node scripts/review-gate.mjs publish` (crée ou met à jour le commentaire « Journal des revues », lu par `pnpm dashboard`). S'il échoue, signale-le sans bloquer : la PR est déjà ouverte. Relance la même commande après chaque nouveau passage de `/review` sur une PR déjà ouverte.
+8. Affiche l'URL de la PR et rappelle que les labels de risque sont posés par la CI.

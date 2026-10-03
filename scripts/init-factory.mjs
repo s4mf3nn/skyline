@@ -22,7 +22,15 @@ const PROJECT_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const GITHUB_OWNER = /^[A-Za-z0-9][A-Za-z0-9-]*(\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/;
 
 /** Fichiers qui portent des jetons à remplacer (chemins après le déplacement des README). */
-export const TOKEN_FILES = ["README.md", "CLAUDE.md", ".github/CODEOWNERS", ".gitleaks.toml", "docs/adr/0001-stack.md"];
+export const TOKEN_FILES = [
+  "README.md",
+  "CLAUDE.md",
+  ".github/CODEOWNERS",
+  ".gitleaks.toml",
+  "docs/adr/0001-stack.md",
+  "docs/PRODUCT.md",
+  "docs/DOMAIN.md",
+];
 const SELF = ["scripts/init-factory.mjs", "tests/unit/init-factory.test.ts", ".claude/commands/init-project.md"];
 const PHASES = ["1", "2", "3"];
 const PHASE_LINE = /Phase en cours : \d\./;

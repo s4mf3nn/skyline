@@ -142,12 +142,69 @@ describe("scripts/plan-gate.mjs check", () => {
     expect(res.err).toContain("git fetch origin impossible");
   });
 
+  it("fails when a dependency is not delivered (a contract file still has .skip)", () => {
+    const repo = newRepo({
+      "specs/SPEC-0002-redirect/plan.md": PLAN,
+      "specs/SPEC-0002-redirect/spec.md": "# SPEC-0002\nDépend de : SPEC-0000, SPEC-0001\n",
+      "tests/acceptance/SPEC-0000.test.ts": 'describe("SPEC-0000", () => {});\n',
+      "tests/acceptance/SPEC-0001.api.test.ts": 'describe("SPEC-0001 api", () => {});\n',
+      "tests/acceptance/SPEC-0001.ui.test.tsx": 'describe.skip("SPEC-0001 ui", () => {});\n',
+    });
+    const res = check(repo, ["SPEC-0002", "T1"]);
+    expect(res.code).toBe(1);
+    expect(res.err).toContain("SPEC-0001");
+    expect(res.err).not.toContain("SPEC-0000,");
+  });
+
+  it("passes when every dependency is delivered", () => {
+    const repo = newRepo({
+      "specs/SPEC-0002-redirect/plan.md": PLAN,
+      "specs/SPEC-0002-redirect/spec.md": "# SPEC-0002\nDépend de : SPEC-0001\n",
+      "tests/acceptance/SPEC-0001.test.ts": 'describe("SPEC-0001", () => {});\n',
+    });
+    const res = check(repo, ["SPEC-0002", "T1"]);
+    expect(res.code).toBe(0);
+    expect(res.out).toContain("Dépendances de SPEC-0002 livrées : SPEC-0001");
+  });
+
+  it("treats a dependency without a contract on the base as not delivered", () => {
+    const repo = newRepo({ "specs/SPEC-0002-redirect/spec.md": "Dépend de : SPEC-0001\n" });
+    expect(
+      spawnSync("node", [script, "deps", "SPEC-0002"], { cwd: repo, env: { ...gitEnv, PLAN_GATE_NO_FETCH: "1" } })
+        .status,
+    ).toBe(1);
+  });
+
+  it("deps accepts « aucune » and a spec without the line, rejects the template text", () => {
+    const repo = newRepo({
+      "specs/SPEC-0001-a/spec.md": "Dépend de : aucune\n",
+      "specs/SPEC-0002-b/spec.md": "# sans dépendance déclarée\n",
+      "specs/SPEC-0003-c/spec.md": "Dépend de : aucune | SPEC-XXXX\n",
+    });
+    const deps = (spec: string) =>
+      spawnSync("node", [script, "deps", spec], {
+        cwd: repo,
+        encoding: "utf8",
+        env: { ...gitEnv, PLAN_GATE_NO_FETCH: "1" },
+      });
+    expect(deps("SPEC-0001").status).toBe(0);
+    expect(deps("SPEC-0002").status).toBe(0);
+    const bad = deps("SPEC-0003");
+    expect(bad.status).toBe(1);
+    expect(bad.stderr).toContain("illisible");
+    const missing = deps("SPEC-0009");
+    expect(missing.status).toBe(1);
+    expect(missing.stderr).toContain("Fusionne d'abord la PR de spec");
+  });
+
   it("s'exécute aussi depuis un chemin contenant des espaces (pas de faux OK silencieux)", () => {
     const repo = newRepo({});
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "plan gate "));
     repos.push(dir);
+    // plan-gate.mjs importe ses voisins : ils sont copiés avec lui.
+    for (const name of ["plan-gate.mjs", "holdout.mjs", "contract-files.mjs"])
+      fs.copyFileSync(path.resolve("scripts", name), path.join(dir, name));
     const copy = path.join(dir, "plan-gate.mjs");
-    fs.copyFileSync(script, copy);
     const res = check(repo, ["SPEC-0002"], {}, copy);
     expect(res.code).toBe(1);
     expect(res.err).toContain("n'est pas sur origin/main");

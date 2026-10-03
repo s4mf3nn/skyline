@@ -1,7 +1,7 @@
 name: release
 
 # Livraison (déploiement, publication sur un store ou un registre de paquets), déclenchée à la main depuis main.
-# Lance `pnpm release`, script écrit par SPEC-0000 d'après l'ADR-0001 (Implications, ligne « Livraison ») : aucun
+# Lance `pnpm release`, script écrit par SPEC-0001 d'après l'ADR-0001 (Implications, ligne « Livraison ») : aucun
 # fournisseur n'est codé ici. Secrets et approbation humaine : environnement GitHub `production`
 # (voir docs/factory/BOILERPLATE.md, « Réglages GitHub »).
 on:
@@ -41,7 +41,7 @@ jobs:
       - name: Script release présent
         run: |
           node -e "if (!require('./package.json').scripts?.release) {
-            console.error('Aucun script release dans package.json : à poser par SPEC-0000 (docs/adr/0001-stack.md, Livraison).');
+            console.error('Aucun script release dans package.json : à poser par SPEC-0001 (docs/adr/0001-stack.md, Livraison).');
             process.exit(1);
           }"
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
@@ -53,6 +53,7 @@ jobs:
       - run: pnpm run --if-present gen && pnpm run --if-present build
       - name: Livraison
         run: pnpm release
-        # Secrets de l'environnement `production` : à exposer ici par SPEC-0000, un par ligne, jamais en argument.
+        # Secrets de l'environnement `production` : à exposer ici par SPEC-0001, un par ligne, jamais en argument.
         # env:
         #   RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        #   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }} # envoi des sourcemaps (observabilité, ADR-0001)

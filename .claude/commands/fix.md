@@ -1,12 +1,12 @@
 ---
 description: Corriger un bug sur une spec livrée, avec un test de non-régression, le relire et ouvrir la PR
-argument-hint: <numéro d'issue | description du bug>
+argument-hint: <numéro d'issue | lien ou identifiant d'issue Sentry | description du bug>
 ---
 
 Bug : $ARGUMENTS
 
 0. Retire les scénarios cachés de ce workspace : `node scripts/holdout.mjs hide`. Tu ne lis jamais `tests/holdout/`, ni dans un autre dossier ni par git.
-1. Lis `CLAUDE.md` et les règles actives de `docs/factory/LEARNINGS.md`. Si l'argument est un numéro, lis l'issue (`gh issue view <n>`). Sinon, pose-moi les questions qui manquent (étapes pour reproduire, résultat attendu, résultat observé), puis crée l'issue : `gh issue create --label bug --title "<titre>" --body "<étapes, attendu, observé>"`. Garde son numéro.
+1. Lis `CLAUDE.md` et les règles actives de `docs/factory/LEARNINGS.md`. Si l'argument est un numéro, lis l'issue (`gh issue view <n>`). Si c'est un lien ou un identifiant d'issue Sentry, lis-la avec le serveur MCP `sentry` (lecture seule) : trace, release, environnement, fréquence ; puis crée l'issue GitHub comme ci-dessous en citant le lien Sentry, sans recopier de donnée personnelle (si l'événement en contient, c'est aussi un bug du filtre de SPEC-0001 : signale-le). Sinon, pose-moi les questions qui manquent (étapes pour reproduire, résultat attendu, résultat observé), puis crée l'issue : `gh issue create --label bug --title "<titre>" --body "<étapes, attendu, observé>"`. Garde son numéro.
 2. Trouve la spec concernée (`specs/SPEC-XXXX-*/spec.md`) à partir de la feature touchée et lis ses critères d'acceptation, ses cas limites et son contrat d'interface. Lis le code de la feature pour localiser la cause. N'écris encore rien.
 3. Classe le bug, et dis-moi dans quel cas on est avant de continuer :
    - **A. Le code ne respecte pas la spec** (un critère, un cas limite ou le contrat d'interface n'est pas tenu) : continue à l'étape 4.

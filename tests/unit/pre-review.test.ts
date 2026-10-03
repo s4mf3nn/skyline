@@ -11,6 +11,7 @@ interface PreReview {
   labelGlobs(text: string, label: string): string[];
   labelNames(text: string): string[];
   deadZones(text: string, files: string[]): { label: string; glob: string }[];
+  unprotectedSqlFiles(text: string, files: string[]): string[];
   reviewLevel(files: string[], labeler: string): string;
   reviewKind(files: string[]): string;
   inPerimeter(file: string, paths: string[]): boolean;
@@ -155,13 +156,22 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.deadZones(labeler, [])).toHaveLength(7);
   });
 
+  it("lists SQL files that no risk:high glob covers", () => {
+    const files = ["src/features/redirect/seed.sql", "drizzle/0001_init.sql", "web/schema.sql", "README.md"];
+    expect(mod.unprotectedSqlFiles(labeler, files)).toEqual(["drizzle/0001_init.sql", "web/schema.sql"]);
+    expect(mod.unprotectedSqlFiles(labeler, ["README.md"])).toEqual([]);
+  });
+
   it("classifies the default zones the same way whatever the package layout", () => {
     const real = fs.readFileSync(".github/labeler.yml", "utf8");
     const level = (file: string) => mod.reviewLevel([file], real);
     expect(level("src/features/auth/routes.ts")).toBe("full");
     expect(level("web/src/features/auth/login.tsx")).toBe("full");
     expect(level("apps/api/src/db/migrations/0001_init.sql")).toBe("full");
-    expect(level("src/shared/auth-middleware.ts")).toBe("standard");
+    expect(level("src/shared/auth-middleware.ts")).toBe("full");
+    expect(level("apps/api/src/shared/http/auth-guard.ts")).toBe("full");
+    expect(level("web/src/features/admin/reports.tsx")).toBe("full");
+    expect(level("src/shared/errors.ts")).toBe("standard");
     expect(level("mobile/package.json")).toBe("standard");
     expect(level("src/features/links/routes.ts")).toBe("light");
   });
@@ -186,6 +196,21 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.reviewKind(["specs/SPEC-0003-export/plan.md"])).toBe("code");
     expect(mod.reviewKind(["specs/_template/extra/spec.md"])).toBe("code");
     expect(mod.reviewKind([])).toBe("code");
+  });
+
+  it("reviews product framing (product, domain, roadmap, numbered ADR) like a spec", () => {
+    const cadrage = ["docs/PRODUCT.md", "docs/DOMAIN.md", "specs/ROADMAP.md", "docs/adr/0002-auth.md"];
+    expect(mod.reviewKind(cadrage)).toBe("spec");
+    expect(mod.reviewKind([...cadrage, "specs/SPEC-0003-export/spec.md"])).toBe("spec");
+    expect(mod.reviewKind(["docs/adr/_template.md"])).toBe("code");
+    expect(mod.reviewKind(["docs/factory/WORKFLOW.md"])).toBe("code");
+    expect(mod.reviewKind(["docs/PRODUCT.md", "src/app.ts"])).toBe("code");
+  });
+
+  it("reviews screen mockups with their spec", () => {
+    const files = ["specs/SPEC-0004-swipe/spec.md", "specs/SPEC-0004-swipe/maquettes/card.png"];
+    expect(mod.reviewKind(files)).toBe("spec");
+    expect(mod.reviewKind(["specs/SPEC-0004-swipe/plan.md", "specs/SPEC-0004-swipe/maquettes/card.png"])).toBe("code");
   });
 
   it("contrôle le périmètre par fichier ou dossier", () => {

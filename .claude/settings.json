@@ -1,6 +1,6 @@
 {
   "model": "sonnet",
-  "enabledMcpjsonServers": ["context7"],
+  "enabledMcpjsonServers": ["context7", "sentry"],
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": false
   },
@@ -28,7 +28,8 @@
       "Bash(gh issue view *)",
       "Bash(gh run list *)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "mcp__sentry"
     ],
     "deny": [
       "Bash(git push --force *)",

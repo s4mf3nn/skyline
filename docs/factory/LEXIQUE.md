@@ -39,7 +39,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Port** : chaque workspace reçoit le sien (`$CONDUCTOR_PORT`), pour que plusieurs applications locales (serveur d'API, serveur de développement web ou mobile) tournent en même temps.
 - **Permissions de l'agent** : liste des commandes autorisées sans confirmation et des actions refusées (`.claude/settings.json`). Sont refusés : le push forcé, `--no-verify`, la lecture des `.env`.
 - **Hook d'agent** : commande lancée automatiquement après une action de l'agent. La factory en a un : le formatage par Biome après chaque édition de fichier.
-- **MCP** : protocole par lequel un agent accède à des outils externes. La factory n'en garde qu'un pour le projet (Context7) et refuse les autres connecteurs, qui alourdissent le contexte.
+- **MCP** : protocole par lequel un agent accède à des outils externes. La factory en garde deux pour le projet (Context7, et Sentry en lecture seule) et refuse les autres connecteurs, qui alourdissent le contexte.
 - **`.context/`** : dossier du workspace ignoré par git, pour les fichiers de travail (verdict de revue, log de vérification).
 - **`.factory/`** : dossier du dépôt principal ignoré par git, visible de tous les workspaces. Il contient les baux.
 - **Commande de la factory** : commande slash définie dans `.claude/commands/`, qui décrit une étape du cycle (voir « Les commandes »).
@@ -48,10 +48,18 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 
 - **Spec** : document `specs/SPEC-XXXX-<slug>/spec.md` qui dit ce qui doit être vrai une fois le travail livré. C'est la seule source de vérité fonctionnelle : on ne code jamais sans spec.
 - **Statut d'une spec** : `BROUILLON`, `VALIDÉE`, `EN COURS`, `LIVRÉE`.
+- **Acteurs et rôles** : section de la spec qui donne, pour chaque action exposée, le rôle requis et ce que voit chacun. Chaque refus est un critère testé.
 - **Critère d'acceptation (CA#)** : comportement observable et testable, numéroté (`CA1`, `CA2`…). Les tâches, les tests et les PR y font référence par leur identifiant.
 - **CU#** : variante utilisée pour le comportement d'une interface, non observable par le test de contrat et vérifié par des tests écrits dans les tâches.
 - **Cas limites** : section de la spec qui liste les entrées et situations anormales à traiter (vide, doublon, concurrence, dépendance indisponible).
 - **Contrat d'interface** : section de la spec qui fige les entrées et sorties exactes de l'interface publique.
+- **Écrans** : section de la spec d'une interface : pour chaque écran, sa maquette, ses états (chargement, vide, erreur, succès, accès refusé), les actions et leur effet. Chaque état a son test.
+- **Maquette** : image ou export fourni par l'humain, rangé dans `specs/SPEC-XXXX-*/maquettes/` avec la spec. Elle fixe la disposition ; la spec fait foi en cas d'écart.
+- **`UI.md`** : conventions communes à tous les écrans (tokens de style, composants de base, états standard, accessibilité), remplies par SPEC-0000 et lues par le relecteur sur un diff `.tsx`.
+- **Service tiers** (ou port) : interface du projet devant un service externe (email, stockage d'objets, notifications, traceur d'événements, suivi des erreurs), avec son implémentation réelle et son faux, dans `src/shared/<service>/`. Liste dans l'ADR-0001 (« Services tiers »).
+- **Horloge factice** : faux de l'interface `Clock`, que les tests avancent pour vérifier une expiration ou une tâche planifiée sans attendre.
+- **Tâche planifiée** : traitement déclenché par le temps (rappel, purge), déclaré par une feature dans son `feature` et branché sur le planificateur du runtime par le point d'entrée.
+- **Faux** : implémentation en mémoire d'un service que les tests ne peuvent pas appeler pour de vrai (service tiers, horloge, API du navigateur ou de l'appareil). Les tests de contrat le passent à l'application et vérifient par lui ce qui a été envoyé.
 - **Questions ouvertes** : section de la spec où l'agent consigne ce qui est ambigu. Elle doit être vide avant le statut `VALIDÉE` : un agent ne suppose rien sur les règles métier, il demande.
 - **Risque estimé** : niveau annoncé par la spec (faible, moyen, élevé), repris tâche par tâche dans le plan. C'est une prévision ; le niveau qui fait foi sur une PR est le label posé par la CI d'après les chemins réellement touchés.
 - **Hors périmètre** (d'une spec) : ce que la spec ne fait volontairement pas. À ne pas confondre avec le périmètre d'une tâche.
@@ -61,7 +69,13 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Scénario caché** (holdout) : parcours de bout en bout écrit avec la spec dans `tests/holdout/SPEC-XXXX.test.ts`, validé par l'humain, que l'agent producteur ne voit jamais. Il vérifie que l'implémentation satisfait l'intention et pas seulement les tests visibles. Retiré du workspace par `scripts/holdout.mjs hide`, joué en CI quand le test de contrat de la spec n'a plus de `.skip`, immuable comme le contrat. Le détail d'un échec est réservé à l'humain.
 - **`contract-change`** : label posé par l'humain sur une PR pour autoriser une modification de test de contrat ou de scénario caché.
 - **PR de spec** : PR qui ne contient que la spec, son test de contrat et ses scénarios cachés. Relue par le `spec-reviewer`, puis relue et fusionnée par l'humain avant tout plan.
-- **SPEC-0000 (bootstrap)** : première spec d'un projet, qui pose le socle technique. Exécutée seule, par un seul agent, avant toute autre.
+- **SPEC-0000 (bootstrap)** : première spec d'un projet, qui pose le socle technique (applications, tests, faux des services). Exécutée seule, par un seul agent, avant toute autre.
+- **SPEC-0001 (livraison)** : deuxième spec du socle : livraison, retour arrière et tests sur cible réelle. Elle suit SPEC-0000, en parallèle des premières specs métier.
+- **Cadrage** : documents qui précèdent les specs et qu'elles ne contredisent pas : `docs/PRODUCT.md` (problème, hypothèses, rôles, parcours, données personnelles, KPI et événements produit), `docs/DOMAIN.md` (vocabulaire, invariants, cycles de vie) et `specs/ROADMAP.md`. Rédigés par `/roadmap`, relus par le `spec-reviewer`, fusionnés par l'humain dans une **PR de cadrage**.
+- **Roadmap des specs** : `specs/ROADMAP.md`, suite ordonnée de tranches verticales, chacune une spec, avec ses dépendances.
+- **Tranche verticale** : fonctionnalité livrable et testable seule par son interface publique, de bout en bout (pas une couche technique isolée).
+- **Invariant** : règle du domaine toujours vraie (`INV#`), avec ce qui la garantit (contrainte de la base, transaction, validation).
+- **Dépendance entre specs** : ligne `Dépend de` d'une spec. `scripts/plan-gate.mjs` refuse de planifier une spec dont une dépendance n'est pas **livrée**, c'est-à-dire dont un fichier de contrat garde son `.skip` sur `origin/main`.
 - **ADR** : compte rendu de décision d'architecture (`docs/adr/`). Explique un choix technique durable et ce que les agents doivent respecter. L'ADR-0001 fixe la stack.
 
 ## 4. Le plan et les tâches
@@ -80,7 +94,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **PR de tâche** : PR ouverte par `/ship` à la fin d'une tâche. Une spec donne donc une PR de spec, une PR de plan, puis une PR par tâche.
 - **Prompt de tâche** : la ligne `/implement SPEC-XXXX T#` que l'humain colle dans un nouveau workspace pour lancer une tâche. `/plan` les fournit, à utiliser après fusion de la PR de plan.
 - **Petit et jetable** : principe de dimensionnement. Une tâche tient dans le contexte d'un agent, un workspace ne sert qu'à une tâche, et une branche qui pose problème se jette et se régénère plutôt que de se réparer longuement.
-- **Contrôle du plan** : `scripts/plan-gate.mjs` vérifie qu'un plan `PRÊT` et la tâche demandée sont sur `origin/main` avant toute implémentation.
+- **Contrôle du plan** : `scripts/plan-gate.mjs` vérifie qu'un plan `PRÊT` et la tâche demandée sont sur `origin/main` avant toute implémentation, et que les specs dont elle dépend sont livrées (`deps`, au début de `/plan`).
 - **Redécoupage** : réponse prévue quand une tâche dépasse le contexte de l'agent ou que la revue ne converge pas. On refait le plan plutôt que de forcer.
 
 ## 5. Le parallélisme
@@ -95,6 +109,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
   - *Limite* : le bail est une convention entre agents, pas un verrou du système de fichiers. Il ne protège que si chaque tâche le pose, et seulement entre workspaces d'un même dépôt principal.
 - **Recoupement** : deux chemins se recoupent s'ils sont identiques ou si l'un est un dossier parent de l'autre. Un bail sur `src/features/links` bloque donc `src/features/links/index.ts`, et un bail sur `src` bloque tout le dossier.
 - **Migration** : changement de schéma de base de données. Zone à risque élevé, qui a ses propres règles : préfixe par timestamp (deux agents ne produisent pas le même numéro), une migration par tâche au plus, et aucun conflit résolu automatiquement.
+- **Test de concurrence** : test qui lance plusieurs requêtes en même temps par l'interface publique, sur la vraie ressource de données, puis vérifie qu'un invariant tient. Il prouve que la règle est garantie par la base (contrainte, transaction) et pas par le code.
 - **Feature** : dossier `src/features/<feature>/` qui regroupe tout le code d'une fonctionnalité, tests compris. L'organisation par feature donne des périmètres disjoints.
 - **Registre central** : fichier que chaque nouvelle fonctionnalité devrait modifier (liste de routes, d'écrans ou de commandes). La factory l'interdit : c'est une source de conflits entre agents.
 - **Fichier généré** : fichier `*.gen.ts` produit par `pnpm gen` à la place d'un registre central, ignoré par git et jamais édité à la main (`scripts/gen-features.mjs`). Il liste les features qui exportent `feature` depuis leur `index.ts` ; avec `--entry` et `--out`, un registre par runtime (ex. serveur et client) ; avec `--reexport`, la surface publique d'une bibliothèque.
@@ -121,7 +136,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Revue locale** : la revue a lieu dans le workspace, avant le push. Il n'y a pas de revue par agent en CI, donc pas de clé d'API en CI.
 - **Pré-revue** : contrôles par script, sans modèle, faits avant la revue : périmètre, contrat, dépendances déclarées, section Context7 remplie (`scripts/pre-review.mjs check`). Une violation se corrige avant de lancer le relecteur et ne compte pas comme un passage.
 - **Brief** : ce que reçoit le relecteur : niveau de revue, résultat de la pré-revue, fichiers modifiés et diff filtré (sans lockfile, fichiers générés ni tests de contrat).
-- **Niveau de revue** : ampleur de la relecture, déduite des chemins touchés : `full` (zone `review:full` : auth, migrations, config, relecteur sur Opus), `standard` (risque élevé ou moyen), `light` (risque faible).
+- **Niveau de revue** : ampleur de la relecture, déduite des chemins touchés : `full` (zone `review:full` : auth, administration, migrations, config, relecteur sur Opus), `standard` (risque élevé ou moyen), `light` (risque faible).
 - **Modèle du relecteur** : au niveau `full`, le relecteur tourne sur un autre modèle que celui du producteur, parce qu'un modèle qui relit son propre code répète ses erreurs au lieu de les voir. Le modèle utilisé est tracé dans le bloc « Revue locale » ; `review-gate.mjs record` refuse un verdict `full` sans `--model`, mais ne vérifie pas que le modèle diffère de celui du producteur. Les deux modèles restent de la même famille : la décorrélation est partielle.
 - **Verdict** : première ligne de la réponse du relecteur. `BLOQUANT` s'il y a au moins un point bloquant, sinon `CHANGEMENTS` s'il y a au moins un point à corriger, sinon `OK`.
 - **Bloquants / À corriger / Points d'incertitude** : les trois rubriques du relecteur. Les deux premières doivent être traitées par l'agent ; la troisième est destinée à l'humain et n'empêche pas un `OK`.
@@ -135,11 +150,12 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 
 ## 8. Le risque et la fusion
 
-- **Zone de risque** : ensemble de chemins classés selon ce qu'une erreur y coûterait (`RISK.md`). Élevé : sécurité du domaine, authentification, migrations, configuration, et la factory elle-même. Moyen : logique métier, schéma, dépendances. Faible : le reste.
-- **Labels de risque** : `risk:high`, `risk:medium`, `risk:low`, posés par la CI d'après `.github/labeler.yml`. Le niveau de revue vient de là, mais découplé : `review:full` (Opus) pour les zones sensibles seulement (auth, migrations, config), `standard` (Sonnet) pour `risk:high` (outillage) et `risk:medium`, `light` (Sonnet) sinon.
+- **Zone de risque** : ensemble de chemins classés selon ce qu'une erreur y coûterait (`RISK.md`). Élevé : sécurité du domaine, authentification et contrôle d'accès, administration, migrations, configuration, et la factory elle-même. Moyen : logique métier, schéma, dépendances. Faible : le reste.
+- **Labels de risque** : `risk:high`, `risk:medium`, `risk:low`, posés par la CI d'après `.github/labeler.yml`. Le niveau de revue vient de là, mais découplé : `review:full` (Opus) pour les zones sensibles seulement (auth, administration, migrations, config), `standard` (Sonnet) pour `risk:high` (outillage) et `risk:medium`, `light` (Sonnet) sinon.
 - **Label `contract`** : posé automatiquement quand une PR touche `tests/acceptance/` ou `tests/holdout/`.
 - **Code owners** : `.github/CODEOWNERS` désigne l'humain propriétaire des chemins à risque élevé.
-- **Livraison** : mise à disposition des utilisateurs (déploiement, publication sur un store ou un registre de paquets). Workflow `release` lancé à la main par l'humain, depuis un commit de `main` dont `gates` est vert, avec l'approbation et les secrets de l'environnement `production` ; la commande `pnpm release` est posée par SPEC-0000.
+- **Livraison** : mise à disposition des utilisateurs (déploiement, publication sur un store ou un registre de paquets). Workflow `release` lancé à la main par l'humain, depuis un commit de `main` dont `gates` est vert, avec l'approbation et les secrets de l'environnement `production` ; la commande `pnpm release` est posée par SPEC-0001. Les migrations restent compatibles avec la version précédente du code, et le retour arrière est écrit dans l'ADR-0001.
+- **Observabilité** : remontée des erreurs de production à Sentry, imposé par la factory pour toute application qui s'exécute, par le service « suivi des erreurs » (`src/shared/monitoring/`), avec la version livrée et sans donnée personnelle. Posée par SPEC-0001.
 - **Sécurité propre au domaine** : règles de sécurité spécifiques au produit (`DOMAIN-SECURITY.md`), lues par l'agent et le relecteur sur les zones concernées.
 - **Gates** : contrôles de CI qu'une PR doit passer : `pr-title`, `gates` (typage, lint, tests, contrat, build, scénarios cachés, mutation), `e2e` (tests sur cible réelle, si le projet a un script `test:e2e`), `security` (gitleaks, Semgrep), `review-trace`. `gates` et `security` tournent aussi sur `main` après chaque fusion.
 - **gitleaks / Semgrep** : détection de secrets dans les commits, et analyse statique de sécurité. Lancés au `pre-push` (avertissement si l'outil est absent) et en CI (`scripts/security-scan.mjs`).
@@ -181,10 +197,11 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 
 | Commande | Rôle | Qui agit ensuite |
 |---|---|---|
+| `/roadmap <brief>` | Cadre le produit : `PRODUCT.md`, `DOMAIN.md`, `ROADMAP.md` et ADR à trancher, sans spec ; ouvre la PR de cadrage | L'humain relit et fusionne, puis lance les `/new-spec` dans l'ordre |
 | `/new-spec <besoin>` | Rédige la spec, les tests de contrat en `describe.skip` et les scénarios cachés, après avoir posé ses questions ; les fait relire (`spec-reviewer`) et ouvre la PR de spec | L'humain relit et fusionne la PR de spec |
 | `/plan <SPEC>` | Découpe la spec en tâches (subagent `planner`) et ouvre la PR de plan | L'humain relit et fusionne la PR de plan |
 | `/implement <SPEC> <T#>` | Implémente une tâche : bail, tests, code, vérification, revue, puis `/ship` | L'agent enchaîne seul |
-| `/fix <issue \| description>` | Corrige un bug sur une spec livrée : classement (code ou spec en cause), bail, test qui reproduit le bug, correction, vérification, revue, puis `/ship` | L'agent enchaîne seul ; il s'arrête si c'est la spec qui est en cause |
+| `/fix <issue \| lien Sentry \| description>` | Corrige un bug sur une spec livrée : classement (code ou spec en cause), bail, test qui reproduit le bug, correction, vérification, revue, puis `/ship` | L'agent enchaîne seul ; il s'arrête si c'est la spec qui est en cause |
 | `/review` | Pré-revue par script puis revue adversariale (`reviewer`, ou `spec-reviewer` pour une PR de spec) ; enregistre le verdict | L'agent corrige si besoin |
 | `/ship` | Vérifie, contrôle la revue, pousse et ouvre la PR | La CI, puis l'humain |
 | `/resolve` | Rebase sur `main` ; résout un petit conflit ou demande de régénérer | `/ship` pour repousser |
@@ -197,7 +214,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | Script | Rôle |
 |---|---|
 | `lease.mjs` | Baux de périmètre entre workspaces |
-| `plan-gate.mjs` | Le plan et la tâche sont-ils sur `origin/main` ? |
+| `plan-gate.mjs` | Le plan et la tâche sont-ils sur `origin/main` ? Les specs dont elle dépend sont-elles livrées ? |
 | `split-plan.mjs` | Extrait d'une tâche et de ses critères |
 | `check-contract.mjs` | Tests de contrat modifiés seulement par le retrait de `.skip` ; scénarios cachés ni modifiés ni supprimés |
 | `holdout.mjs` | Scénarios cachés : retrait du workspace, exécution en CI avec décompte seul |
@@ -226,6 +243,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | commitlint | Format des messages de commit |
 | gitleaks, Semgrep | Secrets et analyse statique de sécurité |
 | Context7 | Documentation des bibliothèques à version épinglée |
+| Sentry | Suivi des erreurs de production (imposé pour toute application qui s'exécute) ; serveur MCP en lecture seule pour `/fix` et `/retro` |
 | GitHub Actions | Gates, trace de revue, labels de risque |
 
 ## Les seuils

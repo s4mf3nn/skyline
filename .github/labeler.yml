@@ -9,7 +9,14 @@
           # Valeurs par défaut (authentification, migrations, configuration) : à adapter au type d'application.
           - "**/migrations/**"
           - "**/features/auth/**"
+          # Contrôle d'accès partagé (middleware, garde de rôle) et surfaces d'administration.
+          - "**/shared/**/auth*"
+          - "**/features/admin/**"
           - "**/config/**"
+          # Suivi des erreurs (Sentry, imposé par la factory) : filtre des données personnelles et configuration.
+          - "**/shared/monitoring/**"
+          - "**/sentry.*"
+          - "**/.sentryclirc"
           # La factory elle-même
           - ".github/**"
           - ".claude/**"
@@ -25,7 +32,12 @@
           # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
           - "**/migrations/**"
           - "**/features/auth/**"
+          - "**/shared/**/auth*"
+          - "**/features/admin/**"
           - "**/config/**"
+          - "**/shared/monitoring/**"
+          - "**/sentry.*"
+          - "**/.sentryclirc"
           - "docker-compose.yml"
 
 "risk:medium":

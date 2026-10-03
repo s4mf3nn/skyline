@@ -92,7 +92,7 @@ jobs:
     # Tests sur cible réelle (navigateur, simulateur, paquet installé, binaire), en CI seulement : pas dans `pnpm verify`.
     # Sans effet tant que package.json n'a pas de script `test:e2e` (lanceur choisi dans l'ADR-0001).
     # Variables de dépôt : E2E_RUNNER (défaut ubuntu-latest ; un simulateur iOS demande un runner macOS) et
-    # E2E_NODE_VERSIONS (tableau JSON, défaut [22]). Services (base, API) : à ajouter ici par SPEC-0000.
+    # E2E_NODE_VERSIONS (tableau JSON, défaut [22]). Services (base, API) : à ajouter ici par SPEC-0001.
     runs-on: ${{ vars.E2E_RUNNER || 'ubuntu-latest' }}
     strategy:
       fail-fast: false

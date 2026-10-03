@@ -3,6 +3,14 @@
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@4.1.1"]
+    },
+    "sentry": {
+      "command": "npx",
+      "args": ["-y", "@sentry/mcp-server@0.42.0"],
+      "env": {
+        "SENTRY_ACCESS_TOKEN": "${SENTRY_ACCESS_TOKEN:-}",
+        "MCP_SKILLS": "inspect"
+      }
     }
   }
 }

@@ -1,0 +1,19 @@
+---
+description: Transformer un brief produit en cadrage (produit, domaine, roadmap de specs, ADR à trancher), sans écrire de spec
+argument-hint: <brief, ou chemin d'un fichier qui le contient>
+model: opus
+effort: medium
+---
+
+Brief : $ARGUMENTS
+
+Tu cadres le produit avant toute spec. Tu n'écris ni spec, ni test, ni code : seulement `docs/PRODUCT.md`, `docs/DOMAIN.md`, `specs/ROADMAP.md` et, si besoin, des ADR au statut `proposée`. Une fois ce cadrage fusionné, l'humain enchaîne les `/new-spec` dans l'ordre de la roadmap. Relancée sur un cadrage existant, la commande l'amende : elle ne réécrit pas ce qui est déjà validé sans le dire.
+
+1. Lis le brief (l'argument, ou le fichier qu'il désigne), `CLAUDE.md`, `docs/adr/0001-stack.md` et, s'ils sont remplis, les trois documents de cadrage et la liste des specs (`specs/*/spec.md`, ligne `Statut` et `Dépend de`).
+2. **Pose-moi tes questions** sur ce que le brief ne tranche pas, en un ou deux envois groupés (`AskUserQuestion`) : problème, utilisateurs et rôles, parcours critique, hors périmètre, données personnelles, KPI. Une hypothèse produit ouverte (ex. deux modèles de produit possibles) se range dans « Hypothèses à valider » : tu ne la tranches pas.
+3. Remplis `docs/PRODUCT.md` (problème, hypothèses, utilisateurs et rôles, parcours, hors périmètre, données personnelles, KPI et événements produit) et `docs/DOMAIN.md` (vocabulaire, invariants numérotés avec ce qui les garantit, cycles de vie). Reste court : le détail ira dans les specs. Un invariant qui doit tenir face à deux requêtes simultanées est garanti par la base.
+4. Écris `specs/ROADMAP.md` : les milestones du brief découpés en **tranches verticales** (chacune livrable et testable seule par son interface publique, 3 à 5 tâches de plan), dans l'ordre de livraison, avec leurs dépendances. SPEC-0000 (socle) et SPEC-0001 (livraison, cible réelle et observabilité) restent en tête ; les specs métier dépendent de SPEC-0000 et peuvent avancer en parallèle de SPEC-0001. Une milestone purement technique (« infrastructure », « base de données », « CI ») n'est pas une spec : son contenu va dans SPEC-0000, SPEC-0001 ou la première tranche qui en a besoin. Le parcours critique de `PRODUCT.md` est la dernière ligne du MVP, avec un parcours sur cible réelle.
+5. Liste les décisions techniques que le brief laisse ouvertes et dont dépend une spec (ex. stockage de fichiers, temps réel, recherche géographique) : pour chacune, une ADR `docs/adr/NNNN-<slug>.md` au statut `proposée`, d'après `docs/adr/_template.md`, avec les options. Une technologie `imposée` de l'ADR-0001 ne se discute pas ici. Si une décision reste `à décider`, la première spec qui en dépend l'indique dans sa ligne de roadmap.
+6. Compare les règles du brief à `docs/factory/DOMAIN-SECURITY.md` et `docs/factory/RISK.md` : propose les règles et zones manquantes (données personnelles, rôles, fichiers envoyés par les utilisateurs) dans le résumé de PR, sans modifier ces fichiers (ils relèvent d'une PR `factory`, relue en risque élevé).
+7. Commite (`docs(cadrage): <description en français>`), rédige `.pr-summary.md` d'après `.github/pull_request_template.md` (« Référence » : `Cadrage : <objet>` ; « Documentation consultée (Context7) » : `Aucune`, sauf bibliothèque vérifiée pour une ADR), puis lance `/review` : un diff de cadrage est relu par le subagent `spec-reviewer`. Corrige les points `Bloquants` et `À corriger`, 3 passages au maximum.
+8. Enchaîne avec `/ship` (titre : `docs(cadrage): ...`). Termine par la liste ordonnée des `/new-spec` à lancer une fois la PR fusionnée, une ligne par spec de la roadmap.

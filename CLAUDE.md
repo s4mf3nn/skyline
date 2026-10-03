@@ -13,7 +13,7 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 - `pnpm test` : tests unitaires et d'acceptation
 - `pnpm verify` : typage, lint, tests avec couverture et contrôle de contrat. **Doit être vert avant de rendre la main.**
 - `pnpm gen` : régénère les fichiers `*.gen.ts` (ne jamais les éditer à la main)
-- `/implement`, `/fix`, `/review`, `/ship`, `/resolve`, `/land`, `/retro`, `/learn`, `/plan`, `/new-spec` : commandes de la factory (`.claude/commands/`)
+- `/roadmap`, `/new-spec`, `/plan`, `/implement`, `/fix`, `/review`, `/ship`, `/resolve`, `/land`, `/retro`, `/learn` : commandes de la factory (`.claude/commands/`)
 
 ## Règles de la factory (non négociables)
 
@@ -33,6 +33,7 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 - Organisation **par feature** : `src/features/<feature>/` avec son point d'entrée `index.ts` et les tests à côté (`*.test.ts`, `*.test.tsx`). Le découpage interne d'une feature dépend du type d'application et est fixé par l'ADR-0001 (ex. API : `{routes,service,repo,schema}.ts` ; web ou mobile : `{screens,components,hooks,service}` ; CLI : `{command,service}.ts`).
 - **Aucun registre central édité à la main.** Chaque feature exporte `feature` depuis son `index.ts` ; `src/features.gen.ts` est généré par `pnpm gen`. C'est ce qui évite les conflits entre agents.
 - Validation des entrées à la frontière (requête HTTP, formulaire, deep link, argument de CLI, message), jamais plus loin.
+- Ce que les tests ne peuvent pas appeler pour de vrai (service tiers, API du navigateur ou de l'appareil, horloge, réseau) passe par une interface avec un faux, injecté par les tests (voir le guide, « Services tiers, horloge et faux »).
 - Erreurs métier typées (`src/shared/errors.ts`), jamais de `throw new Error("...")` brut dans un point d'entrée (route, écran, commande).
 - Si le projet a une persistance : migrations préfixées par timestamp, une migration par tâche au maximum.
 - **Langues** : commentaires en français ; messages d'erreur, codes d'erreur (`NOT_FOUND`), identifiants (variables, fonctions, types), noms de tests (`describe` / `it`) et messages de log en anglais. Commits et titre de PR : type et scope Conventional Commits inchangés, description en français. Sorties CLI des scripts : en français. Ces règles valent pour le code nouveau ou modifié ; le code existant n'est pas réécrit pour elles.
@@ -46,7 +47,7 @@ Détail et zones à risque élevé : `docs/factory/DOMAIN-SECURITY.md` (à lire 
 
 ## Contexte à charger
 
-Ne lis que ce dont la tâche a besoin : ce fichier, la spec, le plan, les fichiers de ton périmètre, et au besoin `docs/adr/`.
+Ne lis que ce dont la tâche a besoin : ce fichier, la spec, le plan, les fichiers de ton périmètre, et au besoin `docs/adr/` et `docs/DOMAIN.md` (vocabulaire, invariants, cycles de vie).
 
 ## Documentation des bibliothèques (Context7)
 

@@ -14,9 +14,11 @@ interface Row {
 }
 interface Holdout {
   specOf(file: string): string | null;
-  isActive(acceptanceText: string | null): boolean;
+  suffixOf(file: string): string | null;
+  isActive(acceptanceTexts: string[]): boolean;
   summarize(report: unknown): Row[];
   holdouts(dir: string): { spec: string; file: string; active: boolean }[];
+  unrecognizedFiles(dir: string): string[];
 }
 const script = path.resolve("scripts/holdout.mjs");
 const mod = (await import(pathToFileURL(script).href)) as Holdout;
@@ -72,11 +74,58 @@ describe("scripts/holdout.mjs", () => {
     expect(mod.specOf("tests/holdout/helpers.ts")).toBeNull();
   });
 
-  it("activates scenarios only when the contract test exists and has no .skip left", () => {
-    expect(mod.isActive('describe("SPEC-0001", () => {});')).toBe(true);
-    expect(mod.isActive('describe.skip("SPEC-0001", () => {});')).toBe(false);
-    expect(mod.isActive('describe("a", () => { it.skip ("b", () => {}); });')).toBe(false);
-    expect(mod.isActive(null)).toBe(false);
+  it("reads the spec id and the suffix of a suffixed file name", () => {
+    expect(mod.specOf("tests/holdout/SPEC-0004.api.test.ts")).toBe("SPEC-0004");
+    expect(mod.suffixOf("tests/holdout/SPEC-0004.api.test.ts")).toBe("api");
+    expect(mod.suffixOf("tests/acceptance/SPEC-0004.native-ui.test.tsx")).toBe("native-ui");
+    expect(mod.suffixOf("tests/holdout/SPEC-0004.test.ts")).toBeNull();
+    expect(mod.specOf("tests/holdout/SPEC-0004.API.test.ts")).toBeNull();
+    expect(mod.specOf("tests/holdout/SPEC-04.test.ts")).toBeNull();
+  });
+
+  it("activates scenarios only when every contract file exists and has no .skip left", () => {
+    expect(mod.isActive(['describe("SPEC-0001", () => {});'])).toBe(true);
+    expect(mod.isActive(['describe.skip("SPEC-0001", () => {});'])).toBe(false);
+    expect(mod.isActive(['describe("a", () => { it.skip ("b", () => {}); });'])).toBe(false);
+    expect(mod.isActive(['describe("api", () => {});', 'describe.skip("ui", () => {});'])).toBe(false);
+    expect(mod.isActive([])).toBe(false);
+  });
+
+  it("activates a split contract only once all its files have lost their .skip", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "holdout-split-"));
+    dirs.push(dir);
+    write(dir, {
+      "tests/holdout/SPEC-0001.api.test.ts": "",
+      "tests/holdout/SPEC-0001.ui.test.tsx": "",
+      "tests/holdout/SPEC-0002.test.ts": "",
+      "tests/acceptance/SPEC-0001.api.test.ts": 'describe("api", () => {});',
+      "tests/acceptance/SPEC-0001.ui.test.tsx": 'describe.skip("ui", () => {});',
+      "tests/acceptance/SPEC-0002.api.test.ts": 'describe("api", () => {});',
+      "tests/acceptance/SPEC-0002.ui.test.tsx": 'describe("ui", () => {});',
+    });
+    expect(mod.holdouts(dir).map((h) => [h.file, h.active])).toEqual([
+      ["tests/holdout/SPEC-0001.api.test.ts", false],
+      ["tests/holdout/SPEC-0001.ui.test.tsx", false],
+      ["tests/holdout/SPEC-0002.test.ts", true],
+    ]);
+  });
+
+  it("lists test files whose name would never be played", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "holdout-names-"));
+    dirs.push(dir);
+    expect(mod.unrecognizedFiles(dir)).toEqual([]);
+    write(dir, {
+      "tests/holdout/SPEC-0001.test.ts": "",
+      "tests/holdout/spec-0002.test.ts": "",
+      "tests/holdout/README.md": "",
+      "tests/acceptance/SPEC-0001.api.test.ts": "",
+      "tests/acceptance/SPEC-0003_ui.test.tsx": "",
+      "tests/acceptance/helpers.ts": "",
+    });
+    expect(mod.unrecognizedFiles(dir)).toEqual([
+      path.join("tests/acceptance", "SPEC-0003_ui.test.tsx"),
+      path.join("tests/holdout", "spec-0002.test.ts"),
+    ]);
   });
 
   it("summarizes a Vitest report per spec, including failures and load errors", () => {
@@ -181,5 +230,18 @@ describe("scripts/holdout.mjs", () => {
     expect(res.out).toContain("aucun à jouer");
     expect(run(ws, "list").out).toContain("inactif");
     expect(run(ws, "nope").code).toBe(2);
+  });
+
+  it("run and list fail on a scenario file whose name is not recognized", () => {
+    const { ws } = newRepo({
+      "tests/holdout/SPEC-0001.e2e-flow.test.ts": "secret",
+      "tests/holdout/SPEC-0001-flow.test.ts": "secret",
+      "tests/acceptance/SPEC-0001.test.ts": 'describe("x", () => {});',
+    });
+    const res = run(ws, "run");
+    expect(res.code).toBe(2);
+    expect(res.err).toContain("Nom non reconnu : tests/holdout/SPEC-0001-flow.test.ts");
+    expect(res.err).not.toContain("e2e-flow");
+    expect(run(ws, "list").code).toBe(2);
   });
 });

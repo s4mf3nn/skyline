@@ -60,6 +60,12 @@ jobs:
         run: pnpm lint
       - name: Tests et couverture
         run: pnpm test:coverage
+      - name: Contrat confié à un autre lanceur que Vitest
+        # Sans effet tant que package.json ne déclare pas `factory.contractRunners` (voir scripts/contract-files.mjs).
+        run: pnpm test:contract
+      - name: Build
+        # Sans effet tant que package.json n'a pas de script `build` (posé par SPEC-0000 si l'application se construit).
+        run: pnpm run --if-present build
       - name: Contrat des tests d'acceptation
         if: github.event_name == 'pull_request'
         env:
@@ -74,12 +80,43 @@ jobs:
         env:
           BASE_REF: origin/${{ github.base_ref }}
         run: |
-          # :(glob) pour que `**` inclue aussi les fichiers directement sous src/ (src/app.ts).
+          # :(glob) pour que `**` inclue aussi les fichiers directement sous src/ (src/app.ts), et `**/src/` les
+          # paquets d'un dépôt à plusieurs applications (web/src/, apps/api/src/).
           # Un point d'entrée qu'aucun test ne charge (ici src/server.ts, à adapter à la stack) est exclu :
-          # ses mutants seraient NoCoverage.
-          FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF"...HEAD -- ':(glob)src/**/*.ts' ':(glob)src/**/*.tsx' \
-            | grep -v -E '(\.(test|gen)\.tsx?|^src/server\.ts)$' | paste -sd, - || true)
+          # ses mutants seraient NoCoverage. Idem pour un fichier testé par un autre lanceur que Vitest.
+          FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF"...HEAD -- ':(glob)**/src/**/*.ts' ':(glob)**/src/**/*.tsx' \
+            | grep -v -E '(\.(test|gen)\.tsx?|(^|/)src/server\.ts)$' | paste -sd, - || true)
           if [ -n "$FILES" ]; then pnpm exec stryker run --mutate "$FILES"; else echo "Rien à muter"; fi
+
+  e2e:
+    # Tests sur cible réelle (navigateur, simulateur, paquet installé, binaire), en CI seulement : pas dans `pnpm verify`.
+    # Sans effet tant que package.json n'a pas de script `test:e2e` (lanceur choisi dans l'ADR-0001).
+    # Variables de dépôt : E2E_RUNNER (défaut ubuntu-latest ; un simulateur iOS demande un runner macOS) et
+    # E2E_NODE_VERSIONS (tableau JSON, défaut [22]). Services (base, API) : à ajouter ici par SPEC-0000.
+    runs-on: ${{ vars.E2E_RUNNER || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(vars.E2E_NODE_VERSIONS || '[22]') }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Script test:e2e présent ?
+        id: e2e
+        run: echo "present=$(node -p "Boolean(require('./package.json').scripts?.['test:e2e'])")" >> "$GITHUB_OUTPUT"
+      - if: steps.e2e.outputs.present == 'true'
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - if: steps.e2e.outputs.present == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - if: steps.e2e.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.e2e.outputs.present == 'true'
+        run: pnpm run --if-present gen && pnpm run --if-present build
+      - name: Tests sur cible réelle
+        if: steps.e2e.outputs.present == 'true'
+        run: pnpm test:e2e
 
   security:
     runs-on: ubuntu-latest

@@ -1,13 +1,15 @@
 # Étiquetage automatique du risque selon les chemins touchés (source : docs/factory/RISK.md)
 # Lu aussi par scripts/pre-review.mjs pour choisir le niveau de revue : garder le format `- "glob"` sous chaque étiquette.
+# Les globs applicatifs commencent par `**/` : ils valent pour `src/` comme pour un paquet (`web/src/`, `apps/api/src/`).
+# `node scripts/pre-review.mjs zones` liste ceux qui ne correspondent à aucun fichier du dépôt.
 "risk:high":
   - changed-files:
       - any-glob-to-any-file:
           # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
-          # Les chemins sous src/ sont des valeurs par défaut (API avec base) : à adapter au type d'application.
-          - "src/db/migrations/**"
-          - "src/features/auth/**"
-          - "src/config/**"
+          # Valeurs par défaut (authentification, migrations, configuration) : à adapter au type d'application.
+          - "**/migrations/**"
+          - "**/features/auth/**"
+          - "**/config/**"
           # La factory elle-même
           - ".github/**"
           - ".claude/**"
@@ -21,18 +23,21 @@
   - changed-files:
       - any-glob-to-any-file:
           # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
-          - "src/db/migrations/**"
-          - "src/features/auth/**"
-          - "src/config/**"
+          - "**/migrations/**"
+          - "**/features/auth/**"
+          - "**/config/**"
           - "docker-compose.yml"
 
 "risk:medium":
   - changed-files:
       - any-glob-to-any-file:
-          - "src/features/**/service.ts"
-          - "src/features/**/repo.ts"
-          - "src/db/schema/**"
-          - "package.json"
+          # Point d'entrée de chaque application (ex. src/app.ts, src/main.tsx) : à ajouter par SPEC-0000.
+          - "**/features/**/service.ts"
+          - "**/features/**/repo.ts"
+          - "**/db/schema/**"
+          # Code partagé entre features (middleware, erreurs, client réseau) : une erreur s'y propage partout.
+          - "**/shared/**"
+          - "**/package.json"
 
 "contract":
   - changed-files:

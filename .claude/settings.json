@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pnpm exec biome check --write --no-errors-on-unmatched \"$CLAUDE_PROJECT_DIR\"/src \"$CLAUDE_PROJECT_DIR\"/tests >/dev/null 2>&1 || true"
+            "command": "pnpm exec biome check --write --no-errors-on-unmatched \"$CLAUDE_PROJECT_DIR\" >/dev/null 2>&1 || true"
           }
         ]
       }

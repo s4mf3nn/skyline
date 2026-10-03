@@ -6,6 +6,7 @@
 //   node scripts/pre-review.mjs mode    travail de spec ou hors spec (bail du workspace, branche spec-xxxx-t#-* ou spec-xxxx-fix-*)
 //   node scripts/pre-review.mjs brief   niveau, contrôles, fichiers et diff filtré, pour le subagent `reviewer`
 //   node scripts/pre-review.mjs kind    relecteur à lancer : spec (`spec-reviewer`) | code (`reviewer`)
+//   node scripts/pre-review.mjs zones   globs de .github/labeler.yml qui ne correspondent à aucun fichier suivi (avertissement)
 // Contrôles : fichiers modifiés dans le périmètre du bail, scénarios cachés retirés du workspace de tâche, tests de
 // contrat (check-contract), dépendances ajoutées et déclarées dans .pr-summary.md, section « Documentation consultée
 // (Context7) » remplie, test de non-régression présent sur une branche de correctif (spec-xxxx-fix-*).
@@ -57,6 +58,26 @@ export function labelGlobs(labelerText, label) {
     }
   }
   return globs;
+}
+
+/** Étiquettes de `labeler.yml` (clés de premier niveau), dans l'ordre du fichier. */
+export function labelNames(labelerText) {
+  return labelerText
+    .split("\n")
+    .filter((line) => /^\S/.test(line) && !line.startsWith("#"))
+    .map((line) => line.trim().replace(/:$/, "").replace(/^"|"$/g, ""));
+}
+
+/**
+ * Globs qui ne correspondent à aucun des `files` : `{ label, glob }`. Une zone morte ne protège rien, par exemple
+ * quand l'outil de migration écrit ailleurs que dans le dossier prévu.
+ */
+export function deadZones(labelerText, files) {
+  return labelNames(labelerText).flatMap((label) =>
+    labelGlobs(labelerText, label)
+      .filter((glob) => !files.some((f) => globMatch(glob, f)))
+      .map((glob) => ({ label, glob })),
+  );
 }
 
 /** `full` si un fichier est en zone `review:full`, `standard` s'il est en risque élevé ou moyen, sinon `light`. */
@@ -248,6 +269,21 @@ function brief() {
   return out.join("\n");
 }
 
+/** Avertit des zones mortes, sans échouer : avant SPEC-0000, la plupart des zones applicatives le sont. */
+function zones() {
+  const files = git("ls-files").split("\n").filter(Boolean);
+  const dead = deadZones(fs.readFileSync(".github/labeler.yml", "utf8"), files);
+  if (!dead.length) {
+    console.log("Zones de risque : chaque glob de .github/labeler.yml correspond à au moins un fichier.");
+    return;
+  }
+  console.log(`Zones de risque : ${dead.length} glob(s) sans aucun fichier correspondant (ne protègent rien) :`);
+  for (const { label, glob } of dead) console.log(`  ${label}  ${glob}`);
+  console.log(
+    "À adapter dans .github/labeler.yml, docs/factory/RISK.md et .github/CODEOWNERS, ou à garder s'ils anticipent du code à venir.",
+  );
+}
+
 const isMain =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
 if (isMain) {
@@ -265,8 +301,9 @@ if (isMain) {
     else if (cmd === "mode") console.log(workMode(currentLease() !== null, currentBranch()));
     else if (cmd === "brief") console.log(brief());
     else if (cmd === "kind") console.log(reviewKind(changedFiles()));
+    else if (cmd === "zones") zones();
     else {
-      console.error("Usage : node scripts/pre-review.mjs check | level | mode | brief | kind");
+      console.error("Usage : node scripts/pre-review.mjs check | level | mode | brief | kind | zones");
       process.exit(2);
     }
   } catch (e) {

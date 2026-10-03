@@ -9,5 +9,6 @@ effort: low
 3. Lance `pnpm tokens --since <date>` et reprends le total, le nombre de tours et le contexte moyen par tour dans la ligne (colonnes tokens de `METRICS.md`).
 4. Ajoute la ligne à `METRICS.md` sans commiter.
 5. Relève les problèmes récurrents : PR fermées, PR à plusieurs passages de revue, fichiers présents plus d'une fois dans `HOTSPOTS.md`, features ou specs corrigées plus d'une fois (PR `fix(spec-…)` fusionnées, sur 30 jours), revues `waive` (raison dans la PR).
-6. Pour chaque problème récurrent, propose la commande `/learn <description>` à lancer. Ne les lance pas.
-7. Dis-moi si les critères de `METRICS.md` pour passer à la phase suivante de la roadmap sont remplis.
+6. Lance `node scripts/pre-review.mjs zones` et reprends les zones de risque mortes (globs de `.github/labeler.yml` sans fichier correspondant) : chacune est à adapter ou à confirmer par moi.
+7. Pour chaque problème récurrent, propose la commande `/learn <description>` à lancer. Ne les lance pas.
+8. Dis-moi si les critères de `METRICS.md` pour passer à la phase suivante de la roadmap sont remplis.

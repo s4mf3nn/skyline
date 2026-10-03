@@ -23,16 +23,19 @@ Technologies du projet. Statuts : `imposée` (exigée par l'utilisateur ; ne cha
 
 Type d'application : <API ou service, application web, application mobile, CLI, bibliothèque, ou plusieurs>
 
+Disposition du dépôt : <une application ; ou plusieurs dans un seul paquet (un point d'entrée par runtime dans chaque feature) ; ou un paquet par application. Voir le guide, « Options »>
+
 À préciser pour ce projet (une ligne du tableau suffit quand le choix y figure) : validation des entrées, persistance et migrations (ou « aucune »), tests d'interface (ou « aucun »), découpage interne d'une feature (fichiers de `src/features/<feature>/`).
 
 ### Implications
 <!-- À compléter, puis à faire valider : ce que les technologies ci-dessus entraînent. -->
 - Runtime et conséquences : <API disponibles, pilotes de base de données utilisables>
-- Stratégie de test : <comment le contrat et les scénarios cachés s'exécutent sans processus externe. Si le runtime n'est pas Node, tests adaptés (ex. Hono : `app.request()`, ou pool de tests du runtime cible), et lanceur ajouté comme dépendance à justifier, enchaîné par `pnpm verify`>
+- Stratégie de test : <comment le contrat et les scénarios cachés s'exécutent sans processus externe. Si le runtime n'est pas Node, tests adaptés (ex. Hono : `app.request()`, ou pool de tests du runtime cible), et lanceur ajouté comme dépendance à justifier. Si une partie du contrat ne peut pas tourner sous Vitest (ex. rendu React Native), son suffixe et son script (`factory.contractRunners` de `package.json`), et ce que deviennent leur couverture et leur mutation>
+- Tests sur cible réelle : <navigateur, simulateur, paquet installé, ou « aucun » ; lanceur, runner de CI et versions de Node (variables `E2E_RUNNER`, `E2E_NODE_VERSIONS`)>
 - Commande `dev` : <à compléter>
 - Ressource de données par workspace : <mécanisme, ou « aucune »>
 - Secrets et variables d'environnement : <à compléter>
-- Déploiement : <à compléter>
+- Livraison : <cible (hébergement, store, registre de paquets, ou « aucune »), commande `pnpm release` lancée par `.github/workflows/release.yml`, mode à blanc s'il existe, secrets de l'environnement GitHub `production`, retour arrière, fichiers de livraison à classer en zone de risque>
 
 ## Conséquences
 - Aucun fichier central n'est édité à la main pour ajouter une feature.

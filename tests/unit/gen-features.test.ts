@@ -23,8 +23,10 @@ function tmpSrc(features: Record<string, string | null>): string {
   return src;
 }
 
-const gen = (src: string) => execFileSync("node", [script, src], { encoding: "utf8", stdio: "pipe" });
-const readGen = (src: string) => fs.readFileSync(path.join(src, "features.gen.ts"), "utf8");
+const gen = (src: string, ...options: string[]) =>
+  execFileSync("node", [script, src, ...options], { encoding: "utf8", stdio: "pipe" });
+const readGen = (src: string, file = "features.gen.ts") => fs.readFileSync(path.join(src, file), "utf8");
+const HEADER = "// Fichier généré par scripts/gen-features.mjs (`pnpm gen`). Ne pas éditer à la main.";
 
 describe("scripts/gen-features.mjs", () => {
   it("lists features alphabetically, accepts index.ts or index.tsx and skips folders without entry file", () => {
@@ -59,6 +61,54 @@ describe("scripts/gen-features.mjs", () => {
     const before = fs.statSync(path.join(src, "features.gen.ts")).mtimeMs;
     expect(gen(src)).toContain("inchangé");
     expect(fs.statSync(path.join(src, "features.gen.ts")).mtimeMs).toBe(before);
+  });
+
+  it("generates one registry per runtime entry, in its own output file", () => {
+    const src = tmpSrc({ links: null, auth: null, stats: null });
+    for (const [feature, file] of [
+      ["links", "server.ts"],
+      ["links", "client.tsx"],
+      ["auth", "server.ts"],
+      ["stats", "client.tsx"],
+    ] as const)
+      fs.writeFileSync(path.join(src, "features", feature, file), "");
+    gen(src, "--entry", "server.ts", "--out", "features.server.gen.ts");
+    gen(src, "--entry", "client.tsx", "--out", "features.client.gen.ts");
+    expect(readGen(src, "features.server.gen.ts")).toBe(
+      [
+        HEADER,
+        'import { feature as authFeature } from "./features/auth/server";',
+        'import { feature as linksFeature } from "./features/links/server";',
+        "",
+        "export const features = [authFeature, linksFeature] as const;",
+        "",
+      ].join("\n"),
+    );
+    expect(readGen(src, "features.client.gen.ts")).toContain('from "./features/stats/client";');
+    expect(readGen(src, "features.client.gen.ts")).not.toContain("auth");
+    expect(fs.existsSync(path.join(src, "features.gen.ts"))).toBe(false);
+  });
+
+  it("re-exports the features for a library public surface", () => {
+    const src = tmpSrc({ parse: "index.ts", validate: "index.ts" });
+    gen(src, "--reexport");
+    expect(readGen(src)).toBe(
+      [HEADER, 'export * from "./features/parse/index";', 'export * from "./features/validate/index";', ""].join("\n"),
+    );
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), "gen-features-"));
+    dirs.push(empty);
+    gen(empty, "--reexport");
+    expect(readGen(empty)).toBe(`${HEADER}\nexport {};\n`);
+  });
+
+  it.each([
+    ["--entry", "sub/server.ts"],
+    ["--entry", "server.js"],
+    ["--out", "features.ts"],
+    ["--out", "../features.gen.ts"],
+  ])("refuse l'option %s %s", (option, value) => {
+    const src = tmpSrc({ alpha: "index.ts" });
+    expect(() => gen(src, option, value)).toThrow(/invalide/);
   });
 
   it.each(["Bad", "with_underscore", "1digit", "trailing-"])("refuse le nom de feature %s", (name) => {

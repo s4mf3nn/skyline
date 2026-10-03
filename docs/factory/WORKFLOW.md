@@ -12,6 +12,7 @@
 7. **Merge** : `/land <PR>`, une PR à la fois. Il vérifie que le dernier run `gates` sur `main` est vert, puis les checks de la PR, demande ta confirmation pour `risk:high` ou `contract-change`, puis fait un squash-merge. Sans ruleset ni merge queue (plan GitHub Free), `/land` et le hook `pre-push` tiennent lieu de barrières ; les gates tournent aussi sur `main` après chaque fusion, pour voir deux PR vertes séparément qui la cassent ensemble. En cas de retard sur `main` ou de conflit : `/resolve` puis `/ship` dans le workspace de la tâche.
 8. **Archivage** du workspace : le bail est libéré (et la base dédiée supprimée, s'il y en a une) automatiquement.
 9. On passe au groupe suivant du plan.
+10. **Livraison**, quand tu le décides (après une spec, ou plusieurs) : workflow `release` lancé à la main sur `main`. Il refuse un commit dont `gates` n'est pas vert, attend ton approbation (environnement `production`) puis lance `pnpm release`. Aucun agent ne le déclenche.
 
 ## Correction d'un bug
 
@@ -37,9 +38,9 @@ Si un scénario caché échoue en CI sur la PR du correctif, la procédure « En
 
 Les tests de contrat sont visibles de l'agent producteur : il peut les faire passer sans satisfaire l'intention (valeurs codées en dur, cas particulier). Les scénarios cachés ferment ce trou.
 
-- **Écriture** : `/new-spec` écrit `tests/holdout/SPEC-XXXX.test.ts` (ou `.test.tsx` ; 2 à 4 parcours de bout en bout, autres données que les tests de contrat). Tu les valides dans la PR de spec. Ensuite ils sont immuables, comme le contrat (`scripts/check-contract.mjs`, label `contract-change`).
+- **Écriture** : `/new-spec` écrit `tests/holdout/SPEC-XXXX.test.ts` (ou `.test.tsx`, ou des fichiers suffixés `SPEC-XXXX.<suffixe>.test.ts(x)` comme le contrat ; 2 à 4 parcours de bout en bout, autres données que les tests de contrat). Tu les valides dans la PR de spec. Ensuite ils sont immuables, comme le contrat (`scripts/check-contract.mjs`, label `contract-change`).
 - **Invisibilité** : `/implement` commence par `node scripts/holdout.mjs hide`, qui retire le dossier du workspace (sparse-checkout, propre au workspace). `pnpm verify` ne les joue pas, et la pré-revue refuse un workspace de tâche où ils sont visibles. C'est une barrière contre l'accident, pas contre un agent qui chercherait à tricher : l'historique git les contient toujours.
-- **Exécution** : en CI, étape « Scénarios cachés » du job `gates`. Les scénarios d'une spec ne sont joués que lorsque son test de contrat n'a plus aucun `.skip`. Les logs ne donnent qu'un décompte par spec.
+- **Exécution** : en CI, étape « Scénarios cachés » du job `gates`. Les scénarios d'une spec ne sont joués que lorsqu'aucun de ses fichiers de contrat n'a plus de `.skip`. Un fichier de test de `tests/acceptance/` ou `tests/holdout/` au nom non reconnu fait échouer l'étape : il ne serait jamais joué. Les logs ne donnent qu'un décompte par spec.
 - **En cas d'échec** : lance toi-même `node scripts/holdout.mjs run --details` sur la branche de la PR, dans le dépôt principal (pas dans le workspace de la tâche). Ne donne pas le scénario à l'agent. Soit l'implémentation est trop étroite : relance la tâche en nommant le critère de la spec qui n'est pas tenu, ou précise la spec. Soit le scénario exigeait plus que la spec : corrige-le dans une PR `contract-change`.
 
 ## Règles de parallélisme

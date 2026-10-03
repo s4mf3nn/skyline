@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -8,6 +9,8 @@ interface PreReview {
   isFixBranch(branch: string): boolean;
   hasRegressionTest(files: string[]): boolean;
   labelGlobs(text: string, label: string): string[];
+  labelNames(text: string): string[];
+  deadZones(text: string, files: string[]): { label: string; glob: string }[];
   reviewLevel(files: string[], labeler: string): string;
   reviewKind(files: string[]): string;
   inPerimeter(file: string, paths: string[]): boolean;
@@ -136,6 +139,31 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.labelGlobs(labeler, "risk:medium")).toEqual(["src/features/**/service.ts", "web/**"]);
     expect(mod.labelGlobs(labeler, "contract")).toEqual(["tests/acceptance/**"]);
     expect(mod.labelGlobs(labeler, "absent")).toEqual([]);
+  });
+
+  it("lists the labels of the labeler in file order", () => {
+    expect(mod.labelNames(labeler)).toEqual(["review:full", "risk:high", "risk:medium", "contract"]);
+  });
+
+  it("reports the globs that match no tracked file", () => {
+    const files = ["src/features/redirect/route.ts", "scripts/lease.mjs", "tests/acceptance/SPEC-0001.test.ts"];
+    expect(mod.deadZones(labeler, files)).toEqual([
+      { label: "risk:high", glob: "web/index.html" },
+      { label: "risk:medium", glob: "src/features/**/service.ts" },
+      { label: "risk:medium", glob: "web/**" },
+    ]);
+    expect(mod.deadZones(labeler, [])).toHaveLength(7);
+  });
+
+  it("classifies the default zones the same way whatever the package layout", () => {
+    const real = fs.readFileSync(".github/labeler.yml", "utf8");
+    const level = (file: string) => mod.reviewLevel([file], real);
+    expect(level("src/features/auth/routes.ts")).toBe("full");
+    expect(level("web/src/features/auth/login.tsx")).toBe("full");
+    expect(level("apps/api/src/db/migrations/0001_init.sql")).toBe("full");
+    expect(level("src/shared/auth-middleware.ts")).toBe("standard");
+    expect(level("mobile/package.json")).toBe("standard");
+    expect(level("src/features/links/routes.ts")).toBe("light");
   });
 
   it("déduit le niveau de revue du fichier le plus risqué", () => {

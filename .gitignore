@@ -7,5 +7,5 @@ reports/
 .env.local
 .pr-summary.md
 .factory/
-src/features.gen.ts
+*.gen.ts
 .context/

@@ -5,14 +5,14 @@ La source technique est `.github/labeler.yml` (lue par la CI et par `scripts/pre
 | Niveau | Chemins | Pourquoi | Revue | Traitement |
 |---|---|---|---|---|
 | Sensible | <zones sensibles du domaine, voir `DOMAIN-SECURITY.md`> | <à compléter> | `full` (Opus) | Revue humaine approfondie, jamais d'auto-merge |
-| Sensible | `src/features/auth/` | Accès et abus | `full` (Opus) | Idem |
-| Sensible | `src/db/migrations/`, `src/config/`, `docker-compose.yml` | Données et environnement | `full` (Opus) | Idem |
+| Sensible | `**/features/auth/` | Accès et abus | `full` (Opus) | Idem |
+| Sensible | `**/migrations/`, `**/config/`, `docker-compose.yml` | Données et environnement | `full` (Opus) | Idem |
 | Élevé | `.github/`, `scripts/`, `CLAUDE.md`, `.claude/` | Modifient la factory elle-même | `standard` (Sonnet) | Revue humaine obligatoire, jamais d'auto-merge |
 | Contrat | `tests/acceptance/`, `tests/holdout/` | Définissent ce qui est juste | Label `contract` ; toute modification après fusion demande `contract-change` |
-| Moyen | `service.ts`, `repo.ts`, `src/db/schema/`, `package.json` | Logique métier et dépendances | Revue humaine rapide : spec, tests, résumé |
+| Moyen | `service.ts`, `repo.ts`, `**/db/schema/`, `**/shared/`, `package.json` de chaque paquet, point d'entrée de chaque application (posé par SPEC-0000) | Logique métier, code partagé entre features, dépendances | Revue humaine rapide : spec, tests, résumé |
 | Faible | Tout le reste, diff < 400 lignes | | Auto-merge possible en phase 3 (voir `WORKFLOW.md`) |
 
-Les chemins applicatifs de ce tableau (`src/db/`, `src/config/`, `service.ts`, `repo.ts`) sont des valeurs par défaut pensées pour une API avec base de données ; un chemin absent du projet est sans effet. Adapte-les au type d'application de l'ADR-0001. Exemple pour une application web ou mobile : configuration de build et de publication, stockage de session et navigation protégée en élevé ; état partagé et appels réseau en moyen.
+Les chemins applicatifs de ce tableau commencent par `**/` : ils valent pour `src/` comme pour un paquet (`web/src/`, `apps/api/src/`). Ce sont des valeurs par défaut pensées pour une API avec base de données ; un chemin absent du projet est sans effet, mais il laisse sans protection ce qu'il était censé couvrir (ex. des migrations écrites ailleurs que dans un dossier `migrations/`). Adapte-les au type d'application de l'ADR-0001, et contrôle-les avec `node scripts/pre-review.mjs zones`, qui liste les globs de `labeler.yml` ne correspondant à aucun fichier du dépôt (lancé par `/retro`). Exemples : application web ou mobile, configuration de build et de publication, stockage de session et navigation protégée en élevé, état partagé et appels réseau en moyen ; CLI ou bibliothèque, surface publique (`exports`, `bin`) et fichiers de publication en élevé.
 
 ## Contrôles automatiques avant ta lecture
 

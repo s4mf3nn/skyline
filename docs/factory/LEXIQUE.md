@@ -55,7 +55,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Questions ouvertes** : section de la spec où l'agent consigne ce qui est ambigu. Elle doit être vide avant le statut `VALIDÉE` : un agent ne suppose rien sur les règles métier, il demande.
 - **Risque estimé** : niveau annoncé par la spec (faible, moyen, élevé), repris tâche par tâche dans le plan. C'est une prévision ; le niveau qui fait foi sur une PR est le label posé par la CI d'après les chemins réellement touchés.
 - **Hors périmètre** (d'une spec) : ce que la spec ne fait volontairement pas. À ne pas confondre avec le périmètre d'une tâche.
-- **Test de contrat** (ou test d'acceptation) : fichier `tests/acceptance/SPEC-XXXX.test.ts`, un `it` par critère d'acceptation, qui ne dépend que de l'interface publique. Écrit avec la spec, validé par l'humain.
+- **Test de contrat** (ou test d'acceptation) : fichier `tests/acceptance/SPEC-XXXX.test.ts` (ou plusieurs fichiers suffixés `SPEC-XXXX.<suffixe>.test.ts(x)` quand les critères demandent des environnements de test différents), un `it` par critère d'acceptation, qui ne dépend que de l'interface publique. Écrit avec la spec, validé par l'humain.
 - **`describe.skip`** : état initial d'un test de contrat. L'agent qui implémente la spec retire `.skip` ; c'est la seule modification qui lui est permise.
 - **Contrat immuable** : règle selon laquelle un test de contrat fusionné ne change plus. `scripts/check-contract.mjs` refuse toute autre modification ou suppression, en local et en CI.
 - **Scénario caché** (holdout) : parcours de bout en bout écrit avec la spec dans `tests/holdout/SPEC-XXXX.test.ts`, validé par l'humain, que l'agent producteur ne voit jamais. Il vérifie que l'implémentation satisfait l'intention et pas seulement les tests visibles. Retiré du workspace par `scripts/holdout.mjs hide`, joué en CI quand le test de contrat de la spec n'a plus de `.skip`, immuable comme le contrat. Le détail d'un échec est réservé à l'humain.
@@ -97,7 +97,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Migration** : changement de schéma de base de données. Zone à risque élevé, qui a ses propres règles : préfixe par timestamp (deux agents ne produisent pas le même numéro), une migration par tâche au plus, et aucun conflit résolu automatiquement.
 - **Feature** : dossier `src/features/<feature>/` qui regroupe tout le code d'une fonctionnalité, tests compris. L'organisation par feature donne des périmètres disjoints.
 - **Registre central** : fichier que chaque nouvelle fonctionnalité devrait modifier (liste de routes, d'écrans ou de commandes). La factory l'interdit : c'est une source de conflits entre agents.
-- **Fichier généré** : fichier `*.gen.ts` produit par `pnpm gen` à la place d'un registre central, ignoré par git et jamais édité à la main (`scripts/gen-features.mjs`). Il liste les features qui exportent `feature` depuis leur `index.ts`.
+- **Fichier généré** : fichier `*.gen.ts` produit par `pnpm gen` à la place d'un registre central, ignoré par git et jamais édité à la main (`scripts/gen-features.mjs`). Il liste les features qui exportent `feature` depuis leur `index.ts` ; avec `--entry` et `--out`, un registre par runtime (ex. serveur et client) ; avec `--reexport`, la surface publique d'une bibliothèque.
 - **Conflit** : désaccord entre la branche d'une tâche et `main` au rebase. Petit et local, il est résolu par `/resolve` ; sinon la tâche est régénérée.
 - **`RÉGÉNÉRER`** : réponse du `conflict-resolver` quand le conflit est trop gros, touche une migration ou oppose deux intentions incompatibles. On jette la branche et on relance la tâche depuis `main` à jour.
 - **Hotspot** : fichier qui revient dans le journal des conflits (`HOTSPOTS.md`). À la troisième fois, il doit être supprimé par un changement d'architecture.
@@ -139,8 +139,9 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Labels de risque** : `risk:high`, `risk:medium`, `risk:low`, posés par la CI d'après `.github/labeler.yml`. Le niveau de revue vient de là, mais découplé : `review:full` (Opus) pour les zones sensibles seulement (auth, migrations, config), `standard` (Sonnet) pour `risk:high` (outillage) et `risk:medium`, `light` (Sonnet) sinon.
 - **Label `contract`** : posé automatiquement quand une PR touche `tests/acceptance/` ou `tests/holdout/`.
 - **Code owners** : `.github/CODEOWNERS` désigne l'humain propriétaire des chemins à risque élevé.
+- **Livraison** : mise à disposition des utilisateurs (déploiement, publication sur un store ou un registre de paquets). Workflow `release` lancé à la main par l'humain, depuis un commit de `main` dont `gates` est vert, avec l'approbation et les secrets de l'environnement `production` ; la commande `pnpm release` est posée par SPEC-0000.
 - **Sécurité propre au domaine** : règles de sécurité spécifiques au produit (`DOMAIN-SECURITY.md`), lues par l'agent et le relecteur sur les zones concernées.
-- **Gates** : contrôles de CI qu'une PR doit passer : `pr-title`, `gates` (typage, lint, tests, contrat, scénarios cachés, mutation), `security` (gitleaks, Semgrep), `review-trace`. `gates` et `security` tournent aussi sur `main` après chaque fusion.
+- **Gates** : contrôles de CI qu'une PR doit passer : `pr-title`, `gates` (typage, lint, tests, contrat, build, scénarios cachés, mutation), `e2e` (tests sur cible réelle, si le projet a un script `test:e2e`), `security` (gitleaks, Semgrep), `review-trace`. `gates` et `security` tournent aussi sur `main` après chaque fusion.
 - **gitleaks / Semgrep** : détection de secrets dans les commits, et analyse statique de sécurité. Lancés au `pre-push` (avertissement si l'outil est absent) et en CI (`scripts/security-scan.mjs`).
 - **Clé factice** : valeur de test au format `test-key` ou `key-<nom>`, seule forme autorisée dans les fichiers de test par `.gitleaks.toml`.
 - **Arbitrage** : lecture humaine d'une PR, dans cet ordre : la spec, les tests, le résumé et le verdict, puis le code aux endroits signalés.
@@ -200,7 +201,8 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | `split-plan.mjs` | Extrait d'une tâche et de ses critères |
 | `check-contract.mjs` | Tests de contrat modifiés seulement par le retrait de `.skip` ; scénarios cachés ni modifiés ni supprimés |
 | `holdout.mjs` | Scénarios cachés : retrait du workspace, exécution en CI avec décompte seul |
-| `pre-review.mjs` | Pré-revue, niveau de revue, choix du relecteur, brief du relecteur |
+| `contract-files.mjs` | Nommage des fichiers de contrat et de scénarios (suffixes) ; contrat confié à un autre lanceur que Vitest (`pnpm test:contract`) |
+| `pre-review.mjs` | Pré-revue, niveau de revue, choix du relecteur, brief du relecteur, zones de risque mortes |
 | `review-gate.mjs` | Enregistrement et contrôle du verdict, trace dans la PR |
 | `security-scan.mjs` | Semgrep et gitleaks, en local comme en CI |
 | `verify-quiet.mjs` | `pnpm verify` à sortie filtrée |

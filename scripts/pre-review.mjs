@@ -11,7 +11,8 @@
 // Contrôles : fichiers modifiés dans le périmètre du bail, scénarios cachés retirés du workspace de tâche, tests de
 // contrat (check-contract), dépendances ajoutées et déclarées dans .pr-summary.md, section « Documentation consultée
 // (Context7) » remplie, test de non-régression présent sur une branche de correctif (spec-xxxx-fix-*), routes fines
-// dans les dossiers de routage par fichiers (`factory.routeDirs` et `factory.routeIgnore` de package.json).
+// dans les dossiers de routage par fichiers (`factory.routeDirs` et `factory.routeIgnore` de package.json), frontières
+// entre features (une feature n'importe que `shared/` et le point d'entrée public des autres).
 // Variables : BASE_REF (défaut origin/main), CONDUCTOR_ROOT_PATH et CONDUCTOR_WORKSPACE_PATH (baux).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -175,18 +176,20 @@ export function hasRegressionTest(files) {
   return files.some((f) => TEST_FILE.test(f) && !inPerimeter(f, ["tests/acceptance", "tests/holdout"]));
 }
 
+/** Liste de chaînes déclarée sous `factory.<key>` dans package.json ; vide sans déclaration. */
+function factoryList(pkg, key) {
+  const value = pkg?.factory?.[key] ?? [];
+  if (!Array.isArray(value) || !value.every((v) => typeof v === "string"))
+    throw new Error(`factory.${key} doit être une liste de chaînes dans package.json`);
+  return value;
+}
+
 /**
  * Routage par fichiers déclaré dans `package.json` : `factory.routeDirs` (dossiers de routes) et `factory.routeIgnore`
  * (globs sur le nom des fichiers qui ne sont pas des routes : layouts, fichiers spéciaux du framework). Vides sans déclaration.
  */
 export function routeConfig(pkg) {
-  const list = (key) => {
-    const value = pkg?.factory?.[key] ?? [];
-    if (!Array.isArray(value) || !value.every((v) => typeof v === "string"))
-      throw new Error(`factory.${key} doit être une liste de chaînes dans package.json`);
-    return value;
-  };
-  return { dirs: list("routeDirs"), ignore: list("routeIgnore") };
+  return { dirs: factoryList(pkg, "routeDirs"), ignore: factoryList(pkg, "routeIgnore") };
 }
 
 /** Route d'un dossier de routage : `.ts` ou `.tsx`, hors test, et dont le nom ne correspond à aucun glob ignoré. */
@@ -202,6 +205,51 @@ const THIN_ROUTE_LINE = /^\s*(\/\/.*|export\s.+\sfrom\s+["'][^"']+["'];?)?\s*$/;
 /** Une route fine ne fait que réexporter l'écran de sa feature : la logique reste dans `src/features/`, testée. */
 export function isThinRoute(text) {
   return text.split("\n").every((line) => THIN_ROUTE_LINE.test(line));
+}
+
+/**
+ * Points d'entrée publics d'une feature, sans extension : `index` plus ceux déclarés dans `factory.featureEntries`
+ * (noms de fichiers, ex. `server.ts` et `client.tsx` pour une feature servie par deux runtimes).
+ */
+export function featureEntries(pkg) {
+  const declared = factoryList(pkg, "featureEntries").map((file) => file.replace(MODULE_EXTENSION, ""));
+  return ["index", ...declared];
+}
+
+// Extension d'un module TypeScript ou JavaScript, avec ou sans suffixe de résolution (`index.js` pour `index.ts`).
+const MODULE_EXTENSION = /\.[cm]?[jt]sx?$/;
+
+// Dossier d'une feature : `[<racine>/]src/features/<nom>/<reste>`.
+const FEATURE_PATH = /^(?:(.*)\/)?src\/features\/([^/]+)\/(.*)$/;
+
+/** Spécificateurs d'import statiques, dynamiques et d'effet de bord d'un fichier TypeScript. */
+export function importSpecifiers(text) {
+  const pattern = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["']([^"']+)["']/g;
+  return [...text.matchAll(pattern)].map((match) => match[1]);
+}
+
+/** Chemin visé par un import relatif ou par l'alias `@/` (= `src/` de la même application) ; null pour un paquet. */
+function importTarget(file, specifier) {
+  if (specifier.startsWith(".")) return path.posix.join(path.posix.dirname(file), specifier);
+  const root = FEATURE_PATH.exec(file)?.[1];
+  if (specifier.startsWith("@/")) return path.posix.join(root ?? "", "src", specifier.slice(2));
+  return null;
+}
+
+/**
+ * Imports d'un fichier de feature qui atteignent un fichier interne d'une autre feature : seuls `shared/`, la feature
+ * elle-même et le point d'entrée public des autres (`entries`, voir featureEntries) sont permis. Vide hors d'une feature.
+ */
+export function boundaryViolations(file, text, entries) {
+  const own = FEATURE_PATH.exec(file);
+  if (!own) return [];
+  return importSpecifiers(text).filter((specifier) => {
+    const target = importTarget(file, specifier);
+    const other = target === null ? null : FEATURE_PATH.exec(target);
+    if (!other || other[2] === own[2]) return false;
+    const inside = other[3].replace(MODULE_EXTENSION, "");
+    return inside !== "" && !entries.includes(inside);
+  });
 }
 
 /** Travail de spec si bail, HEAD détaché, branche de tâche `[préfixe/]spec-xxxx-t#-*` ou de correctif ; sinon hors spec (outillage). */
@@ -265,11 +313,21 @@ export function runChecks() {
   }
 
   // Routage par fichiers : une route qui contient de la logique échappe aux tests, à la couverture et à la mutation.
-  const routes = routeConfig(JSON.parse(fs.readFileSync("package.json", "utf8")));
+  const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  const routes = routeConfig(pkg);
   for (const f of files.filter((file) => isRouteFile(file, routes) && fs.existsSync(file))) {
     if (!isThinRoute(fs.readFileSync(f, "utf8")))
       problems.push(
         `route avec de la logique : ${f} (une route ne fait que réexporter un écran de src/features/, ex. export { default } from "…")`,
+      );
+  }
+
+  // Frontières : un import vers l'intérieur d'une autre feature la couple à des détails qu'elle peut changer seule.
+  const entries = featureEntries(pkg);
+  for (const f of files.filter((file) => /\.tsx?$/.test(file) && fs.existsSync(file))) {
+    for (const specifier of boundaryViolations(f, fs.readFileSync(f, "utf8"), entries))
+      problems.push(
+        `import interne d'une autre feature : ${f} importe "${specifier}" (passe par son point d'entrée, ${entries.join(", ")}, ou par src/shared/)`,
       );
   }
 

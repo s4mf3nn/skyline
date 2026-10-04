@@ -16,6 +16,9 @@ interface PreReview {
   routeConfig(pkg: unknown): RouteConfig;
   isRouteFile(file: string, routes: RouteConfig): boolean;
   isThinRoute(text: string): boolean;
+  featureEntries(pkg: unknown): string[];
+  importSpecifiers(text: string): string[];
+  boundaryViolations(file: string, text: string, entries: string[]): string[];
   labelGlobs(text: string, label: string): string[];
   labelNames(text: string): string[];
   deadZones(text: string, files: string[]): { label: string; glob: string }[];
@@ -296,5 +299,68 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.checkSummary(template, [])).toEqual([expect.stringContaining("Context7")]);
     expect(mod.checkSummary("## Autre\n", [])).toEqual([expect.stringContaining("Context7")]);
     expect(mod.checkSummary(null, [])).toEqual([expect.stringContaining("absent")]);
+  });
+
+  it("reads the public entry points of features", () => {
+    expect(mod.featureEntries({})).toEqual(["index"]);
+    expect(mod.featureEntries({ factory: { featureEntries: ["server.ts", "client.tsx"] } })).toEqual([
+      "index",
+      "server",
+      "client",
+    ]);
+    expect(() => mod.featureEntries({ factory: { featureEntries: "server.ts" } })).toThrow(/factory.featureEntries/);
+  });
+
+  it("extracts import specifiers", () => {
+    const text = [
+      'import { a } from "../links/repo";',
+      "import b from '../links/service.ts';",
+      'import "../links/side-effect";',
+      'const lazy = await import("../links/lazy");',
+      'export { c } from "../links/index";',
+      'import { d } from "zod";',
+    ].join("\n");
+    expect(mod.importSpecifiers(text)).toEqual([
+      "../links/repo",
+      "../links/service.ts",
+      "../links/side-effect",
+      "../links/lazy",
+      "../links/index",
+      "zod",
+    ]);
+  });
+
+  it("rejects imports of another feature's internals", () => {
+    const check = (file: string, text: string) => mod.boundaryViolations(file, text, ["index", "server"]);
+    const file = "src/features/events/service.ts";
+    expect(check(file, 'import { x } from "../links/repo";')).toEqual(["../links/repo"]);
+    expect(check(file, 'import { x } from "../links/screens/Home.tsx";')).toEqual(["../links/screens/Home.tsx"]);
+    expect(check(file, 'import { x } from "@/features/links/repo";')).toEqual(["@/features/links/repo"]);
+    expect(check(file, 'const m = await import("../links/repo");')).toEqual(["../links/repo"]);
+  });
+
+  it("allows shared, its own feature and public entry points", () => {
+    const check = (file: string, text: string) => mod.boundaryViolations(file, text, ["index", "server"]);
+    const file = "src/features/events/service.ts";
+    expect(check(file, 'import { x } from "../links";')).toEqual([]);
+    expect(check(file, 'import { x } from "../links/index";')).toEqual([]);
+    expect(check(file, 'import { x } from "../links/server.ts";')).toEqual([]);
+    expect(check(file, 'import { x } from "../links/index.js";')).toEqual([]);
+    expect(check(file, 'import { x } from "../links/server.mjs";')).toEqual([]);
+    expect(check(file, 'import { x } from "@/features/links";')).toEqual([]);
+    expect(check(file, 'import { x } from "../../shared/clock";')).toEqual([]);
+    expect(check(file, 'import { x } from "./repo";')).toEqual([]);
+    expect(check(file, 'import { x } from "../events/repo";')).toEqual([]);
+    expect(check(file, 'import { x } from "zod";')).toEqual([]);
+    expect(check("src/app.ts", 'import { x } from "./features/links/repo";')).toEqual([]);
+  });
+
+  it("applies the rule in a multi-application repository", () => {
+    const file = "apps/api/src/features/events/service.ts";
+    expect(mod.boundaryViolations(file, 'import { x } from "../links/repo";', ["index"])).toEqual(["../links/repo"]);
+    expect(mod.boundaryViolations(file, 'import { x } from "@/features/links/repo";', ["index"])).toEqual([
+      "@/features/links/repo",
+    ]);
+    expect(mod.boundaryViolations(file, 'import { x } from "@/shared/clock";', ["index"])).toEqual([]);
   });
 });

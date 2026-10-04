@@ -31,6 +31,7 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 <!-- À ajuster après l'ADR-0001 : garder ce qui s'applique à la stack retenue. -->
 - TypeScript strict, pas de `any`, pas de `// @ts-ignore`, pas de désactivation de règle Biome.
 - Organisation **par feature** : `src/features/<feature>/` avec son point d'entrée `index.ts` et les tests à côté (`*.test.ts`, `*.test.tsx`). Le découpage interne d'une feature dépend du type d'application et est fixé par l'ADR-0001 (ex. API : `{routes,service,repo,schema}.ts` ; web ou mobile : `{screens,components,hooks,service}` ; CLI : `{command,service}.ts`).
+- **Frontières entre features** : une feature n'importe que ses propres fichiers, `src/shared/` et le point d'entrée public (`index.ts`) d'une autre feature, jamais l'un de ses fichiers internes. `scripts/pre-review.mjs check` le contrôle ; ce qui doit être partagé monte dans `src/shared/` ou dans l'`index.ts` de la feature qui le possède.
 - **Aucun registre central édité à la main.** Chaque feature exporte `feature` depuis son `index.ts` ; `src/features.gen.ts` est généré par `pnpm gen`. C'est ce qui évite les conflits entre agents.
 - Validation des entrées à la frontière (requête HTTP, formulaire, deep link, argument de CLI, message), jamais plus loin.
 - Ce que les tests ne peuvent pas appeler pour de vrai (service tiers, API du navigateur ou de l'appareil, horloge, réseau) passe par une interface avec un faux, injecté par les tests (voir le guide, « Services tiers, horloge et faux »).

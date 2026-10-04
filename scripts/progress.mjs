@@ -352,8 +352,9 @@ function projectSteps(files, specs, lastRelease) {
   const business = specs.filter((spec) => !SOCLE.includes(spec.id));
   const done = business.filter(isDone).length;
   const gaps = framingGaps(files, specs);
+  const initialised = !files.has(INIT_SCRIPT);
   const steps = [
-    { key: "init", label: "Initialisation", done: !files.has(INIT_SCRIPT), detail: "/init-project" },
+    { key: "init", label: "Initialisation", done: initialised, detail: initialised ? "" : "/init-project à lancer" },
     { key: "framing", label: "Cadrage", done: gaps.length === 0, detail: gaps.join(" ; ") },
     { key: "bootstrap", label: "Socle", done: delivered("SPEC-0000"), detail: "SPEC-0000" },
     { key: "delivery", label: "Livraison prête", done: delivered("SPEC-0001"), detail: "SPEC-0001" },

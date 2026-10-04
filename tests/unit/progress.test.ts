@@ -41,6 +41,9 @@ interface Spec {
   contract: { files: number; todos: number; delivered: boolean };
   hasHoldout: boolean;
   deliveredAt: string | null;
+  specifiedAt: string | null;
+  leadTimeDays: number | null;
+  fixes: number;
   plan: { status: string; tasks: Task[] } | null;
 }
 interface Progress {
@@ -52,6 +55,15 @@ interface Progress {
   specs: Spec[];
   totals: { specs: number; specsDelivered: number; tasks: number; tasksDone: number; tasksInReview: number };
   milestones: { milestone: string; specs: number; specsDelivered: number }[];
+  rhythm: {
+    weeks: { week: string; merged: number; cumulative: number }[];
+    leadTimeMedianDays: number | null;
+    bugsOpen: number;
+    bugsTotal: number;
+    fixes: number;
+    conflicts: number;
+    activeRules: number;
+  };
   blockers: { spec: string | null; kind: string }[];
   nextActions: { spec: string | null; command: string }[];
 }
@@ -59,12 +71,15 @@ interface ProgressModule {
   parseRoadmap(text: string): { order: number; milestone: string; spec: string | null; dependsOn: string[] }[];
   readFromDisk(dir: string): Map<string, string>;
   readFromGit(ref: string, dir: string): Map<string, string>;
+  readSpecDates(ref: string, dir: string): Record<string, string>;
   computeProgress(input: {
     files: Map<string, string>;
     prs?: Pr[];
     leases?: Lease[];
     lastRelease?: { createdAt: string } | null;
     gates?: string | null;
+    specDates?: Record<string, string>;
+    bugs?: { state: string }[];
     now: string;
   }): Progress;
 }
@@ -354,6 +369,63 @@ describe("scripts/progress.mjs", () => {
     });
   });
 
+  describe("rhythm", () => {
+    const delivered = project({
+      "tests/acceptance/SPEC-0002.test.ts": contract("SPEC-0002", false),
+      "docs/factory/HOTSPOTS.md":
+        "| Date | Fichier |\n|---|---|\n| 2026-09-25 | src/shared/db.ts |\n| 2026-09-29 | src/app.ts |\n",
+      "docs/factory/LEARNINGS.md":
+        "## Règles actives\n- Valider le slug à la frontière.\n\n## Journal\n- hors section\n",
+    });
+    // Lundi 14, lundi 21 (aucune fusion), lundi 28 septembre 2026.
+    const prs = [
+      pr(40, "spec-0002-t1-schema", "MERGED", "2026-09-15T10:00:00Z"),
+      pr(41, "spec-0002-t2-route", "MERGED", "2026-09-20T23:00:00Z"),
+      pr(42, "spec-0002-t3-closing", "MERGED", "2026-09-30T09:00:00Z"),
+      { ...pr(43, "spec-0002-fix-9-slug", "MERGED", "2026-10-02T09:00:00Z"), title: "fix(spec-0002): encode the slug" },
+      { ...pr(44, "spec-0002-fix-10-case", "OPEN"), title: "fix(spec-0002): keep the case" },
+    ];
+    const result = progress.computeProgress({
+      files: delivered,
+      prs,
+      specDates: { "SPEC-0002": "2026-09-10T09:00:00Z" },
+      bugs: [{ state: "OPEN" }, { state: "CLOSED" }],
+      now: NOW,
+    });
+
+    it("cumulates merged tasks per week, without a hole on a week with no merge", () => {
+      expect(result.rhythm.weeks).toEqual([
+        { week: "2026-09-14", merged: 2, cumulative: 2 },
+        { week: "2026-09-21", merged: 0, cumulative: 2 },
+        { week: "2026-09-28", merged: 1, cumulative: 3 },
+      ]);
+    });
+
+    it("measures the lead time from the spec merge to its last task", () => {
+      expect(specOf(result, "SPEC-0002")).toMatchObject({ specifiedAt: "2026-09-10T09:00:00Z", leadTimeDays: 20 });
+      expect(result.rhythm.leadTimeMedianDays).toBe(20);
+      expect(specOf(result, "SPEC-0001").leadTimeDays).toBeNull();
+    });
+
+    it("counts merged fixes per spec, bugs, conflicts and active rules", () => {
+      expect(specOf(result, "SPEC-0002").fixes).toBe(1);
+      expect(result.rhythm).toMatchObject({ bugsOpen: 1, bugsTotal: 2, fixes: 1, conflicts: 2, activeRules: 1 });
+    });
+
+    it("stays empty on a project with nothing merged", () => {
+      const empty = progress.computeProgress({ files: project(), now: NOW }).rhythm;
+      expect(empty).toEqual({
+        weeks: [],
+        leadTimeMedianDays: null,
+        bugsOpen: 0,
+        bugsTotal: 0,
+        fixes: 0,
+        conflicts: 0,
+        activeRules: 0,
+      });
+    });
+  });
+
   describe("project steps", () => {
     const statuses = (result: Progress) => Object.fromEntries(result.project.steps.map((s) => [s.key, s.status]));
 
@@ -416,6 +488,36 @@ describe("scripts/progress.mjs", () => {
       const files = progress.readFromGit("HEAD", dir);
       expect([...files.keys()]).toEqual(["specs/ROADMAP.md"]);
       expect(files.get("specs/ROADMAP.md")).toBe(ROADMAP);
+    });
+
+    it("dates each spec from the commit that added it", () => {
+      fs.mkdirSync(path.join(dir, "specs/SPEC-0007-late"), { recursive: true });
+      fs.writeFileSync(path.join(dir, "specs/SPEC-0007-late/spec.md"), spec("SPEC-0007", "aucune"));
+      git("add", "specs/SPEC-0007-late");
+      const env = { ...process.env, GIT_COMMITTER_DATE: "2026-09-12T08:00:00Z" };
+      execFileSync(
+        "git",
+        [
+          "-c",
+          "user.name=test",
+          "-c",
+          "user.email=test@example.test",
+          "-c",
+          "commit.gpgsign=false",
+          "-c",
+          "core.hooksPath=/dev/null",
+          "commit",
+          "--quiet",
+          "-m",
+          "docs: spec",
+        ],
+        { cwd: dir, stdio: "ignore", env },
+      );
+      fs.appendFileSync(path.join(dir, "specs/SPEC-0007-late/spec.md"), "\nAmendée.\n");
+      git("-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "commit", "--quiet", "-am", "docs: amend");
+      const dates = progress.readSpecDates("HEAD", dir);
+      expect(Object.keys(dates)).toEqual(["SPEC-0007"]);
+      expect(Date.parse(dates["SPEC-0007"] ?? "")).toBe(Date.parse("2026-09-12T08:00:00Z"));
     });
 
     it("throws on a missing reference", () => {

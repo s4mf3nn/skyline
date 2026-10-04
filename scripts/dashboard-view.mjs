@@ -91,6 +91,8 @@ a{color:inherit;text-underline-offset:3px}
 .cell{display:inline-flex;align-items:center;gap:.375rem;white-space:nowrap}
 .alert{border-color:var(--warning)}
 svg.chart{width:100%;height:auto}.chart rect,.chart path{fill:var(--series)}.axis{fill:var(--muted-foreground);font-size:11px}
+.chart path.line{fill:none;stroke:var(--series);stroke-width:2;stroke-linejoin:round}.chart path.ref{fill:none;stroke:var(--muted-foreground);stroke-width:1;stroke-dasharray:4 4}
+.chart circle{fill:var(--series);stroke:var(--card);stroke-width:2}.axis.value{fill:var(--foreground);font-size:12px;font-weight:600}
 details.data>summary{cursor:pointer;color:var(--muted-foreground);font-size:.8125rem}
 ul.plain{margin:0;padding-left:1.125rem;display:grid;gap:.25rem}
 @media (max-width:760px){.spec>summary{grid-template-columns:minmax(0,1fr) 1rem}.spec .order,.spec .stage,.spec .tasks{grid-column:1}}
@@ -238,7 +240,10 @@ function specFacts(spec) {
     ["Contrat", contract],
     ["Scénarios cachés", spec.hasHoldout ? "présents" : "absents"],
     ["Plan", spec.plan ? spec.plan.status || "sans statut" : "aucun"],
+    ["Spécifiée le", spec.specifiedAt ? spec.specifiedAt.slice(0, 10) : "n/d"],
     ["Livrée le", spec.deliveredAt ? spec.deliveredAt.slice(0, 10) : "n/d"],
+    ["Délai spec → livrée", spec.leadTimeDays === null ? "n/d" : `${num(spec.leadTimeDays)} j`],
+    ["Correctifs fusionnés", String(spec.fixes)],
   ];
   return `<dl>${facts.map(([term, value]) => `<div><dt>${esc(term)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl>`;
 }
@@ -263,6 +268,48 @@ function roadmapCard(progress) {
   return card("Roadmap", "Chaque spec, son étape et ses tâches. Clique sur une ligne pour le détail.", body);
 }
 
+/** Courbe cumulée des tâches fusionnées par semaine, avec le total planifié en repère et sa vue en tableau. */
+function burnupChart(weeks, planned) {
+  if (weeks.length === 0) return '<p class="empty">Aucune tâche fusionnée pour l\'instant.</p>';
+  const width = 720;
+  const height = 200;
+  const box = { left: 8, right: 680, top: 28, bottom: 176 };
+  const max = Math.max(planned, weeks.at(-1).cumulative);
+  const x = (i) => (weeks.length === 1 ? box.left : box.left + (i / (weeks.length - 1)) * (box.right - box.left));
+  const y = (value) => box.bottom - (value / max) * (box.bottom - box.top);
+  const points = weeks.map((w, i) => ({ ...w, x: x(i).toFixed(1), y: y(w.cumulative).toFixed(1) }));
+  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`).join("");
+  const dots = points
+    .map(
+      (p) =>
+        `<circle cx="${p.x}" cy="${p.y}" r="4"><title>Semaine du ${esc(p.week)} : ${p.merged} fusionnée(s), ${p.cumulative} au total</title></circle>`,
+    )
+    .join("");
+  const last = points.at(-1);
+  const target = y(planned).toFixed(1);
+  const rows = weeks
+    .map((w) => `<tr><td>${esc(w.week)}</td><td class="num">${w.merged}</td><td class="num">${w.cumulative}</td></tr>`)
+    .join("");
+  return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Tâches fusionnées en cumul, de la semaine du ${esc(weeks[0].week)} à celle du ${esc(last.week)} : ${last.cumulative} sur ${planned} planifiées">
+<path class="ref" d="M${box.left} ${target}H${box.right}"/><text x="${box.left}" y="${(Number(target) - 6).toFixed(1)}" class="axis">${planned} planifiée(s)</text>
+<path class="line" d="${line}"/>${dots}
+<text x="${(Number(last.x) + 10).toFixed(1)}" y="${(Number(last.y) + 4).toFixed(1)}" class="axis value">${last.cumulative}</text>
+<text x="${box.left}" y="${height - 4}" class="axis">${esc(weeks[0].week)}</text><text x="${box.right}" y="${height - 4}" text-anchor="end" class="axis">${esc(last.week)}</text></svg>
+<details class="data"><summary>Voir les données</summary><div class="scroll"><table><tr><th>Semaine du</th><th class="num">Fusionnées</th><th class="num">Cumul</th></tr>${rows}</table></div></details>`;
+}
+
+function rhythmSection(rhythm, planned) {
+  const lead = rhythm.leadTimeMedianDays === null ? "n/d" : `${num(rhythm.leadTimeMedianDays)} j`;
+  return `<h2>Rythme</h2>
+<div class="grid cols-4">
+${tile({ label: "Délai médian spec → livrée", value: lead, hint: "de la spec à sa dernière tâche" })}
+${tile({ label: "Bugs ouverts", value: String(rhythm.bugsOpen), hint: `${rhythm.bugsTotal} au total · ${plural(rhythm.fixes, "correctif")} fusionné${rhythm.fixes > 1 ? "s" : ""}` })}
+${tile({ label: "Conflits", value: String(rhythm.conflicts), hint: "lignes de HOTSPOTS.md" })}
+${tile({ label: "Règles actives", value: String(rhythm.activeRules), hint: "10 au plus (LEARNINGS.md)" })}
+</div>
+${card("Tâches fusionnées en cumul", "Par semaine, tous plans confondus ; le repère est le total planifié.", burnupChart(rhythm.weeks, planned))}`;
+}
+
 function progressSections(progress) {
   if (!progress)
     return card(
@@ -276,6 +323,7 @@ function progressSections(progress) {
     summaryTiles(progress.totals),
     `<div class="grid cols-2">${actionsCard(progress.nextActions)}${blockersCard(progress.blockers)}</div>`,
     roadmapCard(progress),
+    rhythmSection(progress.rhythm, progress.totals.tasks),
   ].join("\n");
 }
 

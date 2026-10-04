@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { num, renderPage } from "./dashboard-view.mjs";
-import { computeProgress, readFromDisk, readFromGit } from "./progress.mjs";
+import { computeProgress, readFromDisk, readFromGit, readSpecDates } from "./progress.mjs";
 import { parseComment } from "./review-journal.mjs";
 import { collectRows, dailyTotals, transcriptDirs } from "./token-report.mjs";
 
@@ -155,6 +155,32 @@ function readMain() {
   return readFromGit("origin/main");
 }
 
+/** Issues `bug` (défauts échappés de METRICS.md), ou liste vide si `gh` est indisponible. */
+function fetchBugs() {
+  try {
+    const out = execFileSync(
+      "gh",
+      ["issue", "list", "--label", "bug", "--state", "all", "--limit", "300", "--json", "number,state"],
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    );
+    return JSON.parse(out);
+  } catch {
+    return [];
+  }
+}
+
+/** Dates d'arrivée des specs ; sans historique lisible (clone superficiel), les délais restent `n/d`. */
+function specDates(ref) {
+  try {
+    return readSpecDates(ref);
+  } catch {
+    return {};
+  }
+}
+
 /** Avancement du projet, ou null si origin/main est illisible : le reste du tableau de bord reste produit. */
 function collectProgress(prs, { local, github }) {
   let files;
@@ -170,6 +196,8 @@ function collectProgress(prs, { local, github }) {
     leases: readLeases(),
     lastRelease: github ? lastRun("release", "--status", "success") : null,
     gates: github ? (lastRun("gates", "--event", "push")?.conclusion ?? null) : null,
+    specDates: specDates(local ? "HEAD" : "origin/main"),
+    bugs: github ? fetchBugs() : [],
     now: new Date().toISOString(),
   });
 }

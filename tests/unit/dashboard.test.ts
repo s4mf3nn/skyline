@@ -163,6 +163,16 @@ describe("scripts/dashboard.mjs", () => {
       expect(html).toMatch(/<svg class="icon active"[^>]*>.*?<\/svg>En revue/);
     });
 
+    it("renders the rhythm with its cumulative chart and table view", () => {
+      const merged = { ...openPr, state: "MERGED", mergedAt: "2026-09-30T09:00:00Z" };
+      const done = progress.computeProgress({ files, prs: [merged], now: "2026-10-05T12:00:00.000Z" });
+      const html = render({ progress: done });
+      expect(html).toContain("Tâches fusionnées en cumul");
+      expect(html).toContain("<td>2026-09-28</td>");
+      expect(html).toContain("1 sur 1 planifiées");
+      expect(render({ progress: model })).toContain("Aucune tâche fusionnée");
+    });
+
     it("says so when the progress could not be read", () => {
       const html = render({ progress: null });
       expect(html).toContain("Avancement indisponible");

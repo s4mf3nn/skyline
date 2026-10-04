@@ -10,6 +10,10 @@ command = "PORT=$CONDUCTOR_PORT pnpm dev"
 default = true
 icon = "play"
 
+[scripts.run.dashboard]
+command = "pnpm dashboard && open .context/dashboard.html"
+icon = "chart-bar"
+
 [scripts.run.verify]
 command = "pnpm verify"
 icon = "check"

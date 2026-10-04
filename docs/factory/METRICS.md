@@ -13,7 +13,18 @@ Définitions :
 
 ## Tableau de bord
 
-`pnpm dashboard [--since AAAA-MM-JJ]` génère `.context/dashboard.html` (fichier statique, 30 jours par défaut) et liste les seuils dépassés ; `--json` pour `/retro`. Il croise trois sources :
+`pnpm dashboard [--since AAAA-MM-JJ]` génère `.context/dashboard.html` (fichier statique, sans serveur ni JavaScript) et liste les seuils dépassés et les bloquants ; `--json` pour `/retro`. Dans Conductor, le bouton « dashboard » le génère et l'ouvre. La page a deux parties.
+
+**Avancement du projet** (`scripts/progress.mjs`), lu sur `origin/main` (`--local` : l'arbre de travail du workspace ; `--no-github` : sans appel à `gh`, statuts déduits des fichiers seuls) :
+- **Étapes du projet** : initialisation, cadrage, socle (SPEC-0000), livraison prête (SPEC-0001), specs métier, en production.
+- **Roadmap** : pour chaque ligne de `specs/ROADMAP.md`, l'étape de la spec (à écrire, spécifiée, planifiée, en cours, livrée, en production) et le statut de chaque tâche de son plan (PR par nom de branche `spec-xxxx-t#-slug`, « en cours » par le bail).
+- **À faire maintenant** : la prochaine commande de chaque spec (`/new-spec`, `/plan`, `/implement`, `/land`, workflow `release`).
+- **Bloquants** : contrat encore en `it.todo`, questions ouvertes, dépendance non livrée ou illisible, plan `BLOQUÉ`, critère couvert par aucune tâche, PR rejetée par le relecteur, bail de plus de 24 h sans PR, `gates` rouge sur `main`.
+- **Rythme** : tâches fusionnées en cumul par semaine, délai médian de la fusion d'une spec à celle de sa dernière tâche, issues `bug` et PR `fix(spec-…)` fusionnées, conflits (`HOTSPOTS.md`), règles actives (`LEARNINGS.md`).
+
+Limites : une spec ou un plan en PR non fusionnée n'apparaît pas ; une spec dont aucune PR de tâche n'est retrouvée (branche hors convention, au-delà des 300 dernières PR) n'a ni date de livraison ni passage « en production ».
+
+**Santé de la factory**, sur 30 jours par défaut. Elle croise trois sources :
 - **Transcripts locaux** (`scripts/token-report.mjs`) : tokens pondérés par jour, moyenne par jour actif, par PR fusionnée. Limite : seuls les transcripts de ce poste sont lus.
 - **Journal des revues** : chaque passage du relecteur (verdict, niveau, modèle, bloquants, à corriger) est ajouté à `.context/review-log.jsonl` par `review-gate.mjs record`, puis publié par `/ship` en commentaire de la PR (`review-gate.mjs publish`, marqueur `<!-- factory-review-log -->`). Le corps de la PR ne garde que le dernier verdict ; le commentaire garde les rejets. Les PR ouvertes avant ce journal n'en ont pas : elles sont comptées à part, hors des taux de revue.
 - **PR GitHub** (`gh`) : fusionnées, fermées sans fusion, délai médian.

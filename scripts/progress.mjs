@@ -17,6 +17,8 @@ import { coveredCriteria, parsePlan, section } from "./split-plan.mjs";
 export const STAGES = ["to-write", "specified", "planned", "in-progress", "delivered", "released"];
 
 const INIT_SCRIPT = "scripts/init-factory.mjs";
+const HOTSPOTS = "docs/factory/HOTSPOTS.md";
+const LEARNINGS = "docs/factory/LEARNINGS.md";
 const TRACKED = [
   "specs",
   ACCEPTANCE_DIR,
@@ -26,6 +28,8 @@ const TRACKED = [
   "docs/factory/WORKFLOW.md",
   "package.json",
   INIT_SCRIPT,
+  HOTSPOTS,
+  LEARNINGS,
 ];
 const TEXT_FILE = /\.(md|json|mjs|tsx?)$/;
 const SPEC_FILE = /^specs\/(SPEC-\d{4})-[^/]+\/spec\.md$/;
@@ -55,6 +59,27 @@ export function readFromGit(ref, cwd = process.cwd()) {
 export function readFromDisk(dir = process.cwd()) {
   const paths = TRACKED.flatMap((tracked) => walk(dir, tracked)).filter((p) => TEXT_FILE.test(p));
   return new Map(paths.map((p) => [p, fs.readFileSync(path.join(dir, p), "utf8")]));
+}
+
+/**
+ * Date à laquelle chaque `spec.md` est arrivé sur la référence (fusion de la PR de spec) : `{ "SPEC-0002": date ISO }`.
+ * Une spec sans date (historique indisponible) est simplement absente.
+ */
+export function readSpecDates(ref, cwd = process.cwd()) {
+  const log = execFileSync(
+    "git",
+    ["log", "--diff-filter=A", "--name-only", "--format=@%cI", ref, "--", "specs/*/spec.md"],
+    { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] },
+  );
+  const dates = {};
+  let date = null;
+  for (const line of log.split("\n")) {
+    if (line.startsWith("@")) date = line.slice(1);
+    const id = SPEC_FILE.exec(line)?.[1];
+    // Le journal va du plus récent au plus ancien : la dernière date vue est celle du premier ajout.
+    if (id && date) dates[id] = date;
+  }
+  return dates;
 }
 
 function walk(dir, relative) {
@@ -231,7 +256,16 @@ function deliveredAt(spec) {
   return dates.length > 0 ? dates.sort().at(-1) : null;
 }
 
-function withStatus(spec, { prs, leases, lastRelease }) {
+/** PR de correctif fusionnées d'une spec (`fix(spec-xxxx): ...`, posées par `/fix`). */
+function mergedFixes(specId, prs) {
+  if (!specId) return 0;
+  const prefix = `fix(${specId.toLowerCase()})`;
+  return prs.filter((pr) => pr.mergedAt && (pr.title ?? "").toLowerCase().startsWith(prefix)).length;
+}
+
+const daysBetween = (from, to) => (Date.parse(to) - Date.parse(from)) / 864e5;
+
+function withStatus(spec, { prs, leases, lastRelease, specDates }) {
   const plan = spec.plan && {
     ...spec.plan,
     tasks: spec.plan.tasks.map((task) => taskProgress(spec.id, task, prs, leases)),
@@ -240,7 +274,16 @@ function withStatus(spec, { prs, leases, lastRelease }) {
   const at = deliveredAt(tracked);
   // Une livraison part de main : elle contient toute spec dont la dernière tâche a été fusionnée avant son lancement.
   const released = Boolean(lastRelease && at && at <= lastRelease.createdAt);
-  return { ...tracked, deliveredAt: at, stage: stageOf(tracked, released), docPr: openDocPr(spec.id, prs) };
+  const specifiedAt = specDates[spec.id] ?? null;
+  return {
+    ...tracked,
+    specifiedAt,
+    deliveredAt: at,
+    leadTimeDays: specifiedAt && at ? daysBetween(specifiedAt, at) : null,
+    fixes: mergedFixes(spec.id, prs),
+    stage: stageOf(tracked, released),
+    docPr: openDocPr(spec.id, prs),
+  };
 }
 
 // --- Bloquants et prochaines actions ---
@@ -396,6 +439,59 @@ function byMilestone(specs) {
   }));
 }
 
+// --- Rythme ---
+
+/** Lundi (UTC) de la semaine d'une date ISO, au format AAAA-MM-JJ. */
+function weekOf(iso) {
+  const date = new Date(iso);
+  const sinceMonday = (date.getUTCDay() + 6) % 7;
+  return new Date(date.getTime() - sinceMonday * 864e5).toISOString().slice(0, 10);
+}
+
+/** Tâches fusionnées par semaine et leur cumul, sans trou entre la première et la dernière semaine. */
+function weeklyMerges(specs) {
+  const merges = specs.flatMap((spec) => spec.plan?.tasks ?? []).flatMap((task) => task.pr?.mergedAt ?? []);
+  if (merges.length === 0) return [];
+  const perWeek = new Map();
+  for (const at of merges) perWeek.set(weekOf(at), (perWeek.get(weekOf(at)) ?? 0) + 1);
+  const weeks = [...perWeek.keys()].sort();
+  const out = [];
+  let cumulative = 0;
+  for (let week = weeks[0]; week <= weeks.at(-1); week = weekOf(new Date(Date.parse(week) + 7 * 864e5).toISOString())) {
+    const merged = perWeek.get(week) ?? 0;
+    cumulative += merged;
+    out.push({ week, merged, cumulative });
+  }
+  return out;
+}
+
+function median(values) {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/** Lignes de données d'un tableau Markdown dont la première cellule est une date. */
+const datedRows = (text) => text.split("\n").filter((line) => /^\|\s*\d{4}-\d{2}-\d{2}\s*\|/.test(line)).length;
+
+function activeRules(text) {
+  const rules = section(text.split("\n"), "Règles actives") ?? "";
+  return rules.split("\n").filter((line) => line.startsWith("- ") && line.trim() !== "- (vide)").length;
+}
+
+function rhythmOf(files, specs, bugs) {
+  return {
+    weeks: weeklyMerges(specs),
+    leadTimeMedianDays: median(specs.map((spec) => spec.leadTimeDays).filter((days) => days !== null)),
+    bugsOpen: bugs.filter((bug) => bug.state === "OPEN").length,
+    bugsTotal: bugs.length,
+    fixes: specs.reduce((count, spec) => count + spec.fixes, 0),
+    conflicts: datedRows(files.get(HOTSPOTS) ?? ""),
+    activeRules: activeRules(files.get(LEARNINGS) ?? ""),
+  };
+}
+
 function projectName(files) {
   try {
     return JSON.parse(files.get("package.json") ?? "{}").name ?? "";
@@ -409,10 +505,20 @@ function projectName(files) {
  * `files` : Map chemin → texte (`readFromGit` ou `readFromDisk`) ; `prs` : PR GitHub (number, title, state, mergedAt,
  * headRefName, url, comments) ; `leases` : baux actifs (`scripts/lease.mjs`) ; `lastRelease` : dernier run vert du
  * workflow `release` (`{ createdAt }`) ou null ; `gates` : conclusion du dernier run `gates` sur main ou null ;
+ * `specDates` : date d'arrivée de chaque spec (`readSpecDates`) ; `bugs` : issues `bug` (`{ state }`) ;
  * `now` : date ISO de l'appel.
  */
-export function computeProgress({ files, prs = [], leases = [], lastRelease = null, gates = null, now }) {
-  const specs = listSpecs(files).map((spec) => withStatus(spec, { prs, leases, lastRelease }));
+export function computeProgress({
+  files,
+  prs = [],
+  leases = [],
+  lastRelease = null,
+  gates = null,
+  specDates = {},
+  bugs = [],
+  now,
+}) {
+  const specs = listSpecs(files).map((spec) => withStatus(spec, { prs, leases, lastRelease, specDates }));
   const steps = projectSteps(files, specs, lastRelease);
   const blockers = specs.flatMap((spec) => specBlockers(spec, specs, now));
   if (gates === "failure")
@@ -432,6 +538,7 @@ export function computeProgress({ files, prs = [], leases = [], lastRelease = nu
     specs,
     totals: { ...countTasks(specs), blockers: blockers.length },
     milestones: byMilestone(specs),
+    rhythm: rhythmOf(files, specs, bugs),
     blockers,
     nextActions: nextActions(steps, specs, blockers),
   };

@@ -4,12 +4,15 @@
 // Sources : transcripts Claude Code locaux (tokens par jour, via token-report.mjs) et PR GitHub (`gh`) avec le
 // commentaire « Journal des revues » posé par `review-gate.mjs publish` (rejets du relecteur, passages).
 // Usage :
-//   node scripts/dashboard.mjs [--since AAAA-MM-JJ] [--out <fichier>] [--no-tokens] [--json]
+//   node scripts/dashboard.mjs [--since AAAA-MM-JJ] [--out <fichier>] [--no-tokens] [--json] [--local]
 // Par défaut : 30 derniers jours, écrit dans .context/dashboard.html.
+// `--json` ajoute l'avancement du projet (`progress`, voir scripts/progress.mjs), lu sur origin/main : un workspace
+// est sur une branche de tâche, donc en retard sur ce qui est fusionné. `--local` lit l'arbre de travail à la place.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { computeProgress, readFromDisk, readFromGit } from "./progress.mjs";
 import { parseComment } from "./review-journal.mjs";
 import { collectRows, dailyTotals, transcriptDirs } from "./token-report.mjs";
 
@@ -188,11 +191,71 @@ function fetchPrs() {
       "--limit",
       "300",
       "--json",
-      "number,title,state,createdAt,mergedAt,closedAt,comments",
+      "number,title,state,createdAt,mergedAt,closedAt,comments,headRefName,url",
     ],
     { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
   );
   return JSON.parse(out);
+}
+
+/** Dernier run d'un workflow sur main, ou null (aucun run, workflow absent, `gh` indisponible). */
+function lastRun(workflow, ...filters) {
+  try {
+    const out = execFileSync(
+      "gh",
+      [
+        "run",
+        "list",
+        "--workflow",
+        workflow,
+        "--branch",
+        "main",
+        "--limit",
+        "1",
+        "--json",
+        "conclusion,createdAt",
+        ...filters,
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    );
+    return JSON.parse(out)[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function readLeases() {
+  const file = path.join(process.env.CONDUCTOR_ROOT_PATH ?? process.cwd(), ".factory", "leases.json");
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : [];
+}
+
+/** Fichiers du projet sur origin/main à jour ; hors ligne, la dernière copie connue suffit. */
+function readMain() {
+  try {
+    execFileSync("git", ["fetch", "--quiet", "origin"], { stdio: "ignore" });
+  } catch {
+    // Hors ligne : on lit origin/main tel qu'il a été récupéré la dernière fois.
+  }
+  return readFromGit("origin/main");
+}
+
+/** Avancement du projet, ou null si origin/main est illisible : le reste du tableau de bord reste produit. */
+function collectProgress(prs, local) {
+  let files;
+  try {
+    files = local ? readFromDisk() : readMain();
+  } catch {
+    console.error("Avancement indisponible : origin/main est illisible (dépôt sans remote ?). Relance avec --local.");
+    return null;
+  }
+  return computeProgress({
+    files,
+    prs,
+    leases: readLeases(),
+    lastRelease: lastRun("release", "--status", "success"),
+    gates: lastRun("gates", "--event", "push")?.conclusion ?? null,
+    now: new Date().toISOString(),
+  });
 }
 
 function main() {
@@ -202,10 +265,12 @@ function main() {
     return i >= 0 ? args[i + 1] : undefined;
   };
   const since = opt("--since") ?? new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-  const stats = computeStats(fetchPrs(), since);
+  const prs = fetchPrs();
+  const stats = computeStats(prs, since);
   const days = args.includes("--no-tokens") ? [] : dailyTotals(collectRows(transcriptDirs(), { since }), since);
   if (args.includes("--json")) {
-    console.log(JSON.stringify({ stats, days, alerts: alerts(stats) }, null, 2));
+    const progress = collectProgress(prs, args.includes("--local"));
+    console.log(JSON.stringify({ stats, days, alerts: alerts(stats), progress }, null, 2));
     return;
   }
   const out = opt("--out") ?? path.join(".context", "dashboard.html");

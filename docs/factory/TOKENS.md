@@ -18,7 +18,7 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 | 6 | Boucle de développement avec contrôles ciblés ; `pnpm verify` complet seulement avant de commiter | `/implement` |
 | 7 | `pnpm verify:quiet` : une ligne si vert, erreurs filtrées sinon, log complet dans `.context/verify.log` | `scripts/verify-quiet.mjs`, `package.json`, `/implement`, `/fix`, `/ship`, `/resolve`, `conflict-resolver` |
 | 8 | Lectures en parallèle, pas de relecture après édition | `CLAUDE.md` (section « Sobriété en tokens ») |
-| 9 | Pré-revue par script : périmètre, contrat, dépendances déclarées, section Context7 | `scripts/pre-review.mjs check`, `/review` |
+| 9 | Pré-revue par script : périmètre, contrat, dépendances déclarées, section Context7, routes fines, frontières entre features, conventions de code de `src/` (règles désactivées, horloge directe, `throw new Error`) | `scripts/pre-review.mjs check`, `/review` |
 | 10 | Diff filtré pour le relecteur (sans lockfile, `*.gen.ts`, tests de contrat) | `scripts/pre-review.mjs brief` |
 | 11 | Niveau de revue selon le risque (`full` seulement pour `review:full`, `standard` pour `risk:high`/`risk:medium`, `light` sinon, d'après `.github/labeler.yml`) | `scripts/pre-review.mjs level`, `reviewer.md` |
 | 12 | Passages 2 et 3 : seul le diff depuis le commit relu est lu | `reviewer.md` |
@@ -42,6 +42,6 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 À connaître avant d'en retirer une : si tu retires un script, retire aussi ses appels.
 - 1 et 2 vivent dans `split-plan.mjs` ; `CLAUDE.md`, `/implement` et `reviewer.md` l'appellent.
 - 7 : `/implement`, `/fix`, `/ship`, `/resolve` et `conflict-resolver` appellent `verify:quiet`.
-- 9 à 11 : `/review` et `reviewer.md` appellent `pre-review.mjs`.
+- 9 à 11 : `/review` et `reviewer.md` appellent `pre-review.mjs` ; si tu retires un contrôle de la mesure 9, rends-le à `reviewer.md` (qui ne le refait plus).
 - 4 et 15 : `CLAUDE.md` pointe vers `CONTEXT7.md` et `DOMAIN-SECURITY.md`.
-- Les tests des scripts sont `tests/unit/{split-plan,verify-quiet,pre-review,token-report}.test.ts`.
+- Les tests des scripts sont `tests/unit/{split-plan,verify-quiet,pre-review,lint-edit,token-report}.test.ts`.

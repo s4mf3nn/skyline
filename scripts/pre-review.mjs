@@ -12,7 +12,9 @@
 // contrat (check-contract), dépendances ajoutées et déclarées dans .pr-summary.md, section « Documentation consultée
 // (Context7) » remplie, test de non-régression présent sur une branche de correctif (spec-xxxx-fix-*), routes fines
 // dans les dossiers de routage par fichiers (`factory.routeDirs` et `factory.routeIgnore` de package.json), frontières
-// entre features (une feature n'importe que `shared/` et le point d'entrée public des autres).
+// entre features (une feature n'importe que `shared/` et le point d'entrée public des autres), conventions de code dans
+// `src/` (pas de `biome-ignore` ni de directive `@ts-` : ignore, expect-error, nocheck ; dans les features, ni horloge
+// directe `Date.now()` / `new Date()` ni `throw new Error(`).
 // Variables : BASE_REF (défaut origin/main), CONDUCTOR_ROOT_PATH et CONDUCTOR_WORKSPACE_PATH (baux).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -252,6 +254,50 @@ export function boundaryViolations(file, text, entries) {
   });
 }
 
+// Chaque règle : le motif refusé, où il l'est (`src` = tout `src/`, `features` = les features seulement) et quoi faire.
+const CONVENTION_RULES = [
+  {
+    pattern: /\bbiome-ignore\b/,
+    scope: "src",
+    fix: "corrige le code au lieu de désactiver la règle Biome",
+  },
+  {
+    // Les directives `@ts-` (ignore, expect-error, nocheck) éteignent le typage au lieu de le satisfaire.
+    pattern: /@ts-(?:ignore|expect-error|nocheck)\b/,
+    scope: "src",
+    fix: "corrige le typage au lieu de le désactiver",
+  },
+  {
+    // `new Date(valeur)` avec un argument reste permis : il ne lit pas l'horloge.
+    pattern: /\bDate\.now\s*\(\s*\)|\bnew\s+Date\s*\(\s*\)/,
+    scope: "features",
+    fix: "passe par l'interface Clock de src/shared/ (un faux la remplace dans les tests)",
+  },
+  {
+    pattern: /\bthrow\s+new\s+Error\s*\(/,
+    scope: "features",
+    fix: "lève une erreur typée de src/shared/errors.ts",
+  },
+];
+
+// Un test ou un fichier généré n'est pas contrôlé : le test peut forcer un cas, le généré n'est pas écrit à la main.
+const GENERATED_FILE = /\.gen\.tsx?$/;
+const SRC_PATH = /(?:^|\/)src\//;
+
+/**
+ * Violations de conventions d'un fichier `src/` : `{ match, fix }` (texte trouvé et quoi faire à la place), une par
+ * règle au plus. Vide pour un test, un fichier généré ou un fichier hors de `src/`. `src/shared/` n'est pas une
+ * feature : il peut lire l'horloge réelle et lever `Error`.
+ */
+export function conventionViolations(file, text) {
+  if (TEST_FILE.test(file) || GENERATED_FILE.test(file) || !SRC_PATH.test(file)) return [];
+  const inFeature = FEATURE_PATH.test(file);
+  return CONVENTION_RULES.filter((rule) => rule.scope === "src" || inFeature).flatMap((rule) => {
+    const found = rule.pattern.exec(text);
+    return found ? [{ match: found[0], fix: rule.fix }] : [];
+  });
+}
+
 /** Travail de spec si bail, HEAD détaché, branche de tâche `[préfixe/]spec-xxxx-t#-*` ou de correctif ; sinon hors spec (outillage). */
 export function workMode(hasLease, branch) {
   const isTaskBranch = /^(?:[^/]+\/)?spec-\d+-t\d+(-|$)/i.test(branch);
@@ -329,6 +375,12 @@ export function runChecks() {
       problems.push(
         `import interne d'une autre feature : ${f} importe "${specifier}" (passe par son point d'entrée, ${entries.join(", ")}, ou par src/shared/)`,
       );
+  }
+
+  // Conventions de CLAUDE.md que ni Biome ni tsc ne voient : le relecteur n'a plus à les chercher.
+  for (const f of files.filter((file) => /\.tsx?$/.test(file) && fs.existsSync(file))) {
+    for (const { match, fix } of conventionViolations(f, fs.readFileSync(f, "utf8")))
+      problems.push(`convention de code non respectée : ${f} contient \`${match}\` (${fix})`);
   }
 
   try {

@@ -38,7 +38,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **`.env` / `.env.local`** : variables d'environnement, hors git. Le `.env` vit dans le dépôt principal et est relié dans chaque workspace ; `.env.local` est écrit par le setup pour ce qui est propre au workspace (l'adresse de sa base). Les agents n'ont pas le droit de les lire.
 - **Port** : chaque workspace reçoit le sien (`$CONDUCTOR_PORT`), pour que plusieurs applications locales (serveur d'API, serveur de développement web ou mobile) tournent en même temps.
 - **Permissions de l'agent** : liste des commandes autorisées sans confirmation et des actions refusées (`.claude/settings.json`). Sont refusés : le push forcé, `--no-verify`, la lecture des `.env`.
-- **Hook d'agent** : commande lancée automatiquement après une action de l'agent. La factory en a un : le formatage par Biome après chaque édition de fichier.
+- **Hook d'agent** : commande lancée automatiquement après une action de l'agent. La factory en a un : Biome sur le fichier édité (corrections automatiques, puis erreurs restantes renvoyées à l'agent), `scripts/lint-edit.mjs`.
 - **MCP** : protocole par lequel un agent accède à des outils externes. La factory en garde deux pour le projet (Context7, et Sentry en lecture seule) et refuse les autres connecteurs, qui alourdissent le contexte.
 - **`.context/`** : dossier du workspace ignoré par git, pour les fichiers de travail (verdict de revue, log de vérification).
 - **`.factory/`** : dossier du dépôt principal ignoré par git, visible de tous les workspaces. Il contient les baux.
@@ -138,7 +138,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 
 - **Revue adversariale** : relecture dont l'objectif est de trouver ce qui est faux, pas de valider. Faite par le `reviewer` (ou le `spec-reviewer` pour une PR de spec, choix fait par `scripts/pre-review.mjs kind`) dans un contexte vierge, jamais par l'agent qui a écrit le code.
 - **Revue locale** : la revue a lieu dans le workspace, avant le push. Il n'y a pas de revue par agent en CI, donc pas de clé d'API en CI.
-- **Pré-revue** : contrôles par script, sans modèle, faits avant la revue : périmètre, contrat, dépendances déclarées, section Context7 remplie, routes fines, frontières entre features (`scripts/pre-review.mjs check`). Une violation se corrige avant de lancer le relecteur et ne compte pas comme un passage.
+- **Pré-revue** : contrôles par script, sans modèle, faits avant la revue : périmètre, contrat, dépendances déclarées, section Context7 remplie, routes fines, frontières entre features, conventions de code de `src/` (règle désactivée, horloge directe, `throw new Error` brut) (`scripts/pre-review.mjs check`). Une violation se corrige avant de lancer le relecteur et ne compte pas comme un passage.
 - **Brief** : ce que reçoit le relecteur : niveau de revue, résultat de la pré-revue, fichiers modifiés et diff filtré (sans lockfile, fichiers générés ni tests de contrat).
 - **Niveau de revue** : ampleur de la relecture, déduite des chemins touchés : `full` (zone `review:full` : auth, administration, migrations, config, relecteur sur Opus), `standard` (risque élevé ou moyen), `light` (risque faible).
 - **Modèle du relecteur** : au niveau `full`, le relecteur tourne sur un autre modèle que celui du producteur, parce qu'un modèle qui relit son propre code répète ses erreurs au lieu de les voir. Le modèle utilisé est tracé dans le bloc « Revue locale » ; `review-gate.mjs record` refuse un verdict `full` sans `--model`, mais ne vérifie pas que le modèle diffère de celui du producteur. Les deux modèles restent de la même famille : la décorrélation est partielle.
@@ -218,6 +218,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 
 | Script | Rôle |
 |---|---|
+| `lint-edit.mjs` | Hook d'édition : Biome sur le fichier édité, erreurs renvoyées à l'agent |
 | `lease.mjs` | Baux de périmètre entre workspaces |
 | `plan-gate.mjs` | Le plan et la tâche sont-ils sur `origin/main` ? Les specs dont elle dépend sont-elles livrées ? |
 | `split-plan.mjs` | Extrait d'une tâche et de ses critères |

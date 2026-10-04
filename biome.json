@@ -24,6 +24,35 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["src/**", "**/src/**"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "error" },
+          "style": { "noNonNullAssertion": "error" },
+          "complexity": { "noExcessiveCognitiveComplexity": "error" }
+        }
+      }
+    },
+    {
+      "includes": ["src/shared/**", "**/src/shared/**"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "style": { "noNonNullAssertion": "warn" },
+          "complexity": { "noExcessiveCognitiveComplexity": "off" }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double"

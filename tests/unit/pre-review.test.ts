@@ -19,6 +19,7 @@ interface PreReview {
   featureEntries(pkg: unknown): string[];
   importSpecifiers(text: string): string[];
   boundaryViolations(file: string, text: string, entries: string[]): string[];
+  conventionViolations(file: string, text: string): { match: string; fix: string }[];
   labelGlobs(text: string, label: string): string[];
   labelNames(text: string): string[];
   deadZones(text: string, files: string[]): { label: string; glob: string }[];
@@ -362,5 +363,71 @@ describe("scripts/pre-review.mjs", () => {
       "@/features/links/repo",
     ]);
     expect(mod.boundaryViolations(file, 'import { x } from "@/shared/clock";', ["index"])).toEqual([]);
+  });
+
+  describe("conventionViolations", () => {
+    const feature = "src/features/events/service.ts";
+    const matches = (file: string, text: string) => mod.conventionViolations(file, text).map((v) => v.match);
+
+    it("rejects biome-ignore anywhere in src", () => {
+      const text = "// biome-ignore lint/suspicious/noExplicitAny: legacy\nconst a = 1;";
+      expect(matches(feature, text)).toEqual(["biome-ignore"]);
+      expect(matches("src/shared/clock.ts", text)).toEqual(["biome-ignore"]);
+    });
+
+    it("rejects TypeScript check suppressions", () => {
+      expect(matches(feature, "// @ts-ignore\nconst a = 1;")).toEqual(["@ts-ignore"]);
+      expect(matches(feature, "// @ts-expect-error\nconst a = 1;")).toEqual(["@ts-expect-error"]);
+      expect(matches("src/shared/db.ts", "// @ts-nocheck\nconst a = 1;")).toEqual(["@ts-nocheck"]);
+    });
+
+    it("rejects direct clock reads in a feature", () => {
+      expect(matches(feature, "const now = Date.now();")).toEqual(["Date.now()"]);
+      expect(matches(feature, "const now = new Date();")).toEqual(["new Date()"]);
+      expect(matches(feature, "const now = new Date( );")).toEqual(["new Date( )"]);
+    });
+
+    it("rejects a raw Error throw in a feature", () => {
+      expect(matches(feature, 'throw new Error("boom");')).toEqual(["throw new Error("]);
+    });
+
+    it("explains what to do instead", () => {
+      const [violation] = mod.conventionViolations(feature, 'throw new Error("boom");');
+      expect(violation?.fix).toContain("src/shared/errors.ts");
+    });
+
+    it("reports one violation per rule", () => {
+      const text = "Date.now();\nthrow new Error('x');\n// @ts-ignore";
+      expect(matches(feature, text)).toEqual(["@ts-ignore", "Date.now()", "throw new Error("]);
+    });
+
+    it("applies the rules in a multi-application repository", () => {
+      const file = "apps/api/src/features/events/service.ts";
+      expect(matches(file, "Date.now();")).toEqual(["Date.now()"]);
+      expect(matches(file, "// biome-ignore lint/x: y")).toEqual(["biome-ignore"]);
+    });
+
+    it("allows new Date with an argument", () => {
+      expect(matches(feature, "const d = new Date(value);")).toEqual([]);
+      expect(matches(feature, "const d = new Date(0);")).toEqual([]);
+    });
+
+    it("allows the real clock and raw errors in src/shared", () => {
+      expect(matches("src/shared/clock.ts", "export const now = () => new Date(Date.now());")).toEqual([]);
+      expect(matches("src/shared/errors.ts", 'throw new Error("boom");')).toEqual([]);
+    });
+
+    it("ignores test files and generated files", () => {
+      const text = "// biome-ignore lint/x: y\n// @ts-expect-error\nDate.now();\nthrow new Error('x');";
+      expect(matches("src/features/events/service.test.ts", text)).toEqual([]);
+      expect(matches("src/features/events/screen.test.tsx", text)).toEqual([]);
+      expect(matches("src/features.gen.ts", text)).toEqual([]);
+    });
+
+    it("ignores files outside src", () => {
+      const text = "// biome-ignore lint/x: y\nDate.now();\nthrow new Error('x');";
+      expect(matches("scripts/lease.mjs", text)).toEqual([]);
+      expect(matches("tests/unit/a.ts", text)).toEqual([]);
+    });
   });
 });

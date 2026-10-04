@@ -44,4 +44,4 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 - 7 : `/implement`, `/fix`, `/ship`, `/resolve` et `conflict-resolver` appellent `verify:quiet`.
 - 9 à 11 : `/review` et `reviewer.md` appellent `pre-review.mjs` ; si tu retires un contrôle de la mesure 9, rends-le à `reviewer.md` (qui ne le refait plus).
 - 4 et 15 : `CLAUDE.md` pointe vers `CONTEXT7.md` et `DOMAIN-SECURITY.md`.
-- Les tests des scripts sont `tests/unit/{split-plan,verify-quiet,pre-review,lint-edit,token-report}.test.ts`.
+- Les tests des scripts sont `tests/unit/{split-plan,verify-quiet,pre-review,lint-edit,ask-questions,token-report}.test.ts`.

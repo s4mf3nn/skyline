@@ -46,6 +46,10 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 <!-- À compléter : une phrase qui résume les règles et nomme les zones qui déclenchent la lecture du détail. -->
 Détail et zones à risque élevé : `docs/factory/DOMAIN-SECURITY.md` (à lire avant toute tâche sur une entrée utilisateur, une écriture exposée (route, formulaire, commande) ou une zone à risque élevé) et `docs/factory/RISK.md`.
 
+## Questions à l'humain
+
+Dès qu'une réponse contient une ou plusieurs questions pour l'humain, pose-les avec l'outil de questions interactif (`AskUserQuestion` sous Claude Code), pas en texte libre : une question par entrée, 2 à 4 options concrètes avec ta recommandation en premier, 6 questions au plus par réponse (l'outil en prend 4 par appel : au-delà, enchaîne un second appel). L'humain garde toujours la réponse libre (« Other », ajoutée par l'outil) si aucune option ne convient : n'ajoute pas d'option « Autre » et ne force jamais un choix. Les réponses restent ainsi regroupées et retrouvables dans la conversation. Seule exception : une question purement rhétorique ou qui n'attend pas de réponse. Si l'outil n'existe pas dans l'outil d'agent utilisé, pose les questions en liste numérotée. Le hook `scripts/ask-questions.mjs` refuse une réponse finale qui pose une question en texte libre.
+
 ## Contexte à charger
 
 Ne lis que ce dont la tâche a besoin : ce fichier, la spec, le plan, les fichiers de ton périmètre, et au besoin `docs/adr/` et `docs/DOMAIN.md` (vocabulaire, invariants, cycles de vie).

@@ -38,7 +38,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **`.env` / `.env.local`** : variables d'environnement, hors git. Le `.env` vit dans le dépôt principal et est relié dans chaque workspace ; `.env.local` est écrit par le setup pour ce qui est propre au workspace (l'adresse de sa base). Les agents n'ont pas le droit de les lire.
 - **Port** : chaque workspace reçoit le sien (`$CONDUCTOR_PORT`), pour que plusieurs applications locales (serveur d'API, serveur de développement web ou mobile) tournent en même temps.
 - **Permissions de l'agent** : liste des commandes autorisées sans confirmation et des actions refusées (`.claude/settings.json`). Sont refusés : le push forcé, `--no-verify`, la lecture des `.env`.
-- **Hook d'agent** : commande lancée automatiquement après une action de l'agent. La factory en a un : Biome sur le fichier édité (corrections automatiques, puis erreurs restantes renvoyées à l'agent), `scripts/lint-edit.mjs`.
+- **Hook d'agent** : commande lancée automatiquement après une action de l'agent. La factory en a deux : Biome sur le fichier édité (corrections automatiques, puis erreurs restantes renvoyées à l'agent), `scripts/lint-edit.mjs` ; et le refus d'une réponse finale qui pose des questions en texte libre au lieu de l'outil de questions interactif, `scripts/ask-questions.mjs`.
 - **MCP** : protocole par lequel un agent accède à des outils externes. La factory en garde deux pour le projet (Context7, et Sentry en lecture seule) et refuse les autres connecteurs, qui alourdissent le contexte.
 - **`.context/`** : dossier du workspace ignoré par git, pour les fichiers de travail (verdict de revue, log de vérification).
 - **`.factory/`** : dossier du dépôt principal ignoré par git, visible de tous les workspaces. Il contient les baux.
@@ -221,6 +221,7 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 | Script | Rôle |
 |---|---|
 | `lint-edit.mjs` | Hook d'édition : Biome sur le fichier édité, erreurs renvoyées à l'agent |
+| `ask-questions.mjs` | Hook de fin de réponse : questions en texte libre renvoyées à l'agent, à poser avec l'outil de questions |
 | `lease.mjs` | Baux de périmètre entre workspaces |
 | `plan-gate.mjs` | Le plan et la tâche sont-ils sur `origin/main` ? Les specs dont elle dépend sont-elles livrées ? |
 | `split-plan.mjs` | Extrait d'une tâche et de ses critères |

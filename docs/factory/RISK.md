@@ -24,5 +24,5 @@ Toute PR a passé `pnpm verify`, une revue locale `OK` du subagent `reviewer` (t
 
 1. La spec était-elle la bonne ?
 2. Les tests couvrent-ils réellement la spec ?
-3. Le résumé de l'agent et le verdict du relecteur.
+3. Le résumé de l'agent et le verdict du relecteur, dont les écarts à la conception validée dans la PR de plan (« Décisions prises »).
 4. Le code, uniquement aux endroits signalés comme incertains ou sensibles.

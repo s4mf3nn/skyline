@@ -87,6 +87,8 @@ Ce que la factory n'est pas : un agent autonome qui décide du produit, ni une r
 - **Tâche (T#)** : unité de travail qu'un agent peut finir dans un contexte propre. Elle déclare un périmètre, ses dépendances, son risque, les critères couverts et sa définition de fini. Identifiant complet : `SPEC-XXXX-T#`.
 - **Périmètre** : liste des chemins (fichiers ou dossiers, pas de globs) qu'une tâche a le droit de modifier. Hors périmètre, l'agent s'arrête et le signale.
 - **Définition de fini** : les tests qui doivent passer pour que la tâche soit terminée.
+- **Conception** : bloc d'une tâche de risque moyen ou élevé qui fixe la forme du code avant son écriture (arborescence, signatures, arbre d'appels, ordre de construction en tranches verticales, scénarios de changement). L'humain la valide dans la PR de plan ; `/implement` la suit, le `reviewer` signale les écarts.
+- **Scénario de changement** : évolution probable citée dans une conception, avec les fichiers qu'elle obligerait à modifier. Sert à repérer avant l'écriture une règle dispersée dans plusieurs fichiers.
 - **Groupe** : ensemble de tâches lancées en parallèle. Deux tâches dont les périmètres se recoupent ne sont jamais dans le même groupe. Un groupe démarre après la fusion du précédent.
 - **Tâche « contrat »** : tâche placée dans un groupe antérieur pour figer une interface partagée par plusieurs tâches.
 - **Préambule du plan** : texte avant le premier groupe, réservé aux constats et interfaces communs à plusieurs tâches.

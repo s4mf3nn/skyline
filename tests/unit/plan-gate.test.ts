@@ -212,13 +212,16 @@ describe("scripts/plan-gate.mjs check", () => {
   });
 });
 
-const SEQUENTIAL = "# Plan\nStatut : PRÊT\n\n## Groupe 1\n### T1 : outillage\n\n## Groupe 2\n### T2 : api\n";
-const PARALLEL = "# Plan\nStatut : PRÊT\n\n## Groupe 1 (parallèle)\n### T1 : api\n### T2: mobile\n";
+const LOW = "- Risque : faible (outillage)\n";
+const SEQUENTIAL = `# Plan\nStatut : PRÊT\n\n## Groupe 1\n### T1 : outillage\n${LOW}\n## Groupe 2\n### T2 : api\n${LOW}`;
+const PARALLEL = `# Plan\nStatut : PRÊT\n\n## Groupe 1 (parallèle)\n### T1 : api\n${LOW}### T2: mobile\n${LOW}`;
 
 describe("scripts/plan-gate.mjs, bootstrap plan", () => {
   interface PlanGate {
     tasksPerGroup(plan: string): number[];
     sequentialProblem(spec: string, plan: string): string | null;
+    taskDesigns(plan: string): { id: string; risk: string | null; designed: boolean }[];
+    designProblem(plan: string): string | null;
   }
   const load = async () => (await import(pathToFileURL(path.resolve("scripts/plan-gate.mjs")).href)) as PlanGate;
 
@@ -250,6 +253,57 @@ describe("scripts/plan-gate.mjs, bootstrap plan", () => {
     expect(lint(repo, "bad").stderr).toContain("Identifiant de spec invalide");
     fs.writeFileSync(path.join(repo, "specs/SPEC-0000-bootstrap/plan.md"), SEQUENTIAL);
     expect(lint(repo, "SPEC-0000").status).toBe(0);
+  });
+
+  it("requires a design block with code on medium and high risk tasks", async () => {
+    const mod = await load();
+    const task = (id: string, risk: string, design: string) =>
+      `### ${id} : titre\n- Périmètre : src/a\n- Risque : ${risk} (raison)\n${design}`;
+    const design = "- Conception :\n  ```diff\n  +src/a/service.ts\n  ```\n";
+    const plan = (...tasks: string[]) => `# Plan\nStatut : PRÊT\n\n## Groupe 1\n${tasks.join("\n")}`;
+    const undesigned = (text: string) =>
+      mod
+        .taskDesigns(text)
+        .filter((t) => !t.designed)
+        .map((t) => t.id);
+    expect(mod.designProblem(plan(task("T1", "faible", ""), task("T2", "moyen", design)))).toBeNull();
+    expect(mod.designProblem(plan(task("T1", "moyen", ""), task("T2", "élevé", "")))).toContain(": T1, T2.");
+    // La conception d'une tâche ne vaut pas pour la précédente.
+    expect(undesigned(plan(task("T1", "élevé", ""), task("T2", "moyen", design)))).toEqual(["T1"]);
+    expect(mod.designProblem(plan(task("T1", "moyen", "")))).toContain("« - Conception : »");
+  });
+
+  it("refuses a design block left empty or followed by another bullet's code", async () => {
+    const mod = await load();
+    const plan = (design: string) => `## Groupe 1\n### T1 : api\n- Risque : élevé (auth)\n${design}`;
+    expect(mod.designProblem(plan("- Conception : (risque moyen ou élevé)\n"))).toContain("T1");
+    expect(mod.designProblem(plan("- Conception :\n  du texte seul\n"))).toContain("T1");
+    expect(mod.designProblem(plan("- Conception :\n- Notes :\n  ```ts\n  x\n  ```\n"))).toContain("T1");
+    expect(mod.designProblem(plan("- Conception :\n  ```ts\n  create(): void\n  ```\n"))).toBeNull();
+  });
+
+  it("refuses a task whose risk line is missing or unreadable", async () => {
+    const mod = await load();
+    const plan = (risk: string) => `## Groupe 1\n### T1 : api\n- Périmètre : src/a\n${risk}`;
+    expect(mod.designProblem(plan(""))).toContain("sans ligne « - Risque");
+    expect(mod.designProblem(plan("- **Risque** : élevé (auth)\n"))).toContain("T1");
+    expect(mod.designProblem(plan("- Risque : faible | moyen | élevé (justification)\n"))).toContain("T1");
+    expect(mod.designProblem(plan("- Risque : haut\n"))).toContain("T1");
+    expect(mod.designProblem(plan("- Risque : faible (lecture seule)\n"))).toBeNull();
+    expect(mod.designProblem(plan("- Risque : faible\n"))).toBeNull();
+  });
+
+  it("lint refuses a plan whose risky task has no design block", () => {
+    const risky = "# Plan\nStatut : PRÊT\n\n## Groupe 1\n### T1 : api\n- Risque : élevé (auth)\n";
+    const repo = newRepo({}, { "specs/SPEC-0002-a/plan.md": risky });
+    const lint = () => spawnSync("node", [script, "lint", "SPEC-0002"], { cwd: repo, encoding: "utf8", env: gitEnv });
+    const bad = lint();
+    expect(bad.status).toBe(1);
+    expect(bad.stderr).toContain("sans bloc « - Conception : »");
+    expect(bad.stderr).toContain("T1");
+    const design = "- Conception :\n  ```diff\n  +src/a/routes.ts\n  ```\n";
+    fs.writeFileSync(path.join(repo, "specs/SPEC-0002-a/plan.md"), `${risky}${design}`);
+    expect(lint().status).toBe(0);
   });
 
   it("check refuses a merged SPEC-0000 plan with parallel tasks", () => {

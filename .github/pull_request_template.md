@@ -14,7 +14,7 @@ En deux ou trois phrases, ce que fait ce changement et pourquoi.
 Liste courte. Tout fichier hors du périmètre déclaré doit être justifié ici.
 
 ## Décisions prises
-Les choix non dictés par la spec, avec leur raison.
+Les choix non dictés par la spec, avec leur raison. Tout écart au bloc « Conception » de la tâche (fichier, signature, chemin d'appel) est listé ici.
 
 ## Points d'incertitude
 Ce que l'humain doit regarder en priorité.

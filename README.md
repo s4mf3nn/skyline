@@ -27,7 +27,7 @@ Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept 
 | Tests de contrat immuables | Un agent ne peut que retirer `.skip` ; le reste demande le label `contract-change` ; une partie peut être confiée à un autre lanceur que Vitest | `tests/acceptance/`, `scripts/check-contract.mjs`, `scripts/contract-files.mjs` |
 | Scénarios cachés | L'implémentation satisfait l'intention, pas seulement les tests qu'elle voit : parcours écrits avec la spec, retirés du workspace du producteur, joués en CI | `tests/holdout/`, `scripts/holdout.mjs`, `/new-spec`, `/implement` |
 | Relecture de spec | Critères testables et tests qui les vérifient, avant la lecture humaine | subagent `spec-reviewer`, `/new-spec`, `/review` |
-| Plan en tâches | 3 à 5 tâches par spec, groupes parallèles, périmètre en chemins | subagent `planner`, `/plan`, `scripts/plan-gate.mjs`, `scripts/split-plan.mjs` |
+| Plan en tâches | 3 à 5 tâches par spec, groupes parallèles, périmètre en chemins ; conception (signatures, arbre d'appels, tranches verticales) validée par l'humain avant le code pour les tâches de risque moyen ou élevé | subagent `planner`, `/plan`, `scripts/plan-gate.mjs`, `scripts/split-plan.mjs` |
 | Baux de périmètre | Deux workspaces ne modifient jamais les mêmes chemins | `scripts/lease.mjs` (état dans `.factory/` du dépôt principal, hors git) |
 | Suivi visuel | Une issue par spec et par tâche, statut dérivé des PR, Kanban via GitHub Project | `scripts/board.mjs`, `.github/workflows/board.yml`, `docs/factory/BOARD.md` |
 | Aucun registre central | Ajouter une feature ne touche aucun fichier partagé | `scripts/gen-features.mjs` (`pnpm gen`) |

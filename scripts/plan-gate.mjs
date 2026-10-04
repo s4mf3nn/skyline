@@ -5,7 +5,9 @@
 // Usage :
 //   node scripts/plan-gate.mjs check <SPEC-XXXX> [T#]   plan PRÊT (et tâche) sur la base, dépendances livrées
 //   node scripts/plan-gate.mjs deps <SPEC-XXXX>         dépendances livrées seulement (au début de /plan)
-//   node scripts/plan-gate.mjs lint <SPEC-XXXX>         plan local, avant sa PR : SPEC-0000 a une tâche par groupe
+//   node scripts/plan-gate.mjs lint <SPEC-XXXX>         plan local, avant sa PR : SPEC-0000 a une tâche par groupe,
+//                                                       un risque lisible par tâche, une conception par tâche
+//                                                       de risque moyen ou élevé
 // Dépendances : ligne `Dépend de : SPEC-XXXX, SPEC-YYYY` (ou `aucune`) de spec.md sur la base ; sans cette ligne, aucune.
 // Une spec est livrée quand elle a un contrat sur la base et qu'aucun de ses fichiers n'a plus de `.skip` : c'est la
 // fusion de sa tâche de clôture, le même signal que celui qui active ses scénarios cachés (scripts/holdout.mjs).
@@ -111,6 +113,46 @@ export function sequentialProblem(spec, plan) {
   return `le plan de ${spec} met plusieurs tâches dans un même groupe (ou hors de tout groupe) : le socle s'exécute une tâche à la fois, un groupe « ## Groupe N » par tâche.`;
 }
 
+// Une seule valeur, suivie de sa justification entre parenthèses ou de la fin de ligne : « faible | moyen » est refusé.
+const RISK_LINE = /^- Risque\s*:\s*(faible|moyen|élevé)\s*(\(|$)/;
+
+/**
+ * Risque et conception de chaque tâche : `{ id, risk, designed }`. `risk` vaut null si la ligne `- Risque :` est
+ * absente ou illisible ; `designed` demande un bloc de code indenté sous la puce `- Conception :`, pas la puce seule.
+ */
+export function taskDesigns(plan) {
+  const tasks = [];
+  let task = null;
+  let inDesign = false;
+  for (const line of plan.split("\n")) {
+    const heading = /^### (T\d+)\s*:/.exec(line);
+    if (heading || line.startsWith("## ")) {
+      task = heading ? { id: heading[1], risk: null, designed: false } : null;
+      if (task) tasks.push(task);
+      inDesign = false;
+    } else if (task && line.startsWith("- ")) {
+      inDesign = /^- Conception\s*:/.test(line);
+      const risk = RISK_LINE.exec(line)?.[1];
+      if (risk) task.risk = risk;
+    } else if (task && inDesign && /^\s+```/.test(line)) task.designed = true;
+  }
+  return tasks;
+}
+
+// La forme du code (fichiers, signatures, appels) se décide dans la PR de plan, relue par l'humain : la changer
+// après coup, en revue de code, coûte une tâche entière. Un risque illisible ferait échapper la tâche au contrôle.
+/** Message si une tâche a un risque illisible, ou un risque moyen ou élevé sans conception ; sinon null. */
+export function designProblem(plan) {
+  const tasks = taskDesigns(plan);
+  const ids = (list) => list.map((t) => t.id).join(", ");
+  const unreadable = tasks.filter((t) => t.risk === null);
+  if (unreadable.length)
+    return `tâche(s) sans ligne « - Risque : faible | moyen | élevé (justification) » lisible, une seule valeur : ${ids(unreadable)}.`;
+  const missing = tasks.filter((t) => t.risk !== "faible" && !t.designed);
+  if (!missing.length) return null;
+  return `tâche(s) de risque moyen ou élevé sans bloc « - Conception : » suivi de blocs de code indentés (arborescence, signatures, appels, ordre de construction, scénarios de changement) : ${ids(missing)}.`;
+}
+
 /** Contrôle le plan local, avant sa PR (`/plan`) : `{ ok, message }`. */
 export function lintPlan(spec) {
   if (!SPEC_ID.test(spec ?? ""))
@@ -122,7 +164,8 @@ export function lintPlan(spec) {
         .filter((p) => isSpecFile(p, spec, "plan.md") && fs.existsSync(p))
     : [];
   if (paths.length !== 1) return { ok: false, message: `${spec} : pas de plan.md unique dans specs/.` };
-  const problem = sequentialProblem(spec, fs.readFileSync(paths[0], "utf8"));
+  const plan = fs.readFileSync(paths[0], "utf8");
+  const problem = sequentialProblem(spec, plan) ?? designProblem(plan);
   return problem ? { ok: false, message: `${paths[0]} : ${problem}` } : { ok: true, message: `${paths[0]} : OK.` };
 }
 

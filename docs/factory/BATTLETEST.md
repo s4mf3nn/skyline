@@ -1,6 +1,6 @@
 # Battletest du boilerplate sur trois formes de projet
 
-Date : 2026-10-02 (analyse), 2026-10-03 (lots 1 à 6 ; sections 9 et 10 : battletests suivants). Base de l'analyse : `main` à `a589488`. Trace de décision, conservée comme `SPEC-CONTRAINTES-TECHNO.md` : les notes décrivent le boilerplate **avant** les lots.
+Date : 2026-10-02 (analyse), 2026-10-03 (lots 1 à 6 ; sections 9 à 11 : battletests suivants). Base de l'analyse : `main` à `a589488`. Trace de décision, conservée comme `SPEC-CONTRAINTES-TECHNO.md` : les notes décrivent le boilerplate **avant** les lots.
 
 Méthode : pour chaque forme, lecture du boilerplate comme si le projet démarrait demain, sondes sur les scripts de la factory, et vérification dans Context7 des deux points qui dépendent d'une bibliothèque.
 
@@ -284,3 +284,30 @@ Décisions :
 4. Non retenus : couverture et mutation des écrans par un second lanceur (les routes sont vides et les écrans testés par le contrat), et parcours sur simulateur au-delà d'un parcours de fumée.
 
 Limite : comme pour B, C et D, ces notes restent sur papier ; aucun socle Expo ni Workers n'a été monté. Les deux faits dont dépendent les lots 14 et 19 ont été vérifiés dans la documentation : `Tabs.Screen` d'Expo Router (SDK 56) et les dix ports par workspace de Conductor.
+
+## 11. Quatrième battletest (projet F) et lot 21
+
+Date : 2026-10-04. Projet F, soumis par l'utilisateur : signature électronique pensée pour des agents IA (API Hono sur Cloudflare Workers, Neon, Drizzle, R2, Queues, serveur MCP, SDK TypeScript publié, page de signature sans compte, tableau de bord minimal, webhooks sortants, clés d'API à droits limités, clés d'idempotence, journal d'audit en ajout seul), brief en milestones M0 à M9. Forme nouvelle : quatre surfaces dans un dépôt (API, web, bibliothèque publiée, outils pour agents). Critère fixé par l'utilisateur : le boilerplate convient si la phase de planning (`/init-project`, `/roadmap`, `/new-spec`, `/plan`) fait apparaître les adaptations qu'il ne contient pas.
+
+Verdict : convient, avec des manques que ni le boilerplate ni les consignes du planning ne faisaient apparaître. Le lot 21 ne corrige que ceux qui valent au-delà de ce projet.
+
+| Besoin de F | État avant le lot |
+|---|---|
+| Machine à états, courses entre signatures, files, expiration, stockage, email | Couvert (lots 9, 10, 15) |
+| Isolation entre comptes, droits des clés | Couvert (« Acteurs et rôles », test du refus) |
+| SDK publié, parcours de bout en bout | Couvert (lots 4, 5, 12, 16) |
+| Hébergement du serveur MCP, bibliothèque PDF, limitation de débit, connexion au tableau de bord | Absent, mais sorti par le planning (incompatibilités de `/init-project`, ADR de `/roadmap`) |
+| Idempotence des écritures, audit en ajout seul, interdiction d'annoncer une signature qualifiée | Absent, mais sorti par le planning (invariants, règles du domaine : le brief les énonce) |
+| Outils pour agents comme interface publique | Nommés par aucun modèle (même manque que S8) ; traités par analogie avec l'API HTTP |
+| Version minimale du client sur une API publique | CA7 de SPEC-0001 refuse toute requête sans version, donc tout appel direct : à adapter par le projet |
+| Appel sortant vers une adresse fournie par un client | Aucune règle |
+| Secrets émis par le produit, lien d'accès sans compte | Aucune règle ; la règle du lien de connexion (usage unique, expiration courte) ne convient pas à un lien de signature |
+| Jeton porté par une URL | Absent de la liste de CA5 de SPEC-0001 : il partait au suivi des erreurs |
+| Publication dans une file après une écriture en base | Atomicité jamais demandée par l'ADR |
+| Règles proposées par `/roadmap` (étape 6) | Sans suite : elles restaient dans le résumé de la PR de cadrage |
+
+Lot 21 (texte seulement, aucun script) : trois règles par défaut dans `DOMAIN-SECURITY.md` (lien d'accès sans compte, secrets émis par le produit, appel sortant) et le jeton d'URL dans la règle commune ; CA5 de SPEC-0001 ; lignes « Files de messages » et « Clients installés » (API publique) de l'ADR-0001 ; `/init-project` et `/roadmap` citent ces familles de règles, et `/roadmap` termine par la PR `factory` qui les inscrit.
+
+Non retenus, parce que propres à ce projet : les outils exposés à un agent comme type d'interface des modèles, une exception pour l'API publique dans CA7 de SPEC-0001 (la ligne de l'ADR pose la question, le projet adapte le critère), et les obligations de F (idempotence, audit, allégations) en exemples de `/roadmap`. Non retenue aussi : une commande d'audit du code livré (le brief demande une seconde passe sans ajout de fonctionnalité ; `/review` ne relit qu'un diff), à décider à part. Conséquences acceptées pour F : presque tout le code est en zone sensible (revue `full` et lecture humaine partout, pas de phase 3), et l'enveloppe est un agrégat central que la plupart des specs touchent (peu de parallélisme).
+
+Limites : battletest sur papier, sans exécution de `/init-project` ni de `/roadmap` ; « sorti par le planning » est un jugement sur ce que les consignes font chercher. Non vérifié : le préfixe de clé du brief (`sk_live_`, `sk_test_`) déclencherait probablement une règle par défaut de gitleaks (outil absent du poste).

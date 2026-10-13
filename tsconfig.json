@@ -21,5 +21,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "app", "tests/unit", "*.config.ts", "nativewind-env.d.ts"]
+  "include": ["src", "app", "tests/unit", "*.config.ts", "nativewind-env.d.ts"],
+  "exclude": ["src/**/*.native.test.tsx"]
 }

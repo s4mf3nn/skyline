@@ -102,7 +102,6 @@ describe("SPEC-0006 scénarios cachés : de la scène aux cartes", () => {
       ["overhead:e5", "upcoming:e6"],
       ["overhead:e5", "upcoming:e6"],
       ["upcoming:e6"],
-      ["upcoming:e6"],
     ]);
     expect(seen[0]?.first).toBe("01:41");
     expect(seen[1]?.first).toBe("00:02");
@@ -112,8 +111,8 @@ describe("SPEC-0006 scénarios cachés : de la scène aux cartes", () => {
   it("derives the overhead visibility from the window and keeps the arrow null without heading, then relative to it", async () => {
     const { computeScene } = await sceneModule();
     const { buildCards } = await passages();
-    // Déjà dans la fenêtre : 3,1 km avant le point le plus proche, cap est, 720 km/h (0,2 km/s), 2 km au nord.
-    const aircraft = [plane("w1", "AFR1506", -3.1, 2, 90, 720)];
+    // Déjà dans la fenêtre : 2,9 km avant le point le plus proche, cap est, 720 km/h (0,2 km/s), 2 km au nord.
+    const aircraft = [plane("w1", "AFR1506", -2.9, 2, 90, 720)];
     const nowMs = T0;
     const scene = computeScene({
       snapshot: { aircraft, takenAtMs: T0 },

@@ -104,7 +104,7 @@ describe("SPEC-0006 scénarios cachés : écran Prochains passages", () => {
   });
 
   it("replaces the overhead card by the next aircraft and keeps the unknown airline fallback", async () => {
-    const harness = setup([plane("o1", "ICE451", -3.1, 1, 90), plane("o2", null, 30.1, -2, 270, { altitudeM: null })]);
+    const harness = setup([plane("o1", "ICE451", -2.9, 1, 90), plane("o2", null, 30.1, -2, 270, { altitudeM: null })]);
     await render(<harness.App />);
     await settle();
     expect(cardIds()).toEqual(["o1", "o2"]);

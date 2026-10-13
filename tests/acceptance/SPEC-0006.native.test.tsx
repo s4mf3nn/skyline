@@ -257,7 +257,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   it("CA15 : shows the overhead card with the gauge, the remaining time and the three values", async () => {
     // h1 est déjà dans sa fenêtre : entrée il y a 10,5 s, fin dans 39,5 s (cap est, 720 km/h).
     const harness = setup({
-      aircraft: [plane("h1", "AFR1506", -3.1, 1, 90, { altitudeM: 7850 })],
+      aircraft: [plane("h1", "AFR1506", -2.9, 1, 90, { altitudeM: 7850 })],
     });
     await render(<harness.App />);
     await settle();
@@ -283,7 +283,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA15 : moves the gauge and the remaining time with the clock", async () => {
-    const harness = setup({ aircraft: [plane("h1", "AFR1506", -3.1, 1, 90)] });
+    const harness = setup({ aircraft: [plane("h1", "AFR1506", -2.9, 1, 90)] });
     await render(<harness.App />);
     await settle();
     await elapse(harness.clock, 15 * SECOND);
@@ -317,7 +317,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA16 : points the overhead arrow toward the track of the aircraft", async () => {
-    const harness = setup({ aircraft: [plane("h1", "AFR1506", -3.1, 1, 90)] });
+    const harness = setup({ aircraft: [plane("h1", "AFR1506", -2.9, 1, 90)] });
     await render(<harness.App />);
     await settle();
     expect(screen.queryByTestId("passage-arrow-h1")).toBeNull();
@@ -350,7 +350,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     const crowd = Array.from({ length: 14 }, (_, index) =>
       plane(`f${String(index).padStart(2, "0")}`, "AFR1506", -20 - index, 0, 90),
     );
-    const harness = setup({ aircraft: [...crowd, plane("h1", "IBE3457", -3.1, 1, 90)] });
+    const harness = setup({ aircraft: [...crowd, plane("h1", "IBE3457", -2.9, 1, 90)] });
     await render(<harness.App />);
     await settle();
     const ids = cardIds();
@@ -406,7 +406,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     );
     try {
       const harness = setup({
-        aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("h1", "IBE3457", -3.1, 1, 90)],
+        aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("h1", "IBE3457", -2.9, 1, 90)],
       });
       await render(<harness.App />);
       await settle();

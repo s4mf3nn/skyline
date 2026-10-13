@@ -139,6 +139,7 @@ buildCards(input: { scene: Scene; nowMs: number; headingDeg: number | null; time
 - Heure de passage en 24 h, fuseau de l'appareil, secondes tronquées ; vol en forme IATA par le premier code IATA de la compagnie ; milliers séparés par une espace insécable.
 - Jauge de visibilité : de l'entrée dans la fenêtre à sa fin, 100 % en fin de fenêtre ; nom accessible « Visibilité ».
 - Page Prochains passages d'`order` 1, toujours présente.
+- `flightLabel` reste dans `src/features/passages/service.ts` : SPEC-0005 en dépend (roadmap amendée) et l'importe par l'`index.ts` de Passages, qui le ré-exporte (voir « Contrat d'interface »).
 
 ## Questions ouvertes
-Aucune. `flightLabel` reste dans `src/features/passages/service.ts` et SPEC-0005 en dépend (roadmap amendée) : Ciel l'importe par l'`index.ts` de Passages, qui le ré-exporte à cet effet (voir « Contrat d'interface »).
+Aucune.

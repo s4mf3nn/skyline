@@ -30,9 +30,11 @@ interface AirlineTheme {
   small: string;
   track: string;
 }
+type TailShape = { kind: "path"; d: string } | { kind: "circle"; cx: number; cy: number; r: number };
 interface TailLayer {
   layer: "base" | "band1" | "band2" | "disc";
   fill: string;
+  shape: TailShape;
 }
 interface AirlineThemeModule {
   mix(from: string, to: string, t: number): string;
@@ -42,6 +44,8 @@ interface AirlineThemeModule {
   resolveAirline(callsign: string | null): Airline;
   airlineTheme(airline: Airline): AirlineTheme;
   tailLayers(colors: TailColors): TailLayer[];
+  TAIL_VIEWBOX: string;
+  TAIL_OUTLINE_PATH: string;
 }
 const theme = () => load<AirlineThemeModule>("src/shared/airline-theme/index.ts");
 
@@ -59,6 +63,10 @@ function contrast(a: string, b: string): number {
 }
 
 const NONE = "none";
+const OUTLINE = "M 36 14 Q 40 2 54 2 L 150 2 L 460 440 L 116 440 Z";
+const BAND1: TailShape = { kind: "path", d: "M 0 300 L 320 160 L 320 236 L 0 376 Z" };
+const BAND2: TailShape = { kind: "path", d: "M 0 394 L 320 254 L 320 286 L 0 426 Z" };
+const DISC: TailShape = { kind: "circle", cx: 176, cy: 196, r: 66 };
 const tail = (base: string, band1: string, band2: string, disc: string): TailColors => ({ base, band1, band2, disc });
 
 const KNOWN_AIRLINES: Airline[] = [
@@ -176,6 +184,12 @@ describe.skip("SPEC-0002 airline theme", () => {
     expect(fitColor("#003145", "#00A1DE", 4.5)).toBe("#003145");
   });
 
+  it("CA2 : keeps the foreground when its contrast equals the target exactly", async () => {
+    const { fit: fitColor } = await theme();
+    expect(fitColor("#F6C344", "#C8102E", contrast("#F6C344", "#C8102E"))).toBe("#F6C344");
+    expect(fitColor("#FADF9A", "#C8102E", contrast("#FADF9A", "#C8102E"))).toBe("#FADF9A");
+  });
+
   it("CA2 : returns the foreground unchanged, case included, when it is already readable", async () => {
     const { fit: fitColor } = await theme();
     expect(fitColor("#f6c344", "#C8102E", 3)).toBe("#f6c344");
@@ -213,12 +227,14 @@ describe.skip("SPEC-0002 airline theme", () => {
 
   it("CA5 : lists the eight handoff airlines in order with their codes and colors", async () => {
     const { airlines } = await theme();
-    expect(airlines).toEqual(KNOWN_AIRLINES);
+    // toMatchObject : SPEC-0010 ajoute un champ `image` sans retirer ceux-ci (ordre et nombre d'entrées restent exigés).
+    expect(airlines).toHaveLength(8);
+    expect(airlines).toMatchObject(KNOWN_AIRLINES);
   });
 
   it("CA5 : exposes the unknown airline apart from the table", async () => {
     const { airlines, UNKNOWN_AIRLINE } = await theme();
-    expect(UNKNOWN_AIRLINE).toEqual(UNKNOWN);
+    expect(UNKNOWN_AIRLINE).toMatchObject(UNKNOWN);
     expect(airlines.map((airline) => airline.code)).not.toContain("xx");
   });
 
@@ -255,6 +271,8 @@ describe.skip("SPEC-0002 airline theme", () => {
     const { resolveAirline } = await theme();
     expect(resolveAirline("ezy6103").code).toBe("u2");
     expect(resolveAirline("  RYR8312 ").code).toBe("fr");
+    expect(resolveAirline("\tAFR1506\n").code).toBe("af");
+    expect(resolveAirline("\u00A0VLG8013\u00A0").code).toBe("vy");
   });
 
   it("CA8 : falls back to the unknown airline when there is no usable callsign", async () => {
@@ -276,22 +294,30 @@ describe.skip("SPEC-0002 airline theme", () => {
     expect(resolveAirline("XYZ123")).toBe(UNKNOWN_AIRLINE);
   });
 
-  it("CA9 : lists the layers to paint in order and skips the colors set to none", async () => {
-    const { tailLayers } = await theme();
+  it("CA9 : lists the layers to paint in order, with their shape, and skips the colors set to none", async () => {
+    const { tailLayers, TAIL_OUTLINE_PATH } = await theme();
+    expect(TAIL_OUTLINE_PATH).toBe(OUTLINE);
     expect(tailLayers(tail("#F4F1EA", "#2B5BD6", "#E1251B", "#F9B000"))).toEqual([
-      { layer: "base", fill: "#F4F1EA" },
-      { layer: "band1", fill: "#2B5BD6" },
-      { layer: "band2", fill: "#E1251B" },
-      { layer: "disc", fill: "#F9B000" },
+      { layer: "base", fill: "#F4F1EA", shape: { kind: "path", d: OUTLINE } },
+      { layer: "band1", fill: "#2B5BD6", shape: BAND1 },
+      { layer: "band2", fill: "#E1251B", shape: BAND2 },
+      { layer: "disc", fill: "#F9B000", shape: DISC },
     ]);
     expect(tailLayers(tail("#1A3466", NONE, NONE, "#F9B000"))).toEqual([
-      { layer: "base", fill: "#1A3466" },
-      { layer: "disc", fill: "#F9B000" },
+      { layer: "base", fill: "#1A3466", shape: { kind: "path", d: OUTLINE } },
+      { layer: "disc", fill: "#F9B000", shape: DISC },
     ]);
   });
 
   it("CA9 : paints only the base layer when the bands and the disc are none", async () => {
     const { tailLayers } = await theme();
-    expect(tailLayers(tail("#CFC8BA", NONE, NONE, NONE))).toEqual([{ layer: "base", fill: "#CFC8BA" }]);
+    expect(tailLayers(tail("#CFC8BA", NONE, NONE, NONE))).toEqual([
+      { layer: "base", fill: "#CFC8BA", shape: { kind: "path", d: OUTLINE } },
+    ]);
+  });
+
+  it("CA10 : draws in a 300 x 440 viewBox", async () => {
+    const { TAIL_VIEWBOX } = await theme();
+    expect(TAIL_VIEWBOX).toBe("0 0 300 440");
   });
 });

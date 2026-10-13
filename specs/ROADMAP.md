@@ -43,4 +43,5 @@ Notes :
   4. `RISK.md`, `.github/labeler.yml`, `CODEOWNERS` : zone sensible `**/shared/routes/` (`review:full`).
   5. `DOMAIN-SECURITY.md` : la règle « mentions, test de rendu » devient une vérification du propriétaire avant release.
   6. `docs/adr/0001-stack.md` : la ligne « Source des routes de vol » renvoie à l'ADR-0002.
+  7. `docs/adr/0001-stack.md` (ligne « Typographie ») et `docs/factory/UI.md` (« Rayons, mesures et graisses condensées ») : ces points sont portés par SPEC-0005, plus par « la spec du thème » (SPEC-0002).
 - Repoussés hors v0 : mode nuit, seuils réglables, toute la liste du MVP du brief.

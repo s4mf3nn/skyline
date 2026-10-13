@@ -93,7 +93,7 @@ afterEach(() => {
   tmpDirs = [];
 });
 
-describe.skip("SPEC-0000 bootstrap", () => {
+describe("SPEC-0000 bootstrap", () => {
   it("CA3 : lists a new feature in the generated registry without touching any other file", () => {
     const src = fs.mkdtempSync(path.join(os.tmpdir(), "spec-0000-"));
     tmpDirs.push(src);

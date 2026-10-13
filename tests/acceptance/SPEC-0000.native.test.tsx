@@ -28,7 +28,7 @@ function ClockProbeScreen() {
   return <Text>{`now ${clock.now()}`}</Text>;
 }
 
-describe.skip("SPEC-0000 bootstrap (rendering)", () => {
+describe("SPEC-0000 bootstrap (rendering)", () => {
   it("CA1 : renders the home screen with its title when no feature is mounted", async () => {
     const App = createApp({ services: fakeServices(), features: [] });
     await render(<App />);

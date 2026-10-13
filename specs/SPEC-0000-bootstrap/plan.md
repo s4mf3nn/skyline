@@ -17,7 +17,7 @@ Constats partagés par les tâches :
 
 ## Groupe 1 (seul)
 ### T1 : Projet Expo SDK 57, style NativeWind et commande dev
-- Périmètre : package.json, pnpm-lock.yaml, app.json, babel.config.js, babel.config.cjs, metro.config.js, metro.config.cjs, tailwind.config.js, tailwind.config.cjs, global.css, nativewind-env.d.ts, tsconfig.json, .gitignore, .env.example, app/_layout.tsx, assets/fonts/, tests/unit/expo-config.test.ts, docs/factory/UI.md, docs/factory/libs-cache.md
+- Périmètre : package.json, pnpm-lock.yaml, biome.json, app.json, babel.config.js, babel.config.cjs, metro.config.js, metro.config.cjs, tailwind.config.js, tailwind.config.cjs, global.css, nativewind-env.d.ts, tsconfig.json, .gitignore, .env.example, app/_layout.tsx, assets/fonts/, tests/unit/expo-config.test.ts, docs/factory/UI.md, docs/factory/libs-cache.md
 - Dépend de : aucune
 - Risque : élevé (`app.json` est en zone sensible : permission de localisation ; `package.json` fixe les versions de tout le projet)
 - Critères de la spec couverts : CA4, CA2
@@ -26,6 +26,7 @@ Constats partagés par les tâches :
   - Installe le runtime et le style seulement : `expo`, `react`, `react-native`, `expo-router` et ses pairs, `nativewind`, `tailwindcss` 3.4, `react-native-reanimated`, `react-native-worklets`, `react-native-gesture-handler`, `react-native-svg`, `expo-location`, `expo-font`, `@types/react`. Jest et RNTL sont posés par T3, Sentry par SPEC-0001.
   - `app/_layout.tsx` est le layout du socle : il n'entre dans le périmètre d'aucune tâche de feature. Il importe `global.css`, charge Archivo (`useFonts`) et rend `<Slot />` ; aucune liste d'écrans. La route `app/index.tsx` est posée par T3 : d'ici là, Expo Router affiche son écran par défaut.
   - Archivo : fichier TTF statique du dépôt Google Fonts, avec sa licence `OFL.txt`, dans `assets/fonts/`. Pas de paquet `@expo-google-fonts/archivo` (hors tableau). Une seule graisse suffit au titre ; la spec du thème fixe les instances condensées.
+  - `biome.json` : `pnpm lint` lit tous les fichiers du dépôt. Règle-le pour qu'il accepte `global.css` (directives `@tailwind`), `app.json` et les fichiers de configuration `.cjs`, sans désactiver de règle dans `src/` ; si un fichier ne peut pas être lu par Biome, exclus ce seul fichier avec un commentaire.
   - `app.json` : aucun secret, aucun identifiant d'application, texte de permission fixé ci-dessus. `.env.example` : `EXPO_PUBLIC_SENTRY_DSN=` avec une valeur factice.
   - `tsconfig.json` : `jsx`, `lib`, alias `@/*` vers `src/*`, `app` et les fichiers `*.d.ts` dans `include` ; garde les options strictes actuelles et ce dont `tests/unit` a besoin. `tsconfig.test.json` et `vitest.config.ts` ne sont pas touchés ici (T3).
   - `docs/factory/UI.md` : sections « Tokens de style », « Composants de base » (aucun à ce stade), « États standard », « Accessibilité ». La section « Tests d'interface » est remplie par T3.
@@ -80,12 +81,16 @@ Constats partagés par les tâches :
 - Dépend de : T1
 - Risque : élevé (`src/shared/location/`, `src/shared/adsb/` et `src/shared/monitoring/` sont en zone sensible, revue `full`)
 - Critères de la spec couverts : CA5, cas limites
-- Définition de fini : tests unitaires Vitest à côté de chaque fichier, verts, qui rejouent les cas « CA5 » de `tests/acceptance/SPEC-0000.test.ts` et les cas limites ; ce contrat passe en local sans `.skip` pour ses cas CA5 (non commité) ; `pnpm verify` vert, seuils de couverture tenus sur tous les `.ts` posés. Lis `docs/factory/DOMAIN-SECURITY.md` avant de coder. Les interfaces sont figées et la règle du point d'entrée est ci-dessus.
+- Définition de fini : tests unitaires Vitest à côté de chaque fichier, verts, qui rejouent les cas « CA5 » de `tests/acceptance/SPEC-0000.test.ts`, les cas limites de la spec et les trois cas limites de `createExpoLocation` listés dans les notes ; ce contrat passe en local sans `.skip` pour ses cas CA5 (non commité) ; `pnpm verify` vert, seuils de couverture tenus sur tous les `.ts` posés. Lis `docs/factory/DOMAIN-SECURITY.md` avant de coder. Les interfaces sont figées et la règle du point d'entrée est ci-dessus.
 - Notes :
   - Imports relatifs à l'intérieur de `src/shared/` : l'alias `@/` n'est connu de Vitest qu'après T3.
   - `location/expo.ts` est le seul fichier qui importe `expo-location`. Son test tourne sous Vitest avec `vi.mock("expo-location", fabrique)` : le module natif n'est jamais chargé. Si Vitest ne peut pas le remplacer ainsi, arrête-toi et signale-le (ne sors pas le fichier de la couverture).
   - `watchHeading` est synchrone alors que `watchHeadingAsync` renvoie une promesse : un désabonnement appelé avant sa résolution doit quand même retirer l'abonnement, et plus aucune valeur n'est transmise après.
   - `getPosition` lit l'état de la permission sans déclencher la demande (`getForegroundPermissionsAsync`) ; seule `requestPermission` la déclenche. Aucune position dans un log ni dans un message d'erreur.
+  - Cas limites de `createExpoLocation`, chacun avec son test unitaire (`expo-location` remplacé) :
+    - tout statut de permission autre que `granted` (dont `undetermined`) donne `"denied"` à `requestPermission` et `LOCATION_DENIED` à `getPosition`, jamais une position ;
+    - `trueHeading` vaut `-1` quand le cap vrai est indisponible : `watchHeading` transmet alors `magHeading`, jamais `-1` ;
+    - un rejet de `watchHeadingAsync` (permission refusée, capteur absent) ne devient pas un rejet de promesse non attrapé : aucune valeur n'est transmise, et la fonction de désabonnement renvoyée reste appelable sans erreur, y compris avant que l'abonnement soit établi.
   - Hors spec, donc non fait ici : conversion d'une autre panne de localisation en erreur typée, client adsb.lol, Sentry.
 - Conception :
   ```diff
@@ -125,7 +130,7 @@ Constats partagés par les tâches :
   +  getPosition()        -> Location.getForegroundPermissionsAsync()
   +                          refusée : rejette AppError("LOCATION_DENIED")
   +                          accordée : Location.getCurrentPositionAsync()  # { latitude, longitude }
-  +  watchHeading(cb)     -> Location.watchHeadingAsync(...)                # cap vrai, sinon magnétique
+  +  watchHeading(cb)     -> Location.watchHeadingAsync(...)                # cap vrai, sinon magnétique (voir notes)
   +                          renvoie () => abonnement.remove()
   ```
   Ordre de construction :
@@ -166,10 +171,10 @@ Constats partagés par les tâches :
   +└── src
   +    ├── app.tsx                  # NOUVEAU : createApp ; réexporte AppServices et Feature
   +    ├── app.native.test.tsx      # NOUVEAU : rendu (ordre des features, registre par défaut)
-  +    ├── main.tsx                 # NOUVEAU : createApp avec les implémentations réelles
+  +    ├── main.tsx                 # NOUVEAU : export default createApp({ services réels })
   +    ├── HomeScreen.tsx           # NOUVEAU : écran d'accueil neutre, provisoire
   +    └── shared
-  +        ├── feature.ts           # NOUVEAU : Feature, sortByOrder
+  +        ├── feature.ts           # NOUVEAU : Feature, pickScreen
   +        └── services/index.tsx   # NOUVEAU : AppServices, ServicesProvider, useServices
   ```
   ```ts
@@ -177,7 +182,8 @@ Constats partagés par les tâches :
   createApp(options: { services: AppServices; features?: readonly Feature[] }): ComponentType
   // src/shared/feature.ts
   interface Feature { name: string; order: number; screen: ComponentType }
-  sortByOrder(features: readonly Feature[]): Feature[]        // ordre croissant, sans modifier l'entrée
+  pickScreen(features: readonly Feature[], fallback: ComponentType): ComponentType
+  // écran de la feature d'`order` le plus petit, `fallback` si la liste est vide ; ne modifie pas l'entrée
   // src/shared/services/index.tsx
   interface AppServices { clock: Clock; location: LocationService; adsb: AdsbSource; monitoring: ErrorReporter }
   ServicesProvider(props: { services: AppServices; children: ReactNode }): ReactElement
@@ -191,22 +197,22 @@ Constats partagés par les tâches :
   ```
   ```diff
    app/index.tsx                       # export { default } from "@/main"
-  +  src/main.tsx
+  +  src/main.tsx                     # export default : le composant construit ci-dessous
   +    createApp({ services: { clock: createSystemClock(), location: createExpoLocation(),
   +                            adsb: createEmptyAdsbSource(), monitoring: createNoopErrorReporter() } })
   +      features = options.features ?? registre de src/features.gen.ts
   +      <ServicesProvider services>
-  +        sortByOrder(features)[0]?.screen ?? HomeScreen
+  +        pickScreen(features, HomeScreen)   # le choix de l'écran reste dans un .ts, couvert et muté
   +          useServices()             # lu par les écrans
   ```
   Ordre de construction :
   1. Jest, `jest.config`, `test:native`, `factory.contractRunners`, et `createApp` qui rend `HomeScreen` sans rien lire ; vérifiée par le cas CA1 du contrat de rendu joué en local par `pnpm test:contract`.
-  2. `ServicesProvider`, `useServices`, `Feature`, `sortByOrder`, montage de la première feature ; vérifiée par les cas CA3 et CA5 du contrat, `src/app.native.test.tsx` et `src/shared/feature.test.ts`.
+  2. `ServicesProvider`, `useServices`, `Feature`, `pickScreen`, montage de la première feature ; vérifiée par les cas CA3 et CA5 du contrat, `src/app.native.test.tsx` et `src/shared/feature.test.ts`.
   3. `src/main.tsx` et `app/index.tsx` avec les implémentations réelles de T2 ; vérifiée par `pnpm dev`, la compilation du bundle iOS et `node scripts/pre-review.mjs check` (route fine).
   4. Typage des `*.native.test.tsx`, couverture, `test:render`, `verify`, CI, retrait des mesures provisoires ; vérifiée par `pnpm verify` et `node scripts/contract-files.mjs list`.
   Scénarios de changement :
-  - Pager à deux pages (spec de navigation) : `src/app.tsx` seulement (rend toutes les features triées au lieu de la première) ; `HomeScreen.tsx` supprimé.
-  - Option `build` et écran d'erreur (SPEC-0001) : `src/app.tsx`, un nouvel écran, et l'exclusion ciblée de `tsconfig.test.json` retirée.
+  - Pager à deux pages (spec de navigation) : `src/app.tsx`, `src/app.native.test.tsx` et `src/shared/feature.ts` (toutes les features triées au lieu de la première) ; `HomeScreen.tsx` supprimé.
+  - Option `build` et écran d'erreur (SPEC-0001) : `src/app.tsx`, `src/app.native.test.tsx`, un nouvel écran d'erreur, `src/shared/monitoring/`, et l'exclusion ciblée de `tsconfig.test.json` retirée ; plus `package.json`, `app.json` et `eas.json` pour la livraison. Plus de deux fichiers, accepté : c'est une spec entière, pas une règle dispersée.
   - Cinquième service tiers (source des routes de vol) : son dossier `src/shared/<service>/`, `AppServices` dans `src/shared/services/index.tsx`, `src/main.tsx` ; les contrats existants, qui construisent `AppServices` à la main, demandent alors un champ de plus : accepté, c'est le prix d'une liste de services typée, et la spec qui l'ajoute le porte.
   - Nouveau test de rendu d'une feature : un fichier `*.native.test.tsx` à côté de l'écran, aucun fichier de configuration.
 

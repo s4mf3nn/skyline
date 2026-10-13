@@ -45,7 +45,7 @@ const INK = "#1D1D1B";
 describe("SPEC-0002 hidden scenarios", () => {
   it("themes a batch of ADS-B callsigns and stays readable and consistent with the public helpers", async () => {
     const { resolveAirline, airlineTheme, fit: fitColor, mix, contrastRatio } = await airlines();
-    const callsigns = ["RUK7KM", "EZS15PH", "TAP1046", "KL1004", "VY1221", "IB3171"];
+    const callsigns = ["RUK90QX", "EZS15PH", "TAP1046", "KL1004", "VY1221", "IB3171"];
 
     const names = callsigns.map((callsign) => resolveAirline(callsign).name);
     expect(names).toEqual(["Ryanair", "easyJet", "TAP Air Portugal", "KLM", "Vueling", "Iberia"]);

@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 // Contrat de SPEC-0002 (Vitest) : logique pure du thème et de la table des compagnies. Le composant AirlineTail
-// (CA9) n'a pas de test de contrat : il est vérifié sur simulateur par SPEC-0005.
+// est un livrable hors contrat (spec, « Livrable hors contrat ») : vérifié par une capture sur simulateur.
 // Une fois ce fichier fusionné sur main, un agent n'a le droit que de retirer `.skip` (scripts/check-contract.mjs).
 
 // Module posé par cette spec : chargé par chemin, avec les types du contrat d'interface recopiés ici.
@@ -163,6 +163,22 @@ describe.skip("SPEC-0002 airline theme and table", () => {
       icao: entry.icao,
     }));
     expect(AIRLINES.map(({ name, iata, icao }) => ({ name, iata, icao }))).toEqual(expected);
+    for (const airline of AIRLINES) {
+      expect(airline.code).toBe(airline.icao[0]);
+    }
+  });
+
+  it("CA5 : gives the unknown-airline colors and tail palette, and no country, to every airline outside the handoff", async () => {
+    const { AIRLINES, UNKNOWN_AIRLINE } = await airlines();
+    const handoff = ["IBE", "AFR", "EZY", "DLH", "KLM", "RYR", "VLG", "TAP"];
+    const others = AIRLINES.filter((airline) => !handoff.includes(airline.code));
+    expect(others).toHaveLength(137);
+    for (const airline of others) {
+      expect(airline.primary).toBe(UNKNOWN_AIRLINE.primary);
+      expect(airline.secondary).toBe(UNKNOWN_AIRLINE.secondary);
+      expect(airline.tail).toEqual(UNKNOWN_AIRLINE.tail);
+      expect(airline.country).toBeNull();
+    }
   });
 
   it("CA5 : gives the handoff name, country, colors and tail palette to the eight handoff airlines", async () => {

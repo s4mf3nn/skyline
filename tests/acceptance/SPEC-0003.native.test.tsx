@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen, within } from "@testing-library/react-native";
 import { useState } from "react";
 import { Pressable, Text } from "react-native";
 import { createApp, type Feature } from "../../src/app";
@@ -181,10 +181,12 @@ describe.skip("SPEC-0003 pager (rendering)", () => {
     expect(screen.getByText("count 1")).toBeOnTheScreen();
   });
 
-  it("CA9 : keeps the screens of the pages accessible apart from the indicator", async () => {
+  it("CA9 : keeps the screens of the pages apart from the indicator, which does not wrap the strip", async () => {
     await renderApp([feature("sky", 1, CounterScreen), feature("passages", 2, textScreen("screen passages"))]);
     expect(screen.getByRole("button", { name: "Count" })).toBeOnTheScreen();
-    expect(screen.getByRole("adjustable", { name: "Indicateur de page" })).toBeOnTheScreen();
+    expect(within(pagerElement()).queryByRole("button", { name: "Count" })).toBeNull();
+    expect(within(pagerElement()).queryByText("count 0")).toBeNull();
+    expect(within(pagerElement()).queryByText("screen passages")).toBeNull();
   });
 
   it("CA10 : sizes the traits as indicatorTraits does for the active page", async () => {
@@ -224,6 +226,15 @@ describe.skip("SPEC-0003 pager (rendering)", () => {
 
     await fireAccessibilityAction("decrement");
     expect(trait(0)).toHaveStyle({ backgroundColor: "#F6C344" });
+  });
+
+  it("CA10 : applies the accent as received, lowercase letters included", async () => {
+    await renderApp([
+      feature("sky", 1, accentScreen("screen sky", "#f6c344")),
+      feature("passages", 2, textScreen("screen passages")),
+    ]);
+    expect(trait(0)).toHaveStyle({ backgroundColor: "#f6c344" });
+    expect(trait(1)).toHaveStyle({ backgroundColor: "#f6c344" });
   });
 
   it("CA10 : takes the accent declared by the second page when it is the active one", async () => {

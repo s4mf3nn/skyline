@@ -17,7 +17,7 @@ Constats partagés par les tâches :
 
 ## Groupe 1 (seul)
 ### T1 : Projet Expo SDK 57, style NativeWind et commande dev
-- Périmètre : package.json, pnpm-lock.yaml, biome.json, app.json, babel.config.js, babel.config.cjs, metro.config.js, metro.config.cjs, tailwind.config.js, tailwind.config.cjs, global.css, nativewind-env.d.ts, tsconfig.json, .gitignore, .env.example, app/_layout.tsx, assets/fonts/, tests/unit/expo-config.test.ts, docs/factory/UI.md, docs/factory/libs-cache.md
+- Périmètre : package.json, pnpm-lock.yaml, biome.json, app.json, babel.config.js, babel.config.cjs, metro.config.js, metro.config.cjs, tailwind.config.js, tailwind.config.cjs, global.css, nativewind-env.d.ts, tsconfig.json, .gitignore, .env.example, app/_layout.tsx, assets/fonts/, tests/unit/expo-config.test.ts, docs/factory/UI.md, docs/factory/libs-cache.md, tests/unit/ci-data.test.ts, tests/unit/security-scan.test.ts
 - Dépend de : aucune
 - Risque : élevé (`app.json` est en zone sensible : permission de localisation ; `package.json` fixe les versions de tout le projet)
 - Critères de la spec couverts : CA4, CA2
@@ -29,6 +29,7 @@ Constats partagés par les tâches :
   - `biome.json` : `pnpm lint` lit tous les fichiers du dépôt. Règle-le pour qu'il accepte `global.css` (directives `@tailwind`), `app.json` et les fichiers de configuration `.cjs`, sans désactiver de règle dans `src/` ; si un fichier ne peut pas être lu par Biome, exclus ce seul fichier avec un commentaire.
   - `app.json` : aucun secret, aucun identifiant d'application, texte de permission fixé ci-dessus. `.env.example` : `EXPO_PUBLIC_SENTRY_DSN=` avec une valeur factice.
   - `tsconfig.json` : `jsx`, `lib`, alias `@/*` vers `src/*`, `app` et les fichiers `*.d.ts` dans `include` ; garde les options strictes actuelles et ce dont `tests/unit` a besoin. `tsconfig.test.json` et `vitest.config.ts` ne sont pas touchés ici (T3).
+  - `tests/unit/ci-data.test.ts` et `tests/unit/security-scan.test.ts` : les types d'Expo (`expo/types/metro-require.d.ts`) rendent `NODE_ENV` obligatoire dans `ProcessEnv` pour tout le programme TypeScript ; ces deux tests passent un `env` réduit à `spawnSync` et y ajoutent `NODE_ENV: "test"`. Aucun autre changement.
   - `docs/factory/UI.md` : sections « Tokens de style », « Composants de base » (aucun à ce stade), « États standard », « Accessibilité ». La section « Tests d'interface » est remplie par T3.
 - Conception :
   ```diff
@@ -46,6 +47,8 @@ Constats partagés par les tâches :
   +├── app/_layout.tsx         # NOUVEAU : layout du socle (global.css, police, Slot)
   +├── assets/fonts/           # NOUVEAU : Archivo (TTF) et OFL.txt
   +├── tests/unit/expo-config.test.ts  # NOUVEAU : garde de la permission et du script dev
+  ~├── tests/unit/ci-data.test.ts      # MODIFIÉ : NODE_ENV dans l'env réduit de spawnSync
+  ~├── tests/unit/security-scan.test.ts # MODIFIÉ : NODE_ENV dans l'env réduit de spawnSync
   ~└── docs/factory/UI.md      # MODIFIÉ : tokens, états, accessibilité
   ```
   ```jsonc

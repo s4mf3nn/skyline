@@ -6,7 +6,6 @@
     "version": "0.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "plugins": [
       "expo-router",
       "expo-font",
@@ -15,7 +14,10 @@
         {
           "locationWhenInUsePermission": "Skyline utilise ta position pour trouver les avions qui passent au-dessus de toi.",
           "isIosBackgroundLocationEnabled": false,
-          "isAndroidBackgroundLocationEnabled": false
+          "isAndroidBackgroundLocationEnabled": false,
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false
         }
       ]
     ]

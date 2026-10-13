@@ -23,18 +23,26 @@ function locationPluginOptions(): Record<string, unknown> {
 describe("app.json location permission", () => {
   it("asks for the when-in-use permission with a text", () => {
     const options = locationPluginOptions();
-    expect(options.locationWhenInUsePermission).toEqual(expect.stringContaining("position"));
+    expect(options.locationWhenInUsePermission).toBe(
+      "Skyline utilise ta position pour trouver les avions qui passent au-dessus de toi.",
+    );
+  });
+
+  // Une option absente reçoit le texte par défaut du plugin : seule la valeur `false` retire la clé de l'Info.plist.
+  it("removes the always and motion usage descriptions from the Info.plist", () => {
+    const options = locationPluginOptions();
+    expect(options.locationAlwaysAndWhenInUsePermission).toBe(false);
+    expect(options.locationAlwaysPermission).toBe(false);
+    expect(options.motionUsagePermission).toBe(false);
   });
 
   it("never enables background location on iOS or Android", () => {
     const options = locationPluginOptions();
     expect(options.isIosBackgroundLocationEnabled).toBe(false);
     expect(options.isAndroidBackgroundLocationEnabled).toBe(false);
-    expect(options).not.toHaveProperty("locationAlwaysPermission");
-    expect(options).not.toHaveProperty("locationAlwaysAndWhenInUsePermission");
   });
 
-  it("declares no secret nor application identifier", () => {
+  it("declares no application identifier", () => {
     const raw = readFileSync("app.json", "utf8");
     expect(raw).not.toMatch(/bundleIdentifier|"package"/);
   });

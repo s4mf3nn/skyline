@@ -21,6 +21,7 @@ plusieurs fois par jour ? Mesure pendant deux semaines d'usage par Sam et quelqu
 | H1 : l'écran Ciel et la prévision des passages donnent envie d'ouvrir l'app plusieurs fois par jour | Sessions par testeur et par jour dans TestFlight (seule source qui relie une session à un testeur) ; sessions Sentry par release en contrôle global | Médiane ≥ 3 sessions par jour et par testeur iOS, sur 14 jours consécutifs (seuil à confirmer par l'humain) |
 | H2 : l'usage tient dans la durée, au-delà de l'effet de nouveauté | Testeurs actifs chaque jour pendant les deux semaines, lus dans TestFlight | Sam et au moins la moitié des testeurs iOS actifs au moins 12 jours sur 14 (seuil à confirmer par l'humain) |
 | H3 : la prévision en ligne droite est assez juste pour lever les yeux au bon moment | (a) Rejeu d'une trace enregistrée : écart entre l'heure prévue d'entrée dans la fenêtre et l'entrée réelle de la trace dans cette fenêtre. (b) Sur iPhone : écart entre l'heure de passage au point le plus proche affichée et l'instant où l'observateur voit l'avion au plus près | (a) ≤ 10 s, (b) ≤ 15 s, avion en croisière sans virage (seuils à confirmer par l'humain) |
+| H4 : ouvrir l'app sur Prochains passages, avec Ciel seulement pendant un survol, ne freine pas l'envie de l'ouvrir (décision du propriétaire du 2026-10-13, écart au brief) | Lu avec H1 : sessions par testeur et par jour ; retours des testeurs à la fin des deux semaines sur les avions entendus que l'app n'a pas montrés sur Ciel | H1 atteinte, et aucun testeur ne cite l'absence de Ciel comme raison de ne plus ouvrir l'app (seuil à confirmer par l'humain) |
 
 ## Utilisateurs et rôles
 Un seul rôle, **observateur**, sans compte ni identifiant : toute personne qui ouvre l'app (curieux et passionnés
@@ -30,23 +31,23 @@ interne de Google Play.
 
 ## Parcours principaux
 1. **Parcours critique : lever les yeux au bon moment.** L'observateur ouvre l'app et accorde la localisation
-   « pendant l'utilisation ». Si un avion le survole, l'app s'ouvre sur Ciel, aux couleurs de sa compagnie, et il
-   glisse vers Prochains passages ; sinon, Ciel n'existe pas et l'app montre directement Prochains passages, seule
-   page (INV9). La première carte annonce le prochain avion (compte à rebours, heure, direction d'arrivée, flèche qui
-   suit le téléphone). Il lève les yeux dans la direction indiquée ; quand l'avion arrive, la carte bascule en « En ce
-   moment » et Ciel apparaît à gauche avec ce même avion, sans changer la page affichée. Vérifié sur iPhone réel avec un
-   vrai survol.
-2. **Coup d'œil.** L'observateur entend un avion, ouvre l'app : Ciel l'identifie en une seconde (compagnie, vol,
-   origine et destination, altitude, vitesse, direction).
+   « pendant l'utilisation ». L'app s'ouvre sur Prochains passages (INV9) : la première carte annonce le prochain
+   avion (compte à rebours, heure, direction d'arrivée, flèche qui suit le téléphone). Il lève les yeux dans la
+   direction indiquée ; quand l'avion arrive, la carte bascule en « En ce moment » et Ciel apparaît à gauche avec ce
+   même avion, aux couleurs de sa compagnie, sans changer la page affichée : il glisse vers la droite pour l'ouvrir.
+   Vérifié sur iPhone réel avec un vrai survol.
+2. **Coup d'œil.** L'observateur entend un avion, ouvre l'app : si cet avion est le survol en cours (INV1), la carte
+   « En ce moment » l'annonce et Ciel, à un glissement, l'identifie (compagnie, vol, origine et destination, altitude,
+   vitesse, direction). Un avion entendu mais qui ne passe pas à 4 km ou moins n'ouvre pas Ciel (H4).
 3. **Parcours dégradés.** Localisation refusée (explication et bouton vers les réglages), hors ligne (dernières données
-   avec leur heure), aucun passage prévu. « Aucun avion au-dessus » n'est plus un état affiché : sans survol, Ciel
-   n'existe pas (INV9).
+   avec leur heure), aucun passage prévu, tous sur Prochains passages. « Aucun avion au-dessus » n'est plus un état
+   affiché : sans survol, Ciel n'existe pas (INV9).
 
 Écarts au brief (sections 2 et 5), décisions du propriétaire du 2026-10-13 : Ciel n'est une page que s'il a un avion à
-montrer ou un état d'attente (chargement, localisation refusée, hors ligne sans données) ; l'app s'ouvre sur Ciel
-seulement dans ces cas, sinon sur Prochains passages. Ciel n'a pas de flèche de direction en v0 (le cap de l'avion y
-est donné en point cardinal seulement) et le délai avant le prochain passage n'est affiché nulle part ailleurs que
-sur la première carte de Prochains passages.
+montrer (survol en cours ou avion retenu) ; l'app s'ouvre toujours sur Prochains passages, et les états d'attente
+(chargement, localisation refusée, hors ligne) n'y sont affichés que là. Ciel n'a pas de flèche de direction en v0 (le
+cap de l'avion y est donné en point cardinal seulement) et le délai avant le prochain passage n'est affiché nulle part
+ailleurs que sur la première carte de Prochains passages.
 
 ## Hors périmètre
 - Tout ce que le brief repousse au MVP et au-delà : hangar et collection, fiche avion, recherche, carte, alertes,

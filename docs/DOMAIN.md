@@ -30,7 +30,7 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 | Fenêtre « En ce moment » | `overheadWindow` | Intervalle de temps pendant lequel l'avion parcourt les ±5 km de sa trajectoire autour du point le plus proche |
 | Survol en cours | `overhead` | L'avion montré par Ciel et par la carte « En ce moment » (INV1) |
 | Avion retenu | `heldOverhead` | Dernier survol en cours montré par Ciel, gardé à l'écran après la fin de son survol tant que l'observateur reste sur Ciel (INV9) |
-| Présence de Ciel | `skyPresence` | Ce que la page Ciel montre, ou son absence du pager : `absent`, `neutre` (état d'attente), `survol`, `retenu` (INV9) |
+| Présence de Ciel | `skyPresence` | Ce que la page Ciel montre, ou son absence du pager : `absent`, `survol`, `retenu` (INV9) |
 | Passage | `Passage` | Prévision pour un avion : heure de passage, distance au point le plus proche, gisement d'arrivée, fenêtre |
 | Prochains passages | `upcomingPassages` | Les 10 passages à venir triés par heure (INV3) |
 | Compte à rebours | `countdown` | Temps restant avant le passage, affiché `MM:SS` |
@@ -71,13 +71,16 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 - **INV8** : aucune couleur ni image de compagnie n'est inventée : une compagnie absente de la table prend
   `UNKNOWN_AIRLINE`, une compagnie sans image autorisée prend la dérive générique SVG. (garantie par : résolution de la
   compagnie dans une fonction pure, testée sur un indicatif inconnu)
-- **INV9** : Ciel est une page du pager si et seulement si sa présence n'est pas `absent` (cycle « Page Ciel »
-  ci-dessous) : il y a un état d'attente (chargement, localisation refusée, hors ligne sans données), un survol en
-  cours, ou un avion retenu. Sinon le pager n'a qu'une page, Prochains passages, sans indicateur ni glissement.
-  L'apparition ou le retrait de Ciel ne change jamais la page affichée, sauf le retrait d'un avion retenu, qui se fait
-  quand l'observateur quitte Ciel par un glissement. Un avion retenu garde les dernières valeurs affichées et cède la
-  place dès qu'un nouveau survol commence. (garantie par : une fonction pure de présence de Ciel, qui reçoit l'état
-  des données, le survol en cours et la page affichée, testée sous Vitest ; décisions du propriétaire du 2026-10-13)
+- **INV9** : Ciel est une page du pager si et seulement s'il a un avion à montrer : le survol en cours, ou un avion
+  retenu (cycle « Page Ciel » ci-dessous). Sinon, et notamment en chargement, localisation refusée ou hors ligne sans
+  données, le pager n'a qu'une page, Prochains passages, sans indicateur ni glissement ; l'app s'ouvre donc toujours
+  sur Prochains passages. Des données périmées (ou hors ligne avec des données) comptent comme à jour : Ciel suit la
+  scène calculée sur les dernières données. L'apparition de Ciel ne change jamais la page affichée. Son retrait ne la
+  change que si Ciel est la page affichée : la bande passe alors à Prochains passages par la transition du pager
+  (380 ms). La page affichée est la page de repos du pager, destination comprise d'une transition en cours. Un avion
+  retenu garde les dernières valeurs affichées. (garantie par : une fonction pure de présence de Ciel, qui reçoit le
+  survol en cours, la liste des prochains passages, l'avion retenu, l'état des données et la page affichée, testée
+  sous Vitest ; décisions du propriétaire du 2026-10-13)
 
 Conséquences d'INV1, acceptées par le propriétaire : un avion sans cap ou sans vitesse (hélicoptère en stationnaire)
 n'est jamais le survol en cours, même à 1 km ; la distance actuelle d'un survol en cours peut atteindre environ
@@ -103,7 +106,7 @@ visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et a
 | De | Vers | Déclenchée par | Effet |
 |---|---|---|---|
 | chargement | à jour | Premier instantané reçu | Les écrans affichent la scène |
-| chargement | localisation refusée | Permission refusée | Explication en une phrase et bouton vers les réglages, sur les deux écrans |
+| chargement | localisation refusée | Permission refusée | Explication en une phrase et bouton vers les réglages, sur Prochains passages (Ciel est absent, INV9) |
 | chargement | hors ligne | Premier appel à la source en échec | Message court, sans données |
 | hors ligne | à jour | Rafraîchissement réussi (les tentatives continuent toutes les 10 s hors ligne) | Les écrans affichent la scène |
 | à jour | à jour | Rafraîchissement réussi | Nouvelle scène |
@@ -115,18 +118,19 @@ visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et a
 | en pause | état précédent | Retour au premier plan | Rafraîchissement immédiat |
 
 ### Page Ciel (INV9)
-Décisions du propriétaire du 2026-10-13. L'état d'attente est `neutre` : fond neutre, textes fixés par la spec des
-états (SPEC-0008).
+Décisions du propriétaire du 2026-10-13. Les transitions sont évaluées à chaque recalcul de la scène (tick d'une
+seconde) et à chaque changement de page de repos ; quand plusieurs s'appliquent au même instant, la première ligne
+du tableau qui s'applique l'emporte.
 
 | De | Vers | Déclenchée par | Effet |
 |---|---|---|---|
-| (lancement) | neutre | Ouverture de l'app (données en chargement) | Pager à deux pages, ouvert sur Ciel |
-| neutre | survol | Données à jour avec un survol en cours | Ciel montre l'avion aux couleurs de sa compagnie |
-| neutre | absent | Données à jour sans survol en cours | Ciel retiré ; Prochains passages, seule page, est affichée |
-| absent | survol | Un survol commence | Ciel ajouté à gauche ; la page affichée ne change pas |
+| (lancement) | absent | Ouverture de l'app | Prochains passages, seule page, affichée ; ses états d'attente relèvent de SPEC-0008 |
+| survol ou retenu | absent | Localisation refusée (données effacées) | Avion retenu effacé ; Ciel retiré, la bande passe à Prochains passages si Ciel était affichée |
+| absent ou retenu | survol | Un survol commence (y compris à l'instant où le précédent se termine) | Ciel ajouté à gauche s'il était absent, ou montre le nouvel avion ; la page affichée ne change pas |
 | survol | survol | Un autre avion devient le survol en cours | Ciel montre le nouvel avion |
 | survol | absent | Le survol se termine pendant que Prochains passages est affichée | Ciel retiré |
-| survol | retenu | Le survol se termine pendant que Ciel est affichée | Ciel garde l'avion et ses dernières valeurs |
-| retenu | survol | Un nouveau survol commence | Ciel montre le nouvel avion |
+| survol | retenu | Le survol se termine pendant que Ciel est affichée | Ciel garde l'avion et ses dernières valeurs ; plus de carte « En ce moment » |
 | retenu | absent | L'observateur glisse vers Prochains passages | Ciel retiré à la fin de la transition |
-| absent, survol ou retenu | neutre | Localisation refusée, ou hors ligne sans données | Données et avion retenu effacés ; Ciel montre l'état d'attente, la page affichée ne change pas |
+| retenu | absent | L'avion retenu redevient un passage à venir (virage puis nouvelle prévision) | Ciel retiré, la bande passe à Prochains passages |
+
+Il n'y a pas de transition vers `retenu` depuis `absent` : un avion n'est retenu que s'il était affiché.

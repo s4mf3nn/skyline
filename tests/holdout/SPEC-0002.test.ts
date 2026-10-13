@@ -1,23 +1,26 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Scénarios cachés de SPEC-0002 : parcours « indicatif d'un avion vers thème et dérive », sur d'autres données que le
-// contrat. Sans `.skip` : ils s'activent seuls quand le contrat de la spec n'a plus de `.skip`.
+// Scénarios cachés de SPEC-0002 : parcours de bout en bout par l'interface publique, avec d'autres données que
+// le contrat. Ils s'activent seuls quand aucun fichier de contrat de la spec n'a plus de `.skip`.
 
 const load = <T>(file: string): Promise<T> => import(path.resolve(file));
 
-interface TailColors {
+interface TailPalette {
   base: string;
-  band1: string;
-  band2: string;
-  disc: string;
+  stripe1: string | null;
+  stripe2: string | null;
+  disc: string | null;
 }
 interface Airline {
   code: string;
   name: string;
+  country: string | null;
   primary: string;
   secondary: string;
-  tail: TailColors;
+  iata: readonly string[];
+  icao: readonly string[];
+  tail: TailPalette;
 }
 interface AirlineTheme {
   bg: string;
@@ -25,83 +28,97 @@ interface AirlineTheme {
   small: string;
   track: string;
 }
-interface TailLayer {
-  layer: string;
-  fill: string;
-  shape: unknown;
-}
-interface AirlineThemeModule {
-  mix(from: string, to: string, t: number): string;
-  fit(foreground: string, background: string, target: number): string;
-  airlines: readonly Airline[];
+interface AirlinesModule {
+  AIRLINES: readonly Airline[];
   UNKNOWN_AIRLINE: Airline;
-  resolveAirline(callsign: string | null): Airline;
+  mix(a: string, b: string, t: number): string;
+  contrastRatio(a: string, b: string): number;
+  fit(fg: string, bg: string, target: number): string;
   airlineTheme(airline: Airline): AirlineTheme;
-  tailLayers(colors: TailColors): TailLayer[];
+  resolveAirline(callsign: string | null): Airline;
 }
-const theme = () => load<AirlineThemeModule>("src/shared/airline-theme/index.ts");
+const airlines = () => load<AirlinesModule>("src/shared/airlines/index.ts");
 
-function contrast(a: string, b: string): number {
-  const luminance = (hex: string): number => {
-    const channels = [1, 3, 5].map((i) => {
-      const v = Number.parseInt(hex.slice(i, i + 2), 16) / 255;
-      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * (channels[0] ?? 0) + 0.7152 * (channels[1] ?? 0) + 0.0722 * (channels[2] ?? 0);
-  };
-  const [x, y] = [luminance(a), luminance(b)];
-  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-}
+const CREAM = "#F4F1EA";
+const INK = "#1D1D1B";
 
-const OUTLINE = { kind: "path", d: "M 36 14 Q 40 2 54 2 L 150 2 L 460 440 L 116 440 Z" };
-const DISC = { kind: "circle", cx: 176, cy: 196, r: 66 };
+describe("SPEC-0002 hidden scenarios", () => {
+  it("themes a batch of ADS-B callsigns and stays readable and consistent with the public helpers", async () => {
+    const { resolveAirline, airlineTheme, fit: fitColor, mix, contrastRatio } = await airlines();
+    const callsigns = ["RUK90QX", "EZS15PH", "TAP1046", "KL1004", "VY1221", "IB3171"];
 
-describe("SPEC-0002 holdout : from callsign to theme and tail", () => {
-  it("shows the Lufthansa theme and tail for a lowercase callsign with trailing blanks", async () => {
-    const { resolveAirline, airlineTheme, tailLayers } = await theme();
-    const airline = resolveAirline("dlh1033 \t");
-    expect(airline.name).toBe("Lufthansa");
-    expect(airlineTheme(airline)).toEqual({ bg: "#0A1D3D", big: "#F9B000", small: "#F9B000", track: "#52492B" });
-    expect(tailLayers(airline.tail)).toEqual([
-      { layer: "base", fill: "#1A3466", shape: OUTLINE },
-      { layer: "disc", fill: "#F9B000", shape: DISC },
-    ]);
-  });
+    const names = callsigns.map((callsign) => resolveAirline(callsign).name);
+    expect(names).toEqual(["Ryanair", "easyJet", "TAP Air Portugal", "KLM", "Vueling", "Iberia"]);
 
-  it("themes the remaining handoff airlines from their callsigns, readable on their background", async () => {
-    const { resolveAirline, airlineTheme } = await theme();
-    const expected: Record<string, AirlineTheme> = {
-      KLM1234: { bg: "#00A1DE", big: "#003145", small: "#003145", track: "#007FB0" },
-      RYR8312: { bg: "#073590", big: "#F1C933", small: "#F1C933", track: "#4D6174" },
-      VLG8013: { bg: "#FFCC00", big: "#3C3C3B", small: "#3C3C3B", track: "#C5A112" },
-      TAP433: { bg: "#1E6F4A", big: "#F4F1EA", small: "#F4F1EA", track: "#5E967A" },
-    };
-    for (const [callsign, wanted] of Object.entries(expected)) {
-      const result = airlineTheme(resolveAirline(callsign));
-      expect(result).toEqual(wanted);
-      expect(contrast(result.big, result.bg)).toBeGreaterThanOrEqual(3);
-      expect(contrast(result.small, result.bg)).toBeGreaterThanOrEqual(4.5);
-    }
-  });
-
-  it("never invents a color for an aircraft without a known airline", async () => {
-    const { resolveAirline, airlineTheme, tailLayers, UNKNOWN_AIRLINE } = await theme();
-    for (const callsign of [null, "", "FHBXA", "F-HBXA", "N123AB", "XYZ4567", "AF1506"]) {
+    for (const callsign of callsigns) {
       const airline = resolveAirline(callsign);
-      expect(airline).toBe(UNKNOWN_AIRLINE);
-      expect(airlineTheme(airline)).toEqual({ bg: "#1D1D1B", big: "#F2E8D5", small: "#F2E8D5", track: "#5D5A53" });
-      expect(tailLayers(airline.tail).map((layer) => layer.fill)).toEqual(["#CFC8BA", "#1D1D1B"]);
+      const theme = airlineTheme(airline);
+      expect(theme.bg).toBe(airline.primary);
+      expect(theme.big).toBe(fitColor(airline.secondary, airline.primary, 3));
+      expect(theme.small).toBe(fitColor(airline.secondary, airline.primary, 4.5));
+      expect(theme.track).toBe(mix(theme.bg, theme.small, 0.3));
+      expect(contrastRatio(theme.big, theme.bg)).toBeGreaterThanOrEqual(3);
     }
   });
 
-  it("recomputes the handoff color functions on other colors, up to the 60 % limit and the fallbacks", async () => {
-    const { mix, fit: fitColor } = await theme();
-    expect(fitColor("#B3B3B3", "#808080", 3)).toBe("#E1E1E1");
-    expect(fitColor("#A0A0A0", "#8A8A8A", 3)).toBe("#404040");
-    expect(fitColor("#777777", "#808080", 3)).toBe("#373737");
-    expect(fitColor("#777777", "#808080", 4.5)).toBe("#1D1D1B");
-    expect(fitColor("#F4F1EA", "#F4F1EA", 4.5)).toBe("#6B6A67");
-    expect(mix("#FF6600", "#073590", 0.3)).toBe("#B5572B");
-    expect(mix("#123456", "#654321", 0.33)).toBe("#2D3945");
+  it("resolves a messy callsign list, falling back to the unknown airline without losing any entry", async () => {
+    const { resolveAirline, airlineTheme, UNKNOWN_AIRLINE } = await airlines();
+    const raw = ["eju52qr", "  ruk44 ", "FR1234", "XX1234", null, "GEZWX", "N3456", "Y4123B"];
+
+    const resolved = raw.map((callsign) => resolveAirline(callsign));
+
+    expect(resolved).toHaveLength(raw.length);
+    expect(resolved.map((airline) => airline.name)).toEqual([
+      "easyJet",
+      "Ryanair",
+      "Ryanair",
+      "Inconnue",
+      "Inconnue",
+      "Inconnue",
+      "Volaris Airlines",
+      "Inconnue",
+    ]);
+    expect(resolved[0]?.icao).toContain("EJU");
+    expect(resolved[1]).toBe(resolved[2]);
+    expect(airlineTheme(resolved[3] as Airline)).toEqual(airlineTheme(UNKNOWN_AIRLINE));
+    expect(airlineTheme(UNKNOWN_AIRLINE)).toEqual({
+      bg: "#1D1D1B",
+      big: "#F2E8D5",
+      small: "#F2E8D5",
+      track: "#5D5A53",
+    });
+  });
+
+  it("fit always returns the input, a color that reaches the target, or cream or ink", async () => {
+    const { fit: fitColor, contrastRatio, AIRLINES, UNKNOWN_AIRLINE } = await airlines();
+    expect(fitColor("#19D12C", "#45FE9C", 4.5)).toBe("#0D7118");
+    expect(fitColor("#1B836B", "#DC0894", 3)).toBe("#F4F1EA");
+    const backgrounds = [...AIRLINES, UNKNOWN_AIRLINE].map((airline) => airline.primary);
+    backgrounds.push("#000000", "#FFFFFF", "#7F7F7F", "#808080");
+    const foregrounds = ["#000000", "#FFFFFF", "#7F7F7F", "#C8102E", "#FFCC00", "#00A1DE", "#336699", "#f6c344"];
+
+    for (const bg of backgrounds) {
+      for (const fg of foregrounds) {
+        for (const target of [3, 4.5, 7]) {
+          const result = fitColor(fg, bg, target);
+          const unchanged = result === fg;
+          const reached = contrastRatio(result, bg) >= target;
+          const fallback = result === CREAM || result === INK;
+          expect(unchanged || reached || fallback).toBe(true);
+          if (unchanged) expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(target);
+        }
+      }
+    }
+  });
+
+  it("rejects an invalid custom palette and survives an unsolvable one", async () => {
+    const { airlineTheme, UNKNOWN_AIRLINE } = await airlines();
+
+    const broken = { ...UNKNOWN_AIRLINE, primary: "nope" };
+    expect(() => airlineTheme(broken)).toThrow(expect.objectContaining({ code: "INVALID_COLOR" }));
+
+    const flat = { ...UNKNOWN_AIRLINE, primary: "#7F7F7F", secondary: "#7F7F7F" };
+    const theme = airlineTheme(flat);
+    expect(theme).toEqual({ bg: "#7F7F7F", big: "#353535", small: INK, track: "#626261" });
   });
 });

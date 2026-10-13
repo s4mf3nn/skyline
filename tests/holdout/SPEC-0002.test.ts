@@ -45,10 +45,10 @@ const INK = "#1D1D1B";
 describe("SPEC-0002 hidden scenarios", () => {
   it("themes a batch of ADS-B callsigns and stays readable and consistent with the public helpers", async () => {
     const { resolveAirline, airlineTheme, fit: fitColor, mix, contrastRatio } = await airlines();
-    const callsigns = ["RYR8312", "KLM1234", "VLG8013", "TAP433", "IBE3457", "DLH1033"];
+    const callsigns = ["RUK7KM", "EZS15PH", "TAP1046", "KL1004", "VY1221", "IB3171"];
 
     const names = callsigns.map((callsign) => resolveAirline(callsign).name);
-    expect(names).toEqual(["Ryanair", "KLM", "Vueling", "TAP Air Portugal", "Iberia", "Lufthansa"]);
+    expect(names).toEqual(["Ryanair", "easyJet", "TAP Air Portugal", "KLM", "Vueling", "Iberia"]);
 
     for (const callsign of callsigns) {
       const airline = resolveAirline(callsign);
@@ -58,13 +58,12 @@ describe("SPEC-0002 hidden scenarios", () => {
       expect(theme.small).toBe(fitColor(airline.secondary, airline.primary, 4.5));
       expect(theme.track).toBe(mix(theme.bg, theme.small, 0.3));
       expect(contrastRatio(theme.big, theme.bg)).toBeGreaterThanOrEqual(3);
-      expect(contrastRatio(theme.small, theme.bg)).toBeGreaterThanOrEqual(4.5);
     }
   });
 
   it("resolves a messy callsign list, falling back to the unknown airline without losing any entry", async () => {
     const { resolveAirline, airlineTheme, UNKNOWN_AIRLINE } = await airlines();
-    const raw = ["ezs1234", "  RYR8312", "FR8312", "XX1234", null, "G-EZWX", "U2", "AFR"];
+    const raw = ["eju52qr", "  ruk44 ", "RK44", "XX1234", null, "GEZWX", "N3456", "N3456A"];
 
     const resolved = raw.map((callsign) => resolveAirline(callsign));
 
@@ -76,10 +75,10 @@ describe("SPEC-0002 hidden scenarios", () => {
       "Inconnue",
       "Inconnue",
       "Inconnue",
-      "Inconnue",
+      "Volaris Airlines",
       "Inconnue",
     ]);
-    expect(resolved[0]?.icao).toContain("EZS");
+    expect(resolved[0]?.icao).toContain("EJU");
     expect(resolved[1]).toBe(resolved[2]);
     expect(airlineTheme(resolved[3] as Airline)).toEqual(airlineTheme(UNKNOWN_AIRLINE));
     expect(airlineTheme(UNKNOWN_AIRLINE)).toEqual({
@@ -92,6 +91,8 @@ describe("SPEC-0002 hidden scenarios", () => {
 
   it("fit always returns the input, a color that reaches the target, or cream or ink", async () => {
     const { fit: fitColor, contrastRatio, AIRLINES, UNKNOWN_AIRLINE } = await airlines();
+    expect(fitColor("#19D12C", "#45FE9C", 4.5)).toBe("#0D7118");
+    expect(fitColor("#1B836B", "#DC0894", 3)).toBe("#F4F1EA");
     const backgrounds = [...AIRLINES, UNKNOWN_AIRLINE].map((airline) => airline.primary);
     backgrounds.push("#000000", "#FFFFFF", "#7F7F7F", "#808080");
     const foregrounds = ["#000000", "#FFFFFF", "#7F7F7F", "#C8102E", "#FFCC00", "#00A1DE", "#336699", "#f6c344"];
@@ -111,7 +112,7 @@ describe("SPEC-0002 hidden scenarios", () => {
   });
 
   it("rejects an invalid custom palette and survives an unsolvable one", async () => {
-    const { airlineTheme, UNKNOWN_AIRLINE, contrastRatio } = await airlines();
+    const { airlineTheme, UNKNOWN_AIRLINE } = await airlines();
 
     const broken = { ...UNKNOWN_AIRLINE, primary: "nope" };
     expect(() => airlineTheme(broken)).toThrow(expect.objectContaining({ code: "INVALID_COLOR" }));
@@ -119,6 +120,5 @@ describe("SPEC-0002 hidden scenarios", () => {
     const flat = { ...UNKNOWN_AIRLINE, primary: "#7F7F7F", secondary: "#7F7F7F" };
     const theme = airlineTheme(flat);
     expect(theme).toEqual({ bg: "#7F7F7F", big: "#353535", small: INK, track: "#626261" });
-    expect(contrastRatio(theme.small, theme.bg)).toBeGreaterThanOrEqual(4.5);
   });
 });

@@ -63,7 +63,7 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(contrastRatio("#777777", "#FFFFFF")).toBeCloseTo(4.478, 3);
   });
 
-  it("CA3 : keeps the foreground when it already reaches the target, including when it is exactly met", async () => {
+  it("CA3 : keeps the foreground when it already reaches the target, maximum contrast included", async () => {
     const { fit: fitColor } = await airlines();
     expect(fitColor("#F6C344", "#C8102E", 3)).toBe("#F6C344");
     expect(fitColor("#808080", "#FFFFFF", 3)).toBe("#808080");
@@ -75,6 +75,12 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(fitColor("#808080", "#FFFFFF", 4.5)).toBe("#767676");
     expect(fitColor("#777777", "#FFFFFF", 4.5)).toBe("#757575");
     expect(fitColor("#336699", "#336699", 3)).toBe("#A5BCD2");
+  });
+
+  it("CA3 : accumulates t by floating-point addition, as the handoff does", async () => {
+    const { fit: fitColor } = await airlines();
+    expect(fitColor("#C0B12C", "#59EF48", 4.5)).toBe("#605816");
+    expect(fitColor("#748CC1", "#9B9658", 3)).toBe("#3A4660");
   });
 
   it("CA3 : falls back to cream or ink, the one with the best contrast, when no mix reaches the target", async () => {
@@ -121,7 +127,7 @@ describe.skip("SPEC-0002 airline theme and table", () => {
 
   it("CA5 : lists the catalog airlines with unique, well-formed IATA and OACI codes", async () => {
     const { AIRLINES } = await airlines();
-    expect(AIRLINES.length).toBeGreaterThanOrEqual(145);
+    expect(AIRLINES).toHaveLength(145);
     const icao = AIRLINES.flatMap((airline) => airline.icao);
     const iata = AIRLINES.flatMap((airline) => airline.iata);
     expect(new Set(icao).size).toBe(icao.length);
@@ -136,28 +142,123 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     }
   });
 
-  it("CA5 : gives the handoff colors, name, country and tail palette to Air France and Lufthansa", async () => {
+  it("CA5 : gives the handoff name, country, colors and tail palette to the eight handoff airlines", async () => {
     const { resolveAirline } = await airlines();
-    expect(resolveAirline("AFR1506")).toEqual({
-      code: "AFR",
-      name: "Air France",
-      country: "France",
-      primary: "#0B1F4B",
-      secondary: "#F4F1EA",
-      iata: ["AF"],
-      icao: ["AFR"],
-      tail: { base: "#F4F1EA", stripe1: "#2B5BD6", stripe2: "#E1251B", disc: null },
+    const tail = (base: string, stripe1: string | null, stripe2: string | null, disc: string | null) => ({
+      base,
+      stripe1,
+      stripe2,
+      disc,
     });
-    expect(resolveAirline("DLH1033")).toEqual({
-      code: "DLH",
-      name: "Lufthansa",
-      country: "Allemagne",
-      primary: "#0A1D3D",
-      secondary: "#F9B000",
-      iata: ["LH"],
-      icao: ["DLH"],
-      tail: { base: "#1A3466", stripe1: null, stripe2: null, disc: "#F9B000" },
-    });
+    const expected: [string, Airline][] = [
+      [
+        "IBE3457",
+        {
+          code: "IBE",
+          name: "Iberia",
+          country: "Espagne",
+          primary: "#C8102E",
+          secondary: "#F6C344",
+          iata: ["IB"],
+          icao: ["IBE"],
+          tail: tail("#F6C344", "#8E0A22", null, null),
+        },
+      ],
+      [
+        "AFR1506",
+        {
+          code: "AFR",
+          name: "Air France",
+          country: "France",
+          primary: "#0B1F4B",
+          secondary: "#F4F1EA",
+          iata: ["AF"],
+          icao: ["AFR"],
+          tail: tail("#F4F1EA", "#2B5BD6", "#E1251B", null),
+        },
+      ],
+      [
+        "EZY4617",
+        {
+          code: "EZY",
+          name: "easyJet",
+          country: "Royaume-Uni",
+          primary: "#FF6600",
+          secondary: "#FFFFFF",
+          iata: ["U2", "EC", "DS"],
+          icao: ["EZY", "EJU", "EZS"],
+          tail: tail("#FFFFFF", "#FF6600", null, null),
+        },
+      ],
+      [
+        "DLH1033",
+        {
+          code: "DLH",
+          name: "Lufthansa",
+          country: "Allemagne",
+          primary: "#0A1D3D",
+          secondary: "#F9B000",
+          iata: ["LH"],
+          icao: ["DLH"],
+          tail: tail("#1A3466", null, null, "#F9B000"),
+        },
+      ],
+      [
+        "KLM1234",
+        {
+          code: "KLM",
+          name: "KLM",
+          country: "Pays-Bas",
+          primary: "#00A1DE",
+          secondary: "#003145",
+          iata: ["KL"],
+          icao: ["KLM"],
+          tail: tail("#FFFFFF", "#7FD3F2", null, null),
+        },
+      ],
+      [
+        "RYR8312",
+        {
+          code: "RYR",
+          name: "Ryanair",
+          country: "Irlande",
+          primary: "#073590",
+          secondary: "#F1C933",
+          iata: ["FR", "RK"],
+          icao: ["RYR", "RUK"],
+          tail: tail("#073590", "#F1C933", null, null),
+        },
+      ],
+      [
+        "VLG8013",
+        {
+          code: "VLG",
+          name: "Vueling",
+          country: "Espagne",
+          primary: "#FFCC00",
+          secondary: "#3C3C3B",
+          iata: ["VY"],
+          icao: ["VLG"],
+          tail: tail("#FFCC00", "#3C3C3B", null, null),
+        },
+      ],
+      [
+        "TAP433",
+        {
+          code: "TAP",
+          name: "TAP Air Portugal",
+          country: "Portugal",
+          primary: "#1E6F4A",
+          secondary: "#F4F1EA",
+          iata: ["TP"],
+          icao: ["TAP"],
+          tail: tail("#E4252F", "#F4F1EA", null, null),
+        },
+      ],
+    ];
+    for (const [callsign, airline] of expected) {
+      expect(resolveAirline(callsign)).toEqual(airline);
+    }
   });
 
   it("CA5 : keeps every code of a multi-operator airline, main code first (easyJet)", async () => {
@@ -208,6 +309,7 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(resolveAirline("AF1506").name).toBe("Air France");
     expect(resolveAirline("U24617").name).toBe("easyJet");
     expect(resolveAirline("TP433").name).toBe("TAP Air Portugal");
+    expect(resolveAirline("RK44").name).toBe("Ryanair");
     expect(resolveAirline("  afr1506 ").name).toBe("Air France");
   });
 
@@ -219,13 +321,16 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(resolveAirline("ZZZ123")).toBe(UNKNOWN_AIRLINE);
   });
 
-  it("CA8 : returns the unknown airline when no digit follows the prefix, and for registrations", async () => {
+  it("CA8 : returns the unknown airline when digits do not follow the prefix, and for registrations", async () => {
     const { resolveAirline, UNKNOWN_AIRLINE } = await airlines();
     expect(resolveAirline("AFR")).toBe(UNKNOWN_AIRLINE);
     expect(resolveAirline("AFRX")).toBe(UNKNOWN_AIRLINE);
     expect(resolveAirline("AF")).toBe(UNKNOWN_AIRLINE);
     expect(resolveAirline("F-HBXA")).toBe(UNKNOWN_AIRLINE);
+    expect(resolveAirline("FHBXA")).toBe(UNKNOWN_AIRLINE);
     expect(resolveAirline("N123AB")).toBe(UNKNOWN_AIRLINE);
+    expect(resolveAirline("N3456A")).toBe(UNKNOWN_AIRLINE);
+    expect(resolveAirline("AFR 1506")).toBe(UNKNOWN_AIRLINE);
   });
 
   it("CA8 : never throws on hostile callsign input", async () => {

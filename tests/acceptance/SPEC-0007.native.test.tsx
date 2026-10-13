@@ -55,7 +55,7 @@ function plane(hex: string, eastKm: number, northKm: number, trackDeg: number, g
 const INBOUND = plane("a1", -40, 0, 90, 720);
 
 function stubLocation(initial: { permission: LocationPermission; position: Position }) {
-  const state = { ...initial, permissionRequests: 0, positionReads: 0 };
+  const state = { ...initial, permissionRequests: 0, positionReads: 0, positionFailure: null as Error | null };
   const service: LocationService = {
     async requestPermission() {
       state.permissionRequests += 1;
@@ -63,6 +63,7 @@ function stubLocation(initial: { permission: LocationPermission; position: Posit
     },
     async getPosition() {
       if (state.permission !== "granted") throw new AppError("LOCATION_DENIED", "Location permission denied");
+      if (state.positionFailure !== null) throw state.positionFailure;
       state.positionReads += 1;
       return { ...state.position };
     },
@@ -371,5 +372,74 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     await settle();
     expect(harness.queries).toHaveLength(3);
     expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
+  });
+
+  it("CA11 : sends the return request even when one is in flight, and keeps the more recent answer", async () => {
+    const harness = setup({ aircraft: [INBOUND] });
+    await render(<harness.App />);
+    await settle();
+    harness.hold();
+    await elapse(harness.clock, 10);
+    expect(harness.queries).toHaveLength(2);
+
+    harness.lifecycle?.enterBackground();
+    await elapse(harness.clock, 5);
+    harness.source.setAircraft([plane("b2", 40, 0, 270, 720)]);
+    harness.lifecycle?.enterForeground();
+    await settle();
+    expect(harness.queries).toHaveLength(3);
+
+    harness.release();
+    await settle();
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
+    expect(readyState().snapshotAtMs).toBe(NOW + 15 * SECOND);
+  });
+
+  it("CA12 : reads the permission and the position again at each deadline while no position could be read", async () => {
+    const harness = setup({ aircraft: [INBOUND] });
+    harness.location.state.positionFailure = new Error("GPS unavailable");
+    await render(<harness.App />);
+    await settle();
+    expect(state().status).toBe("unavailable");
+    expect(harness.queries).toHaveLength(0);
+
+    harness.location.state.positionFailure = null;
+    await elapse(harness.clock, 10);
+    expect(harness.location.state.positionReads).toBe(1);
+    expect(harness.queries).toHaveLength(1);
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["a1"]);
+  });
+
+  it("CA15 : refresh() sends its request even while one is in flight, and the most recent answer wins", async () => {
+    const harness = setup({ aircraft: [INBOUND] });
+    await render(<harness.App />);
+    await settle();
+    harness.hold();
+    await elapse(harness.clock, 10);
+    expect(harness.queries).toHaveLength(2);
+
+    harness.source.setAircraft([plane("b2", 40, 0, 270, 720)]);
+    await act(async () => {
+      latestRefresh();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    expect(harness.queries).toHaveLength(3);
+    harness.release();
+    await settle();
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
+  });
+
+  it("CA14 : ignores the answer of a request that was in flight when unmounted", async () => {
+    const error = jest.spyOn(console, "error");
+    const harness = setup({ aircraft: [INBOUND], holdSource: true });
+    const view = await render(<harness.App />);
+    await settle();
+    expect(harness.queries).toHaveLength(1);
+
+    view.unmount();
+    harness.release();
+    await elapse(harness.clock, 30);
+    expect(harness.queries).toHaveLength(1);
+    expect(error).not.toHaveBeenCalled();
   });
 });

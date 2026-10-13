@@ -37,7 +37,8 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 ## Invariants
 - **INV1** : il y a au plus un survol en cours, et c'est le même avion sur Ciel et sur la carte « En ce moment ». C'est
   l'avion dont l'heure courante est dans sa fenêtre « En ce moment » et dont le point le plus proche est à 4 km ou
-  moins ; s'il y en a plusieurs, le plus proche de l'observateur à l'heure courante. (garantie par : une seule fonction
+  moins. Un survol en cours le reste jusqu'à la fin de sa fenêtre (pas de bascule d'un tick à l'autre) ; quand il
+  n'y en a pas, le candidat le plus proche de l'observateur à l'heure courante devient le survol en cours. (garantie par : une seule fonction
   pure de calcul de la scène, lue par les deux écrans ; décision du propriétaire du 2026-10-13, qui remplace la règle
   « distance actuelle ≤ 4 km » de l'écran Ciel du brief)
 - **INV2** : un passage n'est prévu que pour un avion dont le point le plus proche est devant lui (heure de passage
@@ -81,6 +82,7 @@ visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et a
 | (aucun) | à venir | Un rafraîchissement prévoit un passage qui entre dans les 10 premiers | Carte ajoutée à sa place dans l'ordre des heures |
 | à venir | à venir | Rafraîchissement | Heure, gisement et compte à rebours recalculés ; la carte peut changer de rang |
 | à venir | en ce moment | Le compte à rebours atteint 00:00 (cible fixée par SPEC-0004) et l'avion devient le survol en cours (INV1) | La carte passe en tête, en version « En ce moment » ; Ciel montre cet avion |
+| retiré ou aucun | en ce moment | Le survol en cours se termine alors que cet avion est encore dans sa fenêtre (INV1) | La carte « En ce moment » montre cet avion ; Ciel aussi |
 | à venir | retiré | Rafraîchissement qui ne prévoit plus le passage (virage, sortie du rayon, rang > 10), ou entrée dans sa fenêtre alors qu'un autre avion est le survol en cours (INV3) | Carte retirée sans animation particulière |
 | en ce moment | terminé | L'horloge dépasse la fin de la fenêtre, ou un autre avion devient le survol en cours | Carte retirée ; Ciel passe au survol suivant ou à « aucun avion au-dessus » |
 

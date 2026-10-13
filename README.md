@@ -8,15 +8,65 @@ Extrait d'un projet réel (service de raccourcissement d'URL), dont il reprend l
 
 L'humain décide du **quoi** (spec et tests de contrat) et arbitre les fusions. Les agents font le **comment**, chacun dans un workspace isolé, sur un périmètre de fichiers déclaré. Tout ce qu'un script peut vérifier est vérifié par un script, pas par une consigne.
 
-```
-/new-spec ──► PR de spec ──► /plan ──► PR de plan ──► /implement T1 ┐
- (humain relit et fusionne)   (humain relit et fusionne)  /implement T2 ├─► /review ─► /ship ─► CI ─► /land
-                                                          /implement T3 ┘   (boucle ≤ 3)        (humain arbitre)
-                          bug : issue ─► /fix (test qui échoue, puis correction) ─► /review ─► /ship ─► CI ─► /land
-                                        vendredi : /retro ─► /learn ─► règle durable
+```mermaid
+flowchart TB
+  brief{{"Brief produit"}}:::humain
+
+  subgraph quoi["Le quoi : décidé par l'humain"]
+    direction TB
+    roadmap["/roadmap<br/>produit, domaine, ordre des specs"]:::agent
+    spec["/new-spec<br/>spec, tests de contrat, scénarios cachés"]:::agent
+    prSpec{{"PR de spec<br/>l'humain relit et fusionne"}}:::humain
+    plan["/plan<br/>tâches, périmètres, conception"]:::agent
+    prPlan{{"PR de plan<br/>l'humain relit et fusionne"}}:::humain
+    prCadrage{{"PR de cadrage<br/>l'humain relit et fusionne"}}:::humain
+    roadmap --> prCadrage --> spec --> prSpec --> plan --> prPlan
+  end
+
+  subgraph comment["Le comment : produit par les agents, un workspace isolé par tâche"]
+    direction TB
+    t1["/implement T1"]:::agent
+    t2["/implement T2"]:::agent
+    t3["/implement T3"]:::agent
+    verify(["pnpm verify<br/>typage, lint, tests, contrat"]):::script
+    review["/review<br/>relecteur à contexte vierge"]:::agent
+    ship["/ship<br/>push et PR"]:::agent
+    t1 & t2 & t3 --> verify --> review
+    review -- "à corriger, 3 passages au plus" --> verify
+    review -- "OK" --> ship
+  end
+
+  subgraph fusion["La fusion : arbitrée par l'humain"]
+    direction TB
+    ci(["CI<br/>gates, scénarios cachés, sécurité, risque"]):::script
+    land{{"/land<br/>l'humain arbitre et fusionne"}}:::humain
+    main[("main")]
+    release{{"Livraison<br/>lancée et approuvée par l'humain"}}:::humain
+    ci --> land --> main --> release
+  end
+
+  brief --> roadmap
+  prPlan --> t1 & t2 & t3
+  ship --> ci
+
+  subgraph apres["Après la fusion"]
+    direction TB
+    fix["/fix<br/>test qui reproduit le bug, puis correction,<br/>par le même circuit de revue et de fusion"]:::agent
+    retro["/retro puis /learn<br/>chaque vendredi"]:::agent
+    regle(["Règle durable<br/>lint, test ou script"]):::script
+    retro --> regle
+  end
+  main -. "bug" .-> fix
+  main -. "incidents, PR rejetées" .-> retro
+
+  classDef humain fill:#fde68a,stroke:#b45309,color:#1f2937
+  classDef agent fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937
+  classDef script fill:#bbf7d0,stroke:#15803d,color:#1f2937
 ```
 
-Le cycle complet est décrit dans `docs/factory/WORKFLOW.md`, et chaque concept (bail, périmètre, test de contrat, verdict, patch-id…) est défini dans `docs/factory/LEXIQUE.md`.
+Lecture du schéma : un hexagone est une décision de l'humain, un rectangle le travail d'un agent, une forme arrondie un contrôle fait par un script. Chaque tâche suit le circuit `pnpm verify`, `/review`, `/ship` dans son propre workspace : un bail, une revue et une PR par tâche.
+
+Le cycle complet est décrit dans `docs/factory/WORKFLOW.md` (avec le schéma détaillé d'une tâche et de ses barrières), et chaque concept (bail, périmètre, test de contrat, verdict, patch-id…) est défini dans `docs/factory/LEXIQUE.md`.
 
 ## Ce que contient la factory
 

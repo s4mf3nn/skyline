@@ -1,5 +1,84 @@
 # Workflow de la factory
 
+## Une tâche et ses barrières
+
+Le schéma suit une tâche de `/implement` à l'archivage de son workspace (étapes 3 à 9 du cycle ci-dessous). Un losange est une barrière : tant qu'elle refuse, la tâche n'avance pas. La plupart sont tenues par un script ; le verdict du relecteur et les contrôles de `/land` le sont par un agent. Un hexagone est une décision de l'humain, un rectangle le travail d'un agent, une forme arrondie une action faite par un script.
+
+```mermaid
+flowchart TB
+  start["/implement SPEC-XXXX T#<br/>un workspace par tâche"]:::agent
+
+  subgraph production["3. Production"]
+    direction TB
+    planGate{"Plan fusionné sur main ?<br/>plan-gate"}:::script
+    hide(["Scénarios cachés retirés du workspace<br/>holdout hide"]):::script
+    lease{"Bail acquis sur le périmètre ?<br/>lease"}:::script
+    code["Tests puis code,<br/>dans le périmètre déclaré"]:::agent
+    verify{"pnpm verify vert ?<br/>typage, lint, tests, couverture, contrat"}:::script
+    planGate -- "oui" --> hide --> lease
+    lease -- "oui" --> code --> verify
+    verify -- "non" --> code
+  end
+
+  subgraph revue["4. Revue locale"]
+    direction TB
+    preReview{"Pré-revue par script<br/>périmètre, contrat, dépendances, conventions"}:::script
+    reviewer{"Verdict du relecteur<br/>contexte vierge, niveau selon le risque"}:::agent
+    preReview -- "conforme" --> reviewer
+  end
+
+  subgraph pr["5. PR"]
+    direction TB
+    ship["/ship<br/>résumé de PR et push"]:::agent
+    prePush{"Hook pre-push<br/>revue OK à jour, Semgrep, gitleaks"}:::script
+    ci{"CI<br/>gates, scénarios cachés, trace de revue,<br/>étiquette de risque"}:::script
+    ship --> prePush
+    prePush -- "accepté" --> ci
+  end
+
+  subgraph merge["6 et 7. Arbitrage et merge"]
+    direction TB
+    arbitrage{{"Lecture de l'humain<br/>spec, tests, résumé, verdict,<br/>puis le code signalé"}}:::humain
+    land{"/land<br/>main verte, checks verts, branche à jour"}:::agent
+    confirmation{{"Confirmation explicite<br/>si risk:high ou contract-change"}}:::humain
+    squash(["Squash-merge sur main"]):::script
+    arbitrage --> land
+    land -- "risk:high ou<br/>contract-change" --> confirmation --> squash
+    land -- "autre PR" --> squash
+  end
+
+  archivage(["8 et 9. Archivage du workspace : bail libéré,<br/>puis groupe suivant du plan"]):::script
+
+  start --> planGate
+  verify -- "oui" --> preReview
+  reviewer -- "OK" --> ship
+  ci -- "vert" --> arbitrage
+  squash --> archivage
+
+  stopPlan(["Arrêt : fusionner d'abord la PR de plan"]):::arret
+  stopBail(["Arrêt : un autre agent tient ces chemins"]):::arret
+  stopRevue(["Arrêt : proposer un redécoupage"]):::arret
+  stopLand(["Arrêt : /land liste ce qui échoue,<br/>l'humain décide de la suite"]):::arret
+  resolve["/resolve, lancé par l'humain<br/>dans le workspace de la tâche"]:::agent
+
+  planGate -- "non" --> stopPlan
+  lease -- "non" --> stopBail
+  preReview -- "violations" --> code
+  reviewer -- "à corriger,<br/>3 passages au plus" --> code
+  reviewer -- "pas OK après<br/>3 passages" --> stopRevue
+  prePush -- "revue absente<br/>ou périmée" --> preReview
+  ci -- "rouge" --> code
+  land -- "retard ou conflit" --> resolve --> ship
+  land -- "main ou check rouge,<br/>PR en brouillon" --> stopLand
+
+  classDef humain fill:#fde68a,stroke:#b45309,color:#1f2937
+  classDef agent fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937
+  classDef script fill:#bbf7d0,stroke:#15803d,color:#1f2937
+  classDef arret fill:#fecaca,stroke:#b91c1c,color:#1f2937
+```
+
+Si c'est l'étape « Scénarios cachés » de la CI qui est rouge, le retour à l'agent ne se fait pas tel quel : voir « Scénarios cachés », « En cas d'échec ».
+
 ## Cycle d'une fonctionnalité
 
 0. **Cadrage** (une fois par projet, puis à chaque changement de cap) : `/roadmap <brief>`. L'agent pose ses questions, remplit `docs/PRODUCT.md` (problème, hypothèses, rôles, parcours, données personnelles, KPI et événements), `docs/DOMAIN.md` (vocabulaire, invariants, cycles de vie) et `specs/ROADMAP.md` (tranches verticales ordonnées, dépendances), propose les ADR à trancher, puis ouvre une PR de cadrage relue par `spec-reviewer`. Tu la relis et la fusionnes. Chaque spec déclare ensuite ses dépendances (`Dépend de`) : `/plan` refuse une spec dont une dépendance n'est pas livrée (`node scripts/plan-gate.mjs deps`), une spec étant livrée quand aucun de ses fichiers de contrat n'a plus de `.skip`.

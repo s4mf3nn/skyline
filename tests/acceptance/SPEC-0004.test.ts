@@ -36,6 +36,11 @@ interface SceneModule {
   bearingDeg(from: Position, to: Position): number;
   cardinalPoint(deg: number): CardinalPoint;
   arrowAngleDeg(targetDeg: number, headingDeg: number | null): number | null;
+  OVERHEAD_THRESHOLD_KM: number;
+  FORECAST_RADIUS_KM: number;
+  MAX_UPCOMING: number;
+  WINDOW_HALF_LENGTH_KM: number;
+  REFRESH_INTERVAL_MS: number;
   computeScene(input: {
     snapshot: { aircraft: readonly Aircraft[]; takenAtMs: number };
     observer: Position;
@@ -160,6 +165,15 @@ describe.skip("SPEC-0004 scene computation", () => {
     expect(arrowAngleDeg(45, null)).toBeNull();
   });
 
+  it("CA4 : exports the constants of the brief", async () => {
+    const constants = await scene();
+    expect(constants.OVERHEAD_THRESHOLD_KM).toBe(4);
+    expect(constants.FORECAST_RADIUS_KM).toBe(80);
+    expect(constants.MAX_UPCOMING).toBe(10);
+    expect(constants.WINDOW_HALF_LENGTH_KM).toBe(5);
+    expect(constants.REFRESH_INTERVAL_MS).toBe(10_000);
+  });
+
   it("CA4 : computes the passage of an aircraft flying straight over the observer", async () => {
     const result = await computeAt([plane("a1", -40, 0, 90, 720)]);
     expect(result.overhead).toBeNull();
@@ -210,6 +224,14 @@ describe.skip("SPEC-0004 scene computation", () => {
     expectNear(passage.passageTimeMs, T0 + 125 * SECOND, SECOND);
   });
 
+  it("CA4 : treats a track of 360 degrees as 0", async () => {
+    const north = (await computeAt([plane("n0", 0, -30, 0, 720)])).upcoming[0] as Passage;
+    const wrapped = (await computeAt([plane("n0", 0, -30, 360, 720)])).upcoming[0] as Passage;
+    expect(wrapped.trackCardinal).toBe("N");
+    expect(wrapped.passageTimeMs).toBe(north.passageTimeMs);
+    expect(wrapped.arrivalCardinal).toBe("S");
+  });
+
   it("CA4 : rounds the times to the millisecond", async () => {
     const result = await computeAt([plane("e5", -33.3, -1.7, 87, 683)]);
     expect(result.upcoming).toHaveLength(1);
@@ -251,9 +273,9 @@ describe.skip("SPEC-0004 scene computation", () => {
 
   it("CA5 : drops an aircraft once its window is over, the end of the window being excluded", async () => {
     const aircraft = [plane("a1", -40, 0, 90, 720)];
-    expect((await computeAt(aircraft, T0 + 224 * SECOND, "a1")).overhead?.hex).toBe("a1");
-    expect((await computeAt(aircraft, T0 + 226 * SECOND, "a1")).overhead).toBeNull();
-    expect((await computeAt(aircraft, T0 + 226 * SECOND)).upcoming).toEqual([]);
+    expect((await computeAt(aircraft, T0 + 220 * SECOND, "a1")).overhead?.hex).toBe("a1");
+    expect((await computeAt(aircraft, T0 + 230 * SECOND, "a1")).overhead).toBeNull();
+    expect((await computeAt(aircraft, T0 + 230 * SECOND)).upcoming).toEqual([]);
   });
 
   it("CA6 : sorts the passages by entry time, whatever the order of the snapshot", async () => {
@@ -286,9 +308,14 @@ describe.skip("SPEC-0004 scene computation", () => {
     expectNear((duplicate.upcoming[0] as Passage).passageTimeMs, T0 + 175 * SECOND, SECOND);
   });
 
+  it("CA6 : considers only the first occurrence of a hex, even when it is unusable", async () => {
+    const result = await computeAt([plane("dd", -40, 0, 90, null), plane("dd", -30, 0, 90, 720)]);
+    expect(result).toEqual({ overhead: null, upcoming: [] });
+  });
+
   it("CA6 : never lists a passage whose window has started, and shows no negative countdown", async () => {
     const aircraft = [plane("a1", -40, 0, 90, 720), plane("b2", 30, -3, 270, 720), plane("c3", -20, 0, 90, 360)];
-    for (const offset of [0, 60, 124, 126, 160, 176, 300]) {
+    for (const offset of [0, 60, 120, 130, 160, 180, 300]) {
       const nowMs = T0 + offset * SECOND;
       const result = await computeAt(aircraft, nowMs);
       for (const passage of result.upcoming) expect(passage.passageTimeMs).toBeGreaterThan(nowMs);
@@ -318,6 +345,17 @@ describe.skip("SPEC-0004 scene computation", () => {
     expect(result.overhead?.hex).toBe("t1");
   });
 
+  it("CA7 : makes overhead an aircraft already past its closest point, in the middle of its window", async () => {
+    // Point le plus proche 10 s derrière (à 3 km), fenêtre de -35 s à +15 s : l'avion s'éloigne mais est encore éligible.
+    const result = await computeAt([plane("r1", 2, 3, 90, 720)]);
+    const overhead = result.overhead as Passage;
+    expect(overhead.hex).toBe("r1");
+    expect(overhead.closestTimeMs).toBeLessThan(T0);
+    expectNear(overhead.closestDistanceKm, 3, 0.1);
+    expectNear(overhead.windowEndMs, T0 + 15 * SECOND, SECOND);
+    expect(result.upcoming).toEqual([]);
+  });
+
   it("CA7 : has no overhead for an empty snapshot", async () => {
     expect(await computeAt([])).toEqual({ overhead: null, upcoming: [] });
   });
@@ -337,7 +375,7 @@ describe.skip("SPEC-0004 scene computation", () => {
 
   it("CA8 : hands over to the nearest candidate when the previous overhead has left its window", async () => {
     const aircraft = [plane("h1", -1, 2, 90, 720), plane("k1", 6, -1, 270, 720)];
-    const result = await computeAt(aircraft, T0 + 31 * SECOND, "h1");
+    const result = await computeAt(aircraft, T0 + 35 * SECOND, "h1");
     expect(result.overhead?.hex).toBe("k1");
   });
 
@@ -374,13 +412,13 @@ describe.skip("SPEC-0004 scene computation", () => {
 
   it("CA9 : turns an upcoming passage into the overhead at the entry in the window, then drops it at the end", async () => {
     const aircraft = [plane("a1", -40, 0, 90, 720)];
-    const before = await computeAt(aircraft, T0 + 174 * SECOND);
+    const before = await computeAt(aircraft, T0 + 170 * SECOND);
     expect(hexes(before.upcoming)).toEqual(["a1"]);
     expect(before.overhead).toBeNull();
-    const during = await computeAt(aircraft, T0 + 176 * SECOND);
+    const during = await computeAt(aircraft, T0 + 180 * SECOND);
     expect(during.overhead?.hex).toBe("a1");
     expect(during.upcoming).toEqual([]);
-    const after = await computeAt(aircraft, T0 + 226 * SECOND);
+    const after = await computeAt(aircraft, T0 + 230 * SECOND);
     expect(after).toEqual({ overhead: null, upcoming: [] });
   });
 

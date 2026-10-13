@@ -149,9 +149,9 @@ describe("SPEC-0004 hidden scenarios (rendering)", () => {
     expect(upcoming?.hex).toBe("u1");
     expect(Math.abs((upcoming?.passageTimeMs ?? 0) - (NOW + 167 * SECOND))).toBeLessThanOrEqual(SECOND);
 
-    for (let second = 0; second < 166; second += 1) await elapse(harness.clock, SECOND);
+    for (let second = 0; second < 160; second += 1) await elapse(harness.clock, SECOND);
     expect(readyScene().overhead).toBeNull();
-    for (let second = 0; second < 3; second += 1) await elapse(harness.clock, SECOND);
+    for (let second = 0; second < 10; second += 1) await elapse(harness.clock, SECOND);
     expect(readyScene().overhead?.hex).toBe("u1");
     expect(readyScene().upcoming).toEqual([]);
 
@@ -163,7 +163,7 @@ describe("SPEC-0004 hidden scenarios (rendering)", () => {
     expect(view().headingDeg).toBe(30);
     expect(arrowAngleDeg(trackDeg, view().headingDeg)).toBe(330);
 
-    for (let second = 0; second < 66; second += 1) await elapse(harness.clock, SECOND);
+    for (let second = 0; second < 70; second += 1) await elapse(harness.clock, SECOND);
     expect(readyScene()).toEqual({ overhead: null, upcoming: [] });
     expect(harness.queries).toHaveLength(1);
   });

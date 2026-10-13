@@ -72,7 +72,7 @@ function plane(hex: string, eastKm: number, northKm: number, trackDeg: number, g
 
 /** Localisation factice pilotable : permission et position modifiables, cap poussé à la main, lectures comptées. */
 function stubLocation(initial: { permission: LocationPermission; position: Position }) {
-  const state = { ...initial, permissionRequests: 0, positionReads: 0 };
+  const state = { ...initial, permissionRequests: 0, positionReads: 0, positionFailure: null as Error | null };
   const listeners = new Set<(degrees: number) => void>();
   const service: LocationService = {
     async requestPermission() {
@@ -81,6 +81,7 @@ function stubLocation(initial: { permission: LocationPermission; position: Posit
     },
     async getPosition() {
       if (state.permission !== "granted") throw new AppError("LOCATION_DENIED", "Location permission denied");
+      if (state.positionFailure !== null) throw state.positionFailure;
       state.positionReads += 1;
       return { ...state.position };
     },
@@ -105,25 +106,25 @@ interface SetupOptions {
   permission?: LocationPermission;
   aircraft?: Aircraft[];
   withLifecycle?: boolean;
-  /** Retient les réponses de la source ADS-B jusqu'à `release()`. */
+  /** Retient les réponses de la source ADS-B jusqu'à `release()` (ou `hold()` plus tard). */
   holdSource?: boolean;
 }
 
 function setup(options: SetupOptions = {}) {
   const clock = createFakeClock(NOW);
   const fakeSource = createFakeAdsbSource(options.aircraft ?? []);
-  let release: () => void = () => undefined;
-  const gate = options.holdSource
-    ? new Promise<void>((resolve) => {
-        release = resolve;
-      })
-    : Promise.resolve();
   const queries: AdsbQuery[] = [];
+  // Réponses retenues, dans l'ordre des requêtes ; le contenu est figé à la requête, la réponse arrive plus tard.
+  const pending: Array<() => void> = [];
+  let holding = options.holdSource ?? false;
+  let failure: Error | null = null;
   const adsb: AdsbSource = {
     async fetchAircraft(query) {
       queries.push({ ...query });
-      await gate;
-      return fakeSource.fetchAircraft(query);
+      if (failure !== null) throw failure;
+      const answer = await fakeSource.fetchAircraft(query);
+      if (holding) await new Promise<void>((resolve) => pending.push(resolve));
+      return answer;
     },
   };
   const location = stubLocation({ permission: options.permission ?? "granted", position: OBSERVER });
@@ -131,7 +132,30 @@ function setup(options: SetupOptions = {}) {
   const lifecycle = options.withLifecycle ? lifecycleModule().createFakeLifecycle() : undefined;
   const services = { clock, location: location.service, adsb, monitoring, ...(lifecycle ? { lifecycle } : {}) };
   const App = createApp({ services, features: [{ name: "probe", order: 1, screen: ProbeScreen }] });
-  return { App, clock, queries, source: fakeSource, location, monitoring, lifecycle, release };
+  return {
+    App,
+    clock,
+    queries,
+    source: fakeSource,
+    location,
+    monitoring,
+    lifecycle,
+    hold() {
+      holding = true;
+    },
+    /** Cesse de retenir les réponses et libère toutes celles en attente. */
+    release() {
+      holding = false;
+      for (const resolve of pending.splice(0)) resolve();
+    },
+    /** Libère une seule réponse retenue, par rang de requête. */
+    releaseRequest(index: number) {
+      pending[index]?.();
+    },
+    failWith(error: Error | null) {
+      failure = error;
+    },
+  };
 }
 
 let latestRefresh: () => void = () => undefined;
@@ -183,16 +207,18 @@ describe.skip("SPEC-0004 useScene (rendering)", () => {
     expect(view().state.status).toBe("loading");
     expect(view().headingDeg).toBeNull();
 
+    // La réponse arrive 4 s après la requête : l'instantané porte l'heure de la réponse.
+    harness.clock.advance(4 * SECOND);
     harness.release();
     await settle();
     const { state } = view();
     expect(state.status).toBe("ready");
     if (state.status !== "ready") return;
-    expect(state.snapshotAtMs).toBe(NOW);
-    expect(state.nowMs).toBe(NOW);
+    expect(state.snapshotAtMs).toBe(NOW + 4 * SECOND);
+    expect(state.nowMs).toBe(NOW + 4 * SECOND);
     expect(state.scene.overhead).toBeNull();
     expect(state.scene.upcoming.map((passage) => passage.hex)).toEqual(["a1"]);
-    expectNear((state.scene.upcoming[0] as Passage).passageTimeMs, NOW + 175 * SECOND, SECOND);
+    expectNear((state.scene.upcoming[0] as Passage).passageTimeMs, NOW + 179 * SECOND, SECOND);
     expect((state.scene.upcoming[0] as Passage).arrivalCardinal).toBe("O");
   });
 
@@ -299,6 +325,29 @@ describe.skip("SPEC-0004 useScene (rendering)", () => {
     expect(harness.queries).toHaveLength(2);
   });
 
+  it("CA15 : is loading again, not denied, while the position is read again after a grant", async () => {
+    const harness = setup({ aircraft: [plane("a1", -40, 0, 90, 720)], withLifecycle: true });
+    await render(<harness.App />);
+    await settle();
+    harness.location.state.permission = "denied";
+    await act(async () => {
+      harness.lifecycle?.enterForeground();
+    });
+    await settle();
+    expect(view().state).toEqual({ status: "denied" });
+
+    harness.location.state.permission = "granted";
+    harness.hold();
+    await act(async () => {
+      harness.lifecycle?.enterForeground();
+    });
+    await settle();
+    expect(view().state).toEqual({ status: "loading" });
+    harness.release();
+    await settle();
+    expect(view().state.status).toBe("ready");
+  });
+
   it("CA16 : exposes the phone heading, null until the first value, wrapped into [0, 360)", async () => {
     const harness = setup({ aircraft: [] });
     await render(<harness.App />);
@@ -344,6 +393,83 @@ describe.skip("SPEC-0004 useScene (rendering)", () => {
     });
     await settle();
     expect(view().state.status).toBe("ready");
+  });
+
+  it("CA17 : is unavailable when reading the position fails for another reason than the permission", async () => {
+    const harness = setup({ aircraft: [plane("a1", -40, 0, 90, 720)] });
+    harness.location.state.positionFailure = new RangeError("position unavailable");
+    await render(<harness.App />);
+    await settle();
+    expect(view().state).toEqual({ status: "unavailable" });
+    expect(harness.queries).toEqual([]);
+
+    harness.location.state.positionFailure = null;
+    await act(async () => {
+      latestRefresh();
+    });
+    await settle();
+    expect(view().state.status).toBe("ready");
+  });
+
+  it("CA17 : treats any error of the source like an unavailable source, and keeps the last scene", async () => {
+    const harness = setup({ aircraft: [plane("a1", -40, 0, 90, 720)] });
+    harness.failWith(new TypeError("unexpected payload"));
+    await render(<harness.App />);
+    await settle();
+    expect(view().state).toEqual({ status: "unavailable" });
+
+    harness.failWith(null);
+    await act(async () => {
+      latestRefresh();
+    });
+    await settle();
+    expect(view().state.status).toBe("ready");
+
+    harness.failWith(new TypeError("unexpected payload"));
+    await act(async () => {
+      latestRefresh();
+    });
+    await settle();
+    expect(readyScene().upcoming.map((passage) => passage.hex)).toEqual(["a1"]);
+  });
+
+  it("CA17 : keeps only the answer of the latest request when an older one answers late", async () => {
+    const harness = setup({ aircraft: [plane("a1", -40, 0, 90, 720)], holdSource: true });
+    await render(<harness.App />);
+    await settle();
+    harness.source.setAircraft([]);
+    await act(async () => {
+      latestRefresh();
+    });
+    await settle();
+    expect(harness.queries).toHaveLength(2);
+
+    harness.releaseRequest(1);
+    await settle();
+    expect(readyScene()).toEqual({ overhead: null, upcoming: [] });
+    harness.releaseRequest(0);
+    await settle();
+    expect(readyScene()).toEqual({ overhead: null, upcoming: [] });
+  });
+
+  it("CA17 : does nothing after the unmount when a request is still in flight", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const harness = setup({ aircraft: [plane("a1", -40, 0, 90, 720)], holdSource: true });
+      await render(<harness.App />);
+      await settle();
+      await act(async () => {
+        await screen.unmount();
+      });
+      harness.release();
+      await settle();
+      await elapse(harness.clock, 5 * SECOND);
+      expect(harness.queries).toHaveLength(1);
+      expect(harness.location.listenerCount()).toBe(0);
+      expect(consoleError).not.toHaveBeenCalled();
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it("CA17 : keeps the last scene, recomputed every second, when the source fails after a success", async () => {

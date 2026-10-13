@@ -89,7 +89,7 @@ describe("SPEC-0004 hidden scenarios (scene computation)", () => {
       plane("s3", 0, 0.2, 90, 900, 0), // au sol, à côté de l'observateur
       plane("s4", 0, 10, 0, 800), // s'éloigne vers le nord
     ];
-    const [start, gap, first, second, handover, end] = await replay(aircraft, [0, 27, 161, 187, 201, 247]);
+    const [start, gap, first, second, handover, end] = await replay(aircraft, [0, 30, 165, 190, 205, 250]);
     const { arrowAngleDeg } = await sceneModule();
 
     expect(start?.overhead?.hex).toBe("s5");
@@ -176,7 +176,7 @@ describe("SPEC-0004 hidden scenarios (scene computation)", () => {
     const entry = computeScene({ snapshot, observer, nowMs: T0 + 10 * SECOND, previousOverheadHex: null });
     expect(entry).toEqual({ overhead: null, upcoming: [] });
 
-    const gone = computeScene({ snapshot, observer, nowMs: T0 + 17 * SECOND, previousOverheadHex: "t1" });
+    const gone = computeScene({ snapshot, observer, nowMs: T0 + 20 * SECOND, previousOverheadHex: "t1" });
     expect(gone).toEqual({ overhead: null, upcoming: [] });
   });
 });

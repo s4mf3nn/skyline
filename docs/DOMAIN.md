@@ -37,7 +37,9 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 ## Invariants
 - **INV1** : il y a au plus un survol en cours, et c'est le même avion sur Ciel et sur la carte « En ce moment ». C'est
   l'avion dont l'heure courante est dans sa fenêtre « En ce moment » et dont le point le plus proche est à 4 km ou
-  moins. Un survol en cours le reste jusqu'à la fin de sa fenêtre (pas de bascule d'un tick à l'autre) ; quand il
+  moins. Un survol en cours le reste tant que l'instantané courant le contient et que sa fenêtre, recalculée à chaque
+  rafraîchissement, contient l'heure courante ; le seuil de 4 km n'est évalué qu'à son entrée (pas de bascule d'un
+  tick à l'autre) ; quand il
   n'y en a pas, le candidat le plus proche de l'observateur à l'heure courante devient le survol en cours. La fonction
   de scène reçoit donc le survol précédent en entrée (instantané, horloge, position, survol précédent). (garantie par : une seule fonction
   pure de calcul de la scène, lue par les deux écrans ; décision du propriétaire du 2026-10-13, qui remplace la règle
@@ -74,9 +76,7 @@ n'est jamais le survol en cours, même à 1 km ; la distance actuelle d'un survo
 **Point à trancher par la spec des calculs de passage.** Le brief fait basculer la carte en « En ce moment » à 00:00
 et définit la fenêtre comme ±5 km autour du point le plus proche : si le compte à rebours vise le point le plus proche,
 l'avion entre dans la fenêtre (≈ 23 s à 780 km/h) avant 00:00. Recommandation : le compte à rebours et « Passe à »
-visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et avec INV1. Le « passage réel » de H3
-(`docs/PRODUCT.md`) est l'instant où l'avion entre réellement dans sa fenêtre ; si SPEC-0004 retient l'autre cible,
-elle amende ce document et le seuil de H3.
+visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et avec INV1. Les deux mesures de H3 sont définies dans `docs/PRODUCT.md`.
 
 ## Cycles de vie
 ### Passage (carte du carrousel)
@@ -87,7 +87,7 @@ elle amende ce document et le seuil de H3.
 | à venir | en ce moment | Le compte à rebours atteint 00:00 (cible fixée par SPEC-0004) et l'avion devient le survol en cours (INV1) | La carte passe en tête, en version « En ce moment » ; Ciel montre cet avion |
 | retiré ou aucun | en ce moment | Le survol en cours se termine alors que cet avion est encore dans sa fenêtre (INV1) | La carte « En ce moment » montre cet avion ; Ciel aussi |
 | à venir | retiré | Rafraîchissement qui ne prévoit plus le passage (virage, sortie du rayon, rang > 10), ou entrée dans sa fenêtre alors qu'un autre avion est le survol en cours (INV3) | Carte retirée sans animation particulière |
-| en ce moment | terminé | L'horloge dépasse la fin de la fenêtre, ou un rafraîchissement recalcule une fenêtre (virage, avion perdu) qui ne contient plus l'heure courante | Carte retirée ; Ciel passe au survol suivant ou à « aucun avion au-dessus » |
+| en ce moment | terminé | L'instantané courant ne contient plus l'avion, ou sa fenêtre recalculée ne contient plus l'heure courante (fin de fenêtre, virage) | Carte retirée ; Ciel passe au survol suivant ou à « aucun avion au-dessus » |
 
 ### Données affichées
 | De | Vers | Déclenchée par | Effet |

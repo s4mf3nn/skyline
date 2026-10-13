@@ -20,7 +20,7 @@ plusieurs fois par jour ? Mesure pendant deux semaines d'usage par Sam et quelqu
 |---|---|---|
 | H1 : l'écran Ciel et la prévision des passages donnent envie d'ouvrir l'app plusieurs fois par jour | Sessions par testeur et par jour dans TestFlight (seule source qui relie une session à un testeur) ; sessions Sentry par release en contrôle global | Médiane ≥ 3 sessions par jour et par testeur iOS, sur 14 jours consécutifs (seuil à confirmer par l'humain) |
 | H2 : l'usage tient dans la durée, au-delà de l'effet de nouveauté | Testeurs actifs chaque jour pendant les deux semaines, lus dans TestFlight | Sam et au moins la moitié des testeurs iOS actifs au moins 12 jours sur 14 (seuil à confirmer par l'humain) |
-| H3 : la prévision en ligne droite est assez juste pour lever les yeux au bon moment | Écart entre la bascule « En ce moment » et le survol réel, relevé à la main lors du parcours sur cible réelle | ≤ 10 s pour un avion en croisière, sans virage (seuil à confirmer par l'humain) |
+| H3 : la prévision en ligne droite est assez juste pour lever les yeux au bon moment | (a) Rejeu d'une trace enregistrée : écart entre l'heure prévue d'entrée dans la fenêtre et l'entrée réelle de la trace dans cette fenêtre. (b) Sur iPhone : écart entre l'heure de passage au point le plus proche affichée et l'instant où l'observateur voit l'avion au plus près | (a) ≤ 10 s, (b) ≤ 15 s, avion en croisière sans virage (seuils à confirmer par l'humain) |
 
 ## Utilisateurs et rôles
 Un seul rôle, **observateur**, sans compte ni identifiant : toute personne qui ouvre l'app (curieux et passionnés
@@ -79,7 +79,7 @@ session apparaît dans Sentry pour la release livrée. Une spec qui voudrait un
 |---|---|---|
 | Sessions par testeur et par jour (H1) | Médiane, sur 14 jours, du nombre de sessions par testeur iOS et par jour | Sessions TestFlight ; total Sentry en contrôle |
 | Testeurs actifs chaque jour (H2) | Nombre de jours sur 14 avec au moins une session, par testeur iOS | Sessions TestFlight |
-| Précision de la bascule « En ce moment » (H3) | Écart relevé à la main entre bascule et survol réel | Aucun (relevé manuel) |
+| Précision de la prévision (H3) | (a) écart calculé par le rejeu de trace ; (b) écart relevé à la main sur iPhone | Aucun (test et relevé manuel) |
 | Taux de sessions sans plantage | Sessions sans erreur fatale / sessions | Sessions Sentry |
 
 | Événement | Déclencheur | Propriétés |

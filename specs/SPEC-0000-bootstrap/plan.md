@@ -47,6 +47,8 @@ Constats partagés par les tâches :
   +├── app/_layout.tsx         # NOUVEAU : layout du socle (global.css, police, Slot)
   +├── assets/fonts/           # NOUVEAU : Archivo (TTF) et OFL.txt
   +├── tests/unit/expo-config.test.ts  # NOUVEAU : garde de la permission et du script dev
+  ~├── tests/unit/ci-data.test.ts      # MODIFIÉ : NODE_ENV dans l'env réduit de spawnSync
+  ~├── tests/unit/security-scan.test.ts # MODIFIÉ : NODE_ENV dans l'env réduit de spawnSync
   ~└── docs/factory/UI.md      # MODIFIÉ : tokens, états, accessibilité
   ```
   ```jsonc

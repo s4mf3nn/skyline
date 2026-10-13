@@ -13,7 +13,7 @@ suivants sont prévisionnels : `/new-spec` reporte l'identifiant réel.
 |---|---|---|---|---|
 | 1 | Socle | SPEC-0000 | Bootstrap du projet | aucune |
 | 2 | Socle | SPEC-0001 | Livraison, cible réelle et observabilité | SPEC-0000 |
-| 3 | Étape 1 : thème | SPEC-0002 (à écrire) | Thème des compagnies : `fit()` et `mix()` à l'identique de `data.js`, table des compagnies (couleurs du handoff, codes IATA et OACI), résolution de la compagnie depuis l'indicatif avec repli `UNKNOWN_AIRLINE` (INV5, INV8), composant de dérive générique SVG en miroir. Interface publique : fonctions et composant exportés par la feature | SPEC-0000 |
+| 3 | Étape 1 : thème | SPEC-0002 | Thème des compagnies : `fit()` et `mix()` à l'identique de `data.js`, table des compagnies (couleurs du handoff, codes IATA et OACI), résolution de la compagnie depuis l'indicatif avec repli `UNKNOWN_AIRLINE` (INV5, INV8), composant de dérive générique SVG en miroir. Interface publique : `src/shared/airlines/index.ts` (fonctions) et `tail.tsx` (composant), lus par Ciel et Passages | SPEC-0000 |
 | 4 | Étape 2 : navigation | SPEC-0003 (à écrire) | Pager horizontal à deux pages (seuil 60 pt, résistance ×0,3, 380 ms, verrouillage d'axe à 8 pt), indicateur à deux traits, ouverture sur Ciel ; pages lues dans le registre généré des features | SPEC-0000 |
 | 5 | Étape 5 : calculs | SPEC-0004 (à écrire) | Calcul de la scène : distance au sol, extrapolation en ligne droite, point le plus proche, heure de passage, fenêtre « En ce moment », gisement d'arrivée, huit points cardinaux, angle de la flèche, survol en cours (INV1 à INV4) ; acquisition de la position de l'observateur (permission « pendant l'utilisation », lecture de la position, relecture au retour au premier plan) et du cap du téléphone dans `src/shared/location/`, sur l'interface et le faux de SPEC-0000 ; crochet qui lit la position et un instantané de la source ADS-B et recalcule à chaque seconde. Tranche le point ouvert de `docs/DOMAIN.md` (cible du compte à rebours) | SPEC-0000 |
 | 6 | Étape 3 : Ciel | SPEC-0005 (à écrire) | Écran Ciel sur la source ADS-B factice : couleurs de la compagnie survolante, typographie Archivo, colonne d'infos, dérive générique, flèche de direction qui tourne avec le cap du téléphone ; route affichée en repli « inconnue » jusqu'à SPEC-0009 | SPEC-0002, SPEC-0003, SPEC-0004 |
@@ -27,7 +27,7 @@ suivants sont prévisionnels : `/new-spec` reporte l'identifiant réel.
 Notes :
 - SPEC-0002, SPEC-0003 et SPEC-0004 avancent en parallèle entre elles et avec SPEC-0001 ; SPEC-0005 et SPEC-0006
   aussi ; SPEC-0010 avance en parallèle de SPEC-0007 à SPEC-0009.
-- SPEC-0002 et SPEC-0004 sont de la logique pure : leur interface publique est l'`index.ts` de leur feature, jouée
+- SPEC-0002 et SPEC-0004 sont de la logique pure : leur interface publique est un `index.ts` (`src/shared/airlines/` pour SPEC-0002, la feature pour SPEC-0004), jouée
   sous Vitest (mutation comprise). Elles fondent l'algorithme que le backend du MVP reprendra (`GET /passages`).
 - Mentions légales (attribution ODbL, licence d'Archivo, non-affiliation, crédits des dérives) : réalisées par le
   propriétaire hors roadmap des agents (`docs/PRODUCT.md`, « Hors périmètre »). Elles sont un préalable de SPEC-0010

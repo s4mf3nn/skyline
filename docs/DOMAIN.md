@@ -26,16 +26,19 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 | Cap de l'avion | `trackDeg` | Direction vers laquelle l'avion se dirige (0 au nord, sens horaire), affichée en point cardinal sur Ciel et sur la carte « En ce moment » (« repart vers ») |
 | Gisement d'arrivée | `arrivalBearingDeg` | Direction, vue de l'observateur, depuis laquelle l'avion arrive (0 au nord, sens horaire) |
 | Point cardinal | `CardinalPoint` | L'un des huit secteurs N, NE, E, SE, S, SO, O, NO, de 45° chacun |
-| Angle de la flèche | `arrowAngleDeg` | Direction visée moins le cap du téléphone, ramené dans [0, 360). Direction visée : le gisement d'arrivée sur une carte de passage ; le cap de l'avion sur Ciel et sur la carte « En ce moment » (handoff) |
+| Angle de la flèche | `arrowAngleDeg` | Direction visée moins le cap du téléphone, ramené dans [0, 360). Direction visée : le gisement d'arrivée sur une carte de passage ; le cap de l'avion sur la carte « En ce moment » (handoff). Ciel n'a pas de flèche en v0 (décision du propriétaire du 2026-10-13) |
 | Fenêtre « En ce moment » | `overheadWindow` | Intervalle de temps pendant lequel l'avion parcourt les ±5 km de sa trajectoire autour du point le plus proche |
 | Survol en cours | `overhead` | L'avion montré par Ciel et par la carte « En ce moment » (INV1) |
+| Avion retenu | `heldOverhead` | Dernier survol en cours montré par Ciel, gardé à l'écran après la fin de son survol tant que l'observateur reste sur Ciel (INV9) |
+| Présence de Ciel | `skyPresence` | Ce que la page Ciel montre, ou son absence du pager : `absent`, `neutre` (état d'attente), `survol`, `retenu` (INV9) |
 | Passage | `Passage` | Prévision pour un avion : heure de passage, distance au point le plus proche, gisement d'arrivée, fenêtre |
 | Prochains passages | `upcomingPassages` | Les 10 passages à venir triés par heure (INV3) |
 | Compte à rebours | `countdown` | Temps restant avant le passage, affiché `MM:SS` |
 | Route de vol | `FlightRoute` | Origine et destination d'un vol (codes IATA, villes, coordonnées), issues de la source des routes (ADR-0002) |
 
 ## Invariants
-- **INV1** : il y a au plus un survol en cours, et c'est le même avion sur Ciel et sur la carte « En ce moment ». C'est
+- **INV1** : il y a au plus un survol en cours, et c'est le même avion sur Ciel et sur la carte « En ce moment » (seule
+  exception : Ciel peut montrer un avion retenu quand il n'y a plus de survol en cours, INV9). C'est
   l'avion dont l'heure courante est dans sa fenêtre « En ce moment » et dont le point le plus proche est à 4 km ou
   moins. Un survol en cours le reste tant que l'instantané courant le contient et que sa fenêtre, recalculée à chaque
   rafraîchissement, contient l'heure courante ; le seuil de 4 km n'est évalué qu'à son entrée (pas de bascule d'un
@@ -68,6 +71,13 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 - **INV8** : aucune couleur ni image de compagnie n'est inventée : une compagnie absente de la table prend
   `UNKNOWN_AIRLINE`, une compagnie sans image autorisée prend la dérive générique SVG. (garantie par : résolution de la
   compagnie dans une fonction pure, testée sur un indicatif inconnu)
+- **INV9** : Ciel est une page du pager si et seulement si sa présence n'est pas `absent` (cycle « Page Ciel »
+  ci-dessous) : il y a un état d'attente (chargement, localisation refusée, hors ligne sans données), un survol en
+  cours, ou un avion retenu. Sinon le pager n'a qu'une page, Prochains passages, sans indicateur ni glissement.
+  L'apparition ou le retrait de Ciel ne change jamais la page affichée, sauf le retrait d'un avion retenu, qui se fait
+  quand l'observateur quitte Ciel par un glissement. Un avion retenu garde les dernières valeurs affichées et cède la
+  place dès qu'un nouveau survol commence. (garantie par : une fonction pure de présence de Ciel, qui reçoit l'état
+  des données, le survol en cours et la page affichée, testée sous Vitest ; décisions du propriétaire du 2026-10-13)
 
 Conséquences d'INV1, acceptées par le propriétaire : un avion sans cap ou sans vitesse (hélicoptère en stationnaire)
 n'est jamais le survol en cours, même à 1 km ; la distance actuelle d'un survol en cours peut atteindre environ
@@ -84,10 +94,10 @@ visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et a
 |---|---|---|---|
 | (aucun) | à venir | Un rafraîchissement prévoit un passage qui entre dans les 10 premiers | Carte ajoutée à sa place dans l'ordre des heures |
 | à venir | à venir | Rafraîchissement | Heure, gisement et compte à rebours recalculés ; la carte peut changer de rang |
-| à venir | en ce moment | Le compte à rebours atteint 00:00 (cible fixée par SPEC-0004) et l'avion devient le survol en cours (INV1) | La carte passe en tête, en version « En ce moment » ; Ciel montre cet avion |
+| à venir | en ce moment | Le compte à rebours atteint 00:00 (cible fixée par SPEC-0004) et l'avion devient le survol en cours (INV1) | La carte passe en tête, en version « En ce moment » ; Ciel montre cet avion (et apparaît s'il était absent, INV9) |
 | retiré ou aucun | en ce moment | Le survol en cours se termine alors que cet avion est encore dans sa fenêtre (INV1) | La carte « En ce moment » montre cet avion ; Ciel aussi |
 | à venir | retiré | Rafraîchissement qui ne prévoit plus le passage (virage, sortie du rayon, rang > 10), ou entrée dans sa fenêtre alors qu'un autre avion est le survol en cours (INV3) | Carte retirée sans animation particulière |
-| en ce moment | terminé | L'instantané courant ne contient plus l'avion, ou sa fenêtre recalculée ne contient plus l'heure courante (fin de fenêtre, virage) | Carte retirée ; Ciel passe au survol suivant ou à « aucun avion au-dessus » |
+| en ce moment | terminé | L'instantané courant ne contient plus l'avion, ou sa fenêtre recalculée ne contient plus l'heure courante (fin de fenêtre, virage) | Carte retirée ; Ciel passe au survol suivant, retient l'avion ou disparaît (cycle « Page Ciel ») |
 
 ### Données affichées
 | De | Vers | Déclenchée par | Effet |
@@ -103,3 +113,20 @@ visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et a
 | localisation refusée | chargement | Permission accordée au retour au premier plan | Reprise du cycle |
 | tout état | en pause | L'app passe en arrière-plan | Aucun rafraîchissement ni tick |
 | en pause | état précédent | Retour au premier plan | Rafraîchissement immédiat |
+
+### Page Ciel (INV9)
+Décisions du propriétaire du 2026-10-13. L'état d'attente est `neutre` : fond neutre, textes fixés par la spec des
+états (SPEC-0008).
+
+| De | Vers | Déclenchée par | Effet |
+|---|---|---|---|
+| (lancement) | neutre | Ouverture de l'app (données en chargement) | Pager à deux pages, ouvert sur Ciel |
+| neutre | survol | Données à jour avec un survol en cours | Ciel montre l'avion aux couleurs de sa compagnie |
+| neutre | absent | Données à jour sans survol en cours | Ciel retiré ; Prochains passages, seule page, est affichée |
+| absent | survol | Un survol commence | Ciel ajouté à gauche ; la page affichée ne change pas |
+| survol | survol | Un autre avion devient le survol en cours | Ciel montre le nouvel avion |
+| survol | absent | Le survol se termine pendant que Prochains passages est affichée | Ciel retiré |
+| survol | retenu | Le survol se termine pendant que Ciel est affichée | Ciel garde l'avion et ses dernières valeurs |
+| retenu | survol | Un nouveau survol commence | Ciel montre le nouvel avion |
+| retenu | absent | L'observateur glisse vers Prochains passages | Ciel retiré à la fin de la transition |
+| absent, survol ou retenu | neutre | Localisation refusée, ou hors ligne sans données | Données et avion retenu effacés ; Ciel montre l'état d'attente, la page affichée ne change pas |

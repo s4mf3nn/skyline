@@ -30,15 +30,23 @@ interne de Google Play.
 
 ## Parcours principaux
 1. **Parcours critique : lever les yeux au bon moment.** L'observateur ouvre l'app et accorde la localisation
-   « pendant l'utilisation ». Ciel montre le survol en cours aux couleurs de sa compagnie, ou « aucun avion au-dessus »
-   avec le délai avant le prochain passage. Il glisse vers Prochains passages : la première carte annonce le prochain
-   avion (compte à rebours, heure, direction d'arrivée, flèche qui suit le téléphone). Il lève les yeux dans la
-   direction indiquée ; quand l'avion arrive, la carte bascule en « En ce moment » et Ciel montre ce même avion.
-   Vérifié sur iPhone réel avec un vrai survol.
+   « pendant l'utilisation ». Si un avion le survole, l'app s'ouvre sur Ciel, aux couleurs de sa compagnie, et il
+   glisse vers Prochains passages ; sinon, Ciel n'existe pas et l'app montre directement Prochains passages, seule
+   page (INV9). La première carte annonce le prochain avion (compte à rebours, heure, direction d'arrivée, flèche qui
+   suit le téléphone). Il lève les yeux dans la direction indiquée ; quand l'avion arrive, la carte bascule en « En ce
+   moment » et Ciel apparaît à gauche avec ce même avion, sans changer la page affichée. Vérifié sur iPhone réel avec un
+   vrai survol.
 2. **Coup d'œil.** L'observateur entend un avion, ouvre l'app : Ciel l'identifie en une seconde (compagnie, vol,
    origine et destination, altitude, vitesse, direction).
 3. **Parcours dégradés.** Localisation refusée (explication et bouton vers les réglages), hors ligne (dernières données
-   avec leur heure), aucun avion au-dessus, aucun passage prévu.
+   avec leur heure), aucun passage prévu. « Aucun avion au-dessus » n'est plus un état affiché : sans survol, Ciel
+   n'existe pas (INV9).
+
+Écarts au brief (sections 2 et 5), décisions du propriétaire du 2026-10-13 : Ciel n'est une page que s'il a un avion à
+montrer ou un état d'attente (chargement, localisation refusée, hors ligne sans données) ; l'app s'ouvre sur Ciel
+seulement dans ces cas, sinon sur Prochains passages. Ciel n'a pas de flèche de direction en v0 (le cap de l'avion y
+est donné en point cardinal seulement) et le délai avant le prochain passage n'est affiché nulle part ailleurs que
+sur la première carte de Prochains passages.
 
 ## Hors périmètre
 - Tout ce que le brief repousse au MVP et au-delà : hangar et collection, fiche avion, recherche, carte, alertes,

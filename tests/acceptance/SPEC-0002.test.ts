@@ -49,7 +49,7 @@ interface CatalogEntry {
   icao: string[];
 }
 const catalog = (): CatalogEntry[] =>
-  JSON.parse(fs.readFileSync(path.resolve("specs/SPEC-0002-theme-compagnies/catalogue.json"), "utf8")).airlines;
+  JSON.parse(fs.readFileSync(path.resolve("tests/acceptance/SPEC-0002.catalogue.json"), "utf8")).airlines;
 // Noms du handoff qui remplacent ceux du catalogue.
 const HANDOFF_NAMES: Record<string, string> = { EZY: "easyJet", TAP: "TAP Air Portugal" };
 

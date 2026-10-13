@@ -59,7 +59,7 @@ scrubMessage(message: string): string                                   // masqu
 Toute fonctionnalité métier ; les parcours métier sur cible réelle, écrits par les specs qui les créent. La mise en vente sur l'App Store et Google Play (la livraison s'arrête aux pistes de test). Le suivi des performances et la relecture de session de Sentry.
 
 ## Contraintes
-Exécutée après SPEC-0000, en parallèle des premières specs métier : elle ne touche pas `src/features/`. Les fichiers `src/shared/monitoring/`, `app.json` ou `app.config.*` et `eas.json` sont en zone sensible (`review:full`). Aucun secret sous le préfixe `EXPO_PUBLIC_`.
+Exécutée après SPEC-0000, en parallèle des premières specs métier : elle ne touche pas `src/features/`. La tâche qui ajoute l'option `build` à `createApp` retire de `tsconfig.test.json` l'exclusion ciblée de `SPEC-0001.native.test.tsx` laissée par SPEC-0000. Les fichiers `src/shared/monitoring/`, `app.json` ou `app.config.*` et `eas.json` sont en zone sensible (`review:full`). Aucun secret sous le préfixe `EXPO_PUBLIC_`.
 
 ## Questions ouvertes
 Aucune.

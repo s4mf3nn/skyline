@@ -118,7 +118,7 @@ describe("SPEC-0007 hidden scenarios", () => {
     expect(Math.abs((passage?.passageTimeMs ?? 0) - (NOW + 65_000))).toBeLessThanOrEqual(2000);
   });
 
-  it("recovers a source that fails with a bad status then a timeout, one error code throughout", async () => {
+  it("recovers a source that fails with a bad status then a network error, one error code throughout", async () => {
     const { createAdsbLolSource } = await load<AdsbLolModule>("src/shared/adsb/adsblol.ts");
     let call = 0;
     const fetch: FetchLike = async () => {

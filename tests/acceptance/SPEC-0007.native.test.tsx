@@ -110,6 +110,9 @@ function setup(options: SetupOptions = {}) {
     location,
     monitoring,
     lifecycle,
+    hold() {
+      holding = true;
+    },
     release() {
       holding = false;
       for (const resolve of pending.splice(0)) resolve();
@@ -120,9 +123,14 @@ function setup(options: SetupOptions = {}) {
   };
 }
 
+// Statut de chaque rendu de la sonde, dans l'ordre.
+let renderedStatuses: string[] = [];
+let latestRefresh: () => void = () => undefined;
 function ProbeScreen() {
   const { useScene } = sceneModule();
-  const { state } = useScene();
+  const { state, refresh } = useScene();
+  latestRefresh = refresh;
+  renderedStatuses.push(state.status);
   return <Text testID="view">{JSON.stringify(state)}</Text>;
 }
 
@@ -154,6 +162,7 @@ async function elapse(clock: { advance(ms: number): void }, seconds: number) {
 describe.skip("SPEC-0007 refresh (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    renderedStatuses = [];
   });
   afterEach(() => {
     jest.useRealTimers();
@@ -182,6 +191,7 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
 
     expect(harness.location.state.permissionRequests).toBe(1);
     expect(harness.location.state.positionReads).toBe(1);
+    expect(renderedStatuses.slice(renderedStatuses.indexOf("ready"))).not.toContain("loading");
   });
 
   it("CA9 : keeps refreshing without a lifecycle service", async () => {
@@ -311,6 +321,7 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
   });
 
   it("CA14 : cancels the cadence when unmounted", async () => {
+    const error = jest.spyOn(console, "error");
     const harness = setup({ aircraft: [INBOUND] });
     const view = await render(<harness.App />);
     await settle();
@@ -319,6 +330,46 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     view.unmount();
     await elapse(harness.clock, 40);
     expect(harness.queries).toHaveLength(1);
-    expect(jest.getTimerCount()).toBe(0);
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it("CA15 : refresh() queries at once and does not shift the 10 second deadline", async () => {
+    const harness = setup({ aircraft: [INBOUND] });
+    await render(<harness.App />);
+    await settle();
+    await elapse(harness.clock, 4);
+    await act(async () => {
+      latestRefresh();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    expect(harness.queries).toHaveLength(2);
+    expect(readyState().snapshotAtMs).toBe(NOW + 4 * SECOND);
+
+    await elapse(harness.clock, 5);
+    expect(harness.queries).toHaveLength(2);
+    await elapse(harness.clock, 1);
+    expect(harness.queries).toHaveLength(3);
+    expect(readyState().snapshotAtMs).toBe(NOW + 10 * SECOND);
+  });
+
+  it("CA11 : ignores a response that arrives during the pause, and queries once on return", async () => {
+    const harness = setup({ aircraft: [INBOUND] });
+    await render(<harness.App />);
+    await settle();
+    harness.hold();
+    harness.source.setAircraft([plane("b2", 40, 0, 270, 720)]);
+    await elapse(harness.clock, 10);
+    expect(harness.queries).toHaveLength(2);
+
+    harness.lifecycle?.enterBackground();
+    harness.release();
+    await settle();
+    expect(readyState().snapshotAtMs).toBe(NOW);
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["a1"]);
+
+    harness.lifecycle?.enterForeground();
+    await settle();
+    expect(harness.queries).toHaveLength(3);
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
   });
 });

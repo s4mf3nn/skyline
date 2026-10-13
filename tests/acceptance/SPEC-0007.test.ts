@@ -291,7 +291,7 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
   });
 
   it("CA7 : rejects an invalid query without calling fetch", async () => {
-    const { createAdsbLolSource } = await adsbLol();
+    const { createAdsbLolSource, buildAdsbLolUrl } = await adsbLol();
     const invalid: AdsbQuery[] = [
       { ...LYON, latitude: 91 },
       { ...LYON, latitude: -90.1 },
@@ -300,6 +300,9 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
       { ...LYON, latitude: Number.POSITIVE_INFINITY },
       { ...LYON, radiusKm: 0 },
       { ...LYON, radiusKm: -5 },
+      { ...LYON, radiusKm: Number.NaN },
+      { ...LYON, radiusKm: Number.POSITIVE_INFINITY },
+      { ...LYON, longitude: -180.1 },
     ];
     for (const query of invalid) {
       const { fetch, calls } = stubFetch(async () => okResponse({ ac: [] }));
@@ -307,6 +310,7 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
         code: "ADSB_UNAVAILABLE",
       });
       expect(calls).toHaveLength(0);
+      expect(() => buildAdsbLolUrl(query)).toThrow(expect.objectContaining({ code: "ADSB_UNAVAILABLE" }));
     }
   });
 

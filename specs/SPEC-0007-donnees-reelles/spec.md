@@ -2,7 +2,7 @@
 
 Statut : BROUILLON
 Risque estimé : élevé (touche `src/shared/adsb/`, zone sensible : la position de l'observateur sort de l'appareil dans la requête ; ajoute une dépendance, Zod ; le minuteur de rafraîchissement vit dans le crochet de scène)
-Dépend de : SPEC-0004, SPEC-0005, SPEC-0006
+Dépend de : SPEC-0004, SPEC-0005, SPEC-0006 (SPEC-0004 telle qu'amendée : fournisseur commun de la scène, clause de non-rafraîchissement retirée, `onBackground`, voir « Décisions »)
 Tests de contrat : `tests/acceptance/SPEC-0007.test.ts` (Vitest), `tests/acceptance/SPEC-0007.native.test.tsx` (Jest)
 Scénarios cachés : `tests/holdout/SPEC-0007.test.ts` et `tests/holdout/SPEC-0007.native.test.tsx` (ne pas les décrire ici)
 
@@ -24,16 +24,17 @@ Client adsb.lol (Vitest, `tests/acceptance/SPEC-0007.test.ts`, avec un faux de `
 - **CA5** : (INV6) un champ absent ou invalide vaut `null` sans retirer l'avion : `flight` qui n'est pas une chaîne, `alt_baro` ni nombre fini ni `"ground"`, `gs` négatif ou non fini, `track` hors de [0, 360] ou non fini. Une entrée de `ac` qui n'est pas un objet est écartée, comme un avion dont le `hex` n'est pas formé de six chiffres hexadécimaux (adresses non OACI, préfixe `~` compris) ou dont `lat` ou `lon` n'est pas un nombre dans sa plage (latitude [-90, 90], longitude [-180, 180]) est écarté : sans identité ni position il ne peut pas être placé.
 - **CA6** : (INV6) une réponse illisible fait rejeter `fetchAircraft` avec `ADSB_UNAVAILABLE` : corps qui n'est pas du JSON, qui n'est pas un objet, `ac` absent ou qui n'est pas un tableau. Une réponse `{"ac": []}` rend la liste vide.
 - **CA7** : une erreur du réseau (rejet de `fetch`), un statut HTTP hors 2xx ou une requête sans réponse après `ADSB_REQUEST_TIMEOUT_MS` (8 000 ms ; le signal est alors avorté) rejettent avec `ADSB_UNAVAILABLE`, jamais une autre erreur. Le message de l'erreur ne contient aucune coordonnée. Une requête dont la latitude, la longitude ou le rayon est invalide (non fini, latitude hors de [-90, 90], longitude hors de [-180, 180], rayon ≤ 0) rejette avec `ADSB_UNAVAILABLE` **sans appeler** `fetch`.
-- **CA8** : `chooseAdsbSource({ isDev, requested })` rend `"demo"` seulement si `isDev` est vrai et `requested` vaut exactement `"demo"` ; sinon `"real"` (y compris `requested` absent, `"DEMO"` ou `" demo"`). `src/main.tsx` le lit avec `__DEV__` et `EXPO_PUBLIC_ADSB_SOURCE`, et branche `createAdsbLolSource({ fetch })` pour `"real"`, la source de SPEC-0006 pour `"demo"`.
+- **CA8** : `chooseAdsbSource({ isDev, requested })` rend `"demo"` seulement si `isDev` est vrai et `requested` vaut exactement `"demo"` ; sinon `"real"` (y compris `requested` absent, `"DEMO"` ou `" demo"`). `src/main.tsx` le lit avec `__DEV__` et `EXPO_PUBLIC_ADSB_SOURCE`, et branche `createAdsbLolSource({ fetch })` pour `"real"`, la source de SPEC-0006 pour `"demo"` : ce câblage, sans logique, est hors contrat (module natif, comme `expo.ts`) et vérifié par le relecteur.
 
 Rafraîchissement (Jest, `tests/acceptance/SPEC-0007.native.test.tsx`, sous `createApp` avec les faux de `src/shared/` et `jest.useFakeTimers()`) :
 
 - **CA9** : une fois la scène prête, le crochet `useScene` interroge de nouveau la source à chaque `REFRESH_INTERVAL_MS` (10 s d'horloge, à partir de la première requête), avec la dernière position lue arrondie à 3 décimales et le rayon de 80 km. Chaque réponse remplace l'instantané (`snapshotAtMs` = heure de la réponse) sans repasser par `loading`. La permission et la position ne sont pas relues.
-- **CA10** : jamais deux requêtes en vol : quand une requête n'a pas répondu à l'échéance suivante, cette échéance est sautée (pas de rattrapage) et la cadence reprend à l'échéance d'après.
-- **CA11** : (INV9, cycle « Données affichées ») à l'entrée en arrière-plan (`lifecycle.enterBackground()`), plus aucun rafraîchissement ni recalcul de la scène chaque seconde ; la scène exposée ne change plus. Au retour au premier plan, il y a **une seule** requête (celle de SPEC-0004 CA15 : position relue, source interrogée), la scène est recalculée à l'heure courante, et la cadence de 10 s repart de ce retour. Sans service `lifecycle`, le rafraîchissement ne s'arrête jamais.
+- **CA10** : l'échéance de 10 s n'empile jamais deux requêtes : quand la requête précédente n'a pas répondu à l'échéance, cette échéance est sautée (pas de rattrapage) et la cadence reprend à l'échéance d'après.
+- **CA11** : (INV9, cycle « Données affichées ») à l'entrée en arrière-plan (`lifecycle.enterBackground()`), plus aucun rafraîchissement ni recalcul de la scène chaque seconde ; la scène exposée ne change plus. Au retour au premier plan, il y a **une seule** requête (celle de SPEC-0004 CA15 : position relue, source interrogée), la scène est recalculée à l'heure courante, et la cadence de 10 s repart de ce retour. Une requête encore en vol au retour au premier plan n'empêche pas cette requête de retour (la position a pu changer) : sa réponse, plus ancienne, est ignorée (SPEC-0004, seule la plus récente est gardée). Une réponse qui arrive pendant la pause est ignorée. Sans service `lifecycle`, le rafraîchissement ne s'arrête jamais.
 - **CA12** : une requête en échec (source indisponible ou erreur quelconque) n'interrompt pas la cadence : la dernière scène reste exposée et recalculée chaque seconde (SPEC-0004 CA17), la source est interrogée à l'échéance suivante, et la première réponse qui réussit remplace l'instantané. Sans instantané antérieur, `status` reste `unavailable` puis passe à `ready` à la première réponse qui réussit. Rien n'est envoyé au suivi des erreurs et rien n'est loggé.
 - **CA13** : permission refusée : aucune échéance n'interroge la source (SPEC-0004 CA14). Quand la permission est de nouveau accordée au retour au premier plan, la cadence reprend.
-- **CA14** : au démontage, l'échéance est annulée : aucune requête, aucune mise à jour d'état après.
+- **CA14** : au démontage, l'échéance est annulée : aucune requête, aucune mise à jour d'état après (ni avertissement de React).
+- **CA15** : `refresh()` envoie une requête tout de suite et n'avance ni ne décale l'échéance de 10 s : l'échéance suivante interroge la source à l'heure prévue.
 
 ## Cas limites
 - Liste `ac` vide : `fetchAircraft` rend `[]`, la scène est vide.
@@ -42,6 +43,8 @@ Rafraîchissement (Jest, `tests/acceptance/SPEC-0007.native.test.tsx`, sous `cre
 - `seen_pos` très grand (avion vu il y a des minutes) : recalé comme les autres, sans seuil ; limite connue de la prévision en ligne droite.
 - Position (arrondie) à l'équateur ou au méridien de Greenwich : écrite `0`, jamais `-0`.
 - Réponse en retard d'une requête plus ancienne : seule la plus récente est gardée (SPEC-0004).
+- Arrondi des coordonnées : au plus proche, `Math.round` sur la valeur ×1000 ; une valeur négative à égalité exacte n'est pas testée.
+- Le délai d'attente de CA7 couvre l'attente de la réponse ; la lecture du corps n'est pas bornée à part (limite connue).
 - Horloge de l'appareil décalée : sans effet sur le recalage, qui n'utilise que `seen_pos`.
 - Réseau coupé puis rétabli : l'échéance suivante rétablit la scène (CA12).
 
@@ -62,7 +65,7 @@ createAdsbLolSource(options: { fetch: FetchLike }): AdsbSource
 
 `src/shared/lifecycle/index.ts` (SPEC-0004, étendu) : `AppLifecycle` gagne `onBackground(listener: () => void): () => void` (appelé à chaque passage de l'app à `inactive` ou `background` depuis `active`, plus jamais après la fonction de désabonnement) ; `createFakeLifecycle()` gagne `enterBackground()`. L'implémentation `AppState` de React Native l'appelle comme `onForeground`.
 
-`useScene` (SPEC-0004) garde sa signature ; `refresh()` reste disponible et n'avance pas l'échéance. `src/shared/errors.ts` n'a pas de nouveau code : `ADSB_UNAVAILABLE` couvre toute source inutilisable.
+`useScene` (SPEC-0004) garde sa signature ; `refresh()` reste disponible (CA15). `src/shared/errors.ts` n'a pas de nouveau code : `ADSB_UNAVAILABLE` couvre toute source inutilisable.
 
 ## Hors périmètre
 - États d'interface, textes et délai de péremption des données (SPEC-0008).

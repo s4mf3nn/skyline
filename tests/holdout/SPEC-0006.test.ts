@@ -77,13 +77,13 @@ describe("SPEC-0006 scénarios cachés : de la scène aux cartes", () => {
   it("follows an aircraft from its first countdown to the overhead card and to its removal", async () => {
     const { computeScene } = await sceneModule();
     const { buildCards } = await passages();
-    // Vers le sud à 900 km/h (0,25 km/s) depuis 30 km au nord, décalé de 2 km à l'est : entrée dans la fenêtre à
-    // 100 s, fin à 140 s.
-    const aircraft = [plane("e5", "QFA12", 2, 30, 180, 900), plane("e6", "VOZ401", -50, 0, 90, 900)];
+    // Vers le sud à 900 km/h (0,25 km/s) depuis 30,125 km au nord, décalé de 2 km à l'est : entrée dans la fenêtre à
+    // 100,5 s, fin à 140,5 s (mi-seconde : la tolérance de SPEC-0004 ne peut rien faire basculer).
+    const aircraft = [plane("e5", "QFA12", 2, 30.125, 180, 900), plane("e6", "VOZ401", -50, 0, 90, 900)];
     const snapshot = { aircraft, takenAtMs: T0 };
     let previous: string | null = null;
     const seen: Array<{ second: number; kinds: string[]; first: string | null }> = [];
-    for (const second of [0, 99, 100, 120, 139, 140, 141]) {
+    for (const second of [0, 99, 100, 101, 120, 140, 141]) {
       const nowMs = T0 + second * SECOND;
       const scene = computeScene({ snapshot, observer: OBSERVER, nowMs, previousOverheadHex: previous });
       previous = scene.overhead?.hex ?? null;
@@ -97,21 +97,23 @@ describe("SPEC-0006 scénarios cachés : de la scène aux cartes", () => {
     expect(seen.map((entry) => entry.kinds)).toEqual([
       ["upcoming:e5", "upcoming:e6"],
       ["upcoming:e5", "upcoming:e6"],
+      ["upcoming:e5", "upcoming:e6"],
       ["overhead:e5", "upcoming:e6"],
       ["overhead:e5", "upcoming:e6"],
       ["overhead:e5", "upcoming:e6"],
       ["upcoming:e6"],
       ["upcoming:e6"],
     ]);
-    expect(seen[0]?.first).toBe("01:40");
-    expect(seen[1]?.first).toBe("00:01");
+    expect(seen[0]?.first).toBe("01:41");
+    expect(seen[1]?.first).toBe("00:02");
+    expect(seen[2]?.first).toBe("00:01");
   });
 
   it("derives the overhead visibility from the window and keeps the arrow null without heading, then relative to it", async () => {
     const { computeScene } = await sceneModule();
     const { buildCards } = await passages();
-    // Déjà dans la fenêtre : 3 km avant le point le plus proche, cap est, 720 km/h (0,2 km/s), 2 km au nord.
-    const aircraft = [plane("w1", "AFR1506", -3, 2, 90, 720)];
+    // Déjà dans la fenêtre : 3,1 km avant le point le plus proche, cap est, 720 km/h (0,2 km/s), 2 km au nord.
+    const aircraft = [plane("w1", "AFR1506", -3.1, 2, 90, 720)];
     const nowMs = T0;
     const scene = computeScene({
       snapshot: { aircraft, takenAtMs: T0 },
@@ -122,7 +124,7 @@ describe("SPEC-0006 scénarios cachés : de la scène aux cartes", () => {
     const [blind] = buildCards({ scene, nowMs, headingDeg: null, timeZone: "UTC" });
     expect(blind?.kind).toBe("overhead");
     expect(blind?.arrowAngleDeg).toBeNull();
-    expect(blind?.visibility?.progress).toBeCloseTo(0.2, 2);
+    expect(blind?.visibility?.progress).toBeCloseTo(0.21, 2);
     expect(blind?.visibility?.remaining).toBe("00:40");
     expect(blind?.countdown).toBeNull();
     const [aware] = buildCards({ scene, nowMs, headingDeg: 359, timeZone: "UTC" });
@@ -165,8 +167,8 @@ describe("SPEC-0006 scénarios cachés : de la scène aux cartes", () => {
   it("keeps a slow aircraft countdown beyond 99 minutes readable", async () => {
     const { computeScene } = await sceneModule();
     const { buildCards } = await passages();
-    // 30 km/h : 70 km de trajet jusqu'à la fenêtre, soit plus de deux heures.
-    const aircraft = [plane("s1", "ZZZ9", -70, 0, 90, 30)];
+    // 30 km/h : 65 km de trajet jusqu'à la fenêtre, soit plus de deux heures (7 800,5 s).
+    const aircraft = [plane("s1", "ZZZ9", -70.00417, 0, 90, 30)];
     const scene = computeScene({
       snapshot: { aircraft, takenAtMs: T0 },
       observer: OBSERVER,
@@ -174,7 +176,7 @@ describe("SPEC-0006 scénarios cachés : de la scène aux cartes", () => {
       previousOverheadHex: null,
     });
     const [card] = buildCards({ scene, nowMs: T0, headingDeg: null, timeZone: "UTC" });
-    expect(card?.countdown).toBe("130:00");
+    expect(card?.countdown).toBe("130:01");
     expect(card?.altitude).toBe("9 000");
   });
 });

@@ -49,7 +49,8 @@ const airlinesModule = () => jest.requireActual<AirlinesModule>("../../src/share
 const lifecycleModule = () => jest.requireActual<LifecycleModule>("../../src/shared/lifecycle");
 
 // Géométrie de test : plan local autour de l'observateur (x vers l'est, y vers le nord, en km), 720 km/h = 0,2 km/s,
-// donc la fenêtre de ±5 km dure 50 s autour du point le plus proche et l'entrée y est à 175 s pour -40 km.
+// donc la fenêtre de ±5 km dure 50 s autour du point le plus proche. Les décalages de 0,1 km (-40,1 km : entrée à 175,5 s)
+// placent les heures à mi-seconde : la tolérance de ±1 s de SPEC-0004 ne peut pas faire basculer un affichage.
 const KM_PER_DEGREE = (6371 * Math.PI) / 180;
 const OBSERVER: Position = { latitude: 45.76449, longitude: 4.83571 };
 const NOW = 1_800_000_000_000;
@@ -141,7 +142,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
 
   it("CA11 : renders a vertical list calibrated on 662 pt with 650 pt cards", async () => {
     const harness = setup({
-      aircraft: [plane("a1", "AFR1506", -40, 0, 90), plane("b2", "IBE3457", -60, 0, 90)],
+      aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("b2", "IBE3457", -60.1, 0, 90)],
     });
     await render(<harness.App />);
     await settle();
@@ -161,27 +162,30 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA12 : shows an upcoming card with the countdown, the passage time, the direction and the airline columns", async () => {
-    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40, 0, 90)] });
+    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40.1, 0, 90)] });
     await render(<harness.App />);
     await settle();
     const { formatLocalTime } = passagesModule();
     const { resolveAirline } = airlinesModule();
     expect(cardIds()).toEqual(["a1"]);
     const view = card("a1");
-    expect(view.getByText("02:55")).toBeOnTheScreen();
+    expect(view.getByText("02:56")).toBeOnTheScreen();
     expect(view.getByText("Passe à")).toBeOnTheScreen();
-    expect(view.getByText(formatLocalTime(NOW + 175 * SECOND, TIME_ZONE))).toBeOnTheScreen();
+    expect(view.getByText(formatLocalTime(NOW + 175_500, TIME_ZONE))).toBeOnTheScreen();
     expect(view.getByText("Regardez")).toBeOnTheScreen();
     expect(view.getByText("O")).toBeOnTheScreen();
+    expect(view.getByText("Compagnie")).toBeOnTheScreen();
     expect(view.getByText(resolveAirline("AFR1506").name)).toBeOnTheScreen();
+    expect(view.getByText("Vol")).toBeOnTheScreen();
     expect(view.getByText("AF1506")).toBeOnTheScreen();
+    expect(view.getByText("Appareil")).toBeOnTheScreen();
     expect(view.getByText("—")).toBeOnTheScreen();
     expect(view.queryByText("Au-dessus de vous")).toBeNull();
   });
 
   it("CA12 : colours the card with the airline theme, shows the generic tail and no route block", async () => {
     const harness = setup({
-      aircraft: [plane("a1", "AFR1506", -40, 0, 90), plane("u9", "ZZZ123", -60, 0, 90)],
+      aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("u9", "ZZZ123", -60.1, 0, 90)],
     });
     await render(<harness.App />);
     await settle();
@@ -196,12 +200,12 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
       expect(screen.queryByTestId(`passage-route-${hex}`)).toBeNull();
     }
     const firstTheme = airlineTheme(resolveAirline("AFR1506"));
-    expect(StyleSheet.flatten(card("a1").getByText("02:55").props.style).color).toBe(firstTheme.big);
+    expect(StyleSheet.flatten(card("a1").getByText("02:56").props.style).color).toBe(firstTheme.big);
     expect(StyleSheet.flatten(card("a1").getByText("Passe à").props.style).color).toBe(firstTheme.small);
   });
 
   it("CA12 : shows a dash for the flight and the unknown airline name when there is no callsign", async () => {
-    const harness = setup({ aircraft: [plane("n1", null, -40, 0, 90)] });
+    const harness = setup({ aircraft: [plane("n1", null, -40.1, 0, 90)] });
     await render(<harness.App />);
     await settle();
     const { resolveAirline } = airlinesModule();
@@ -212,31 +216,31 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
 
   it("CA13 : updates every countdown each second without querying the source again", async () => {
     const harness = setup({
-      aircraft: [plane("a1", "AFR1506", -40, 0, 90), plane("b2", "IBE3457", -60, 0, 90)],
+      aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("b2", "IBE3457", -60.1, 0, 90)],
     });
     await render(<harness.App />);
     await settle();
-    expect(card("a1").getByText("02:55")).toBeOnTheScreen();
-    expect(card("b2").getByText("04:35")).toBeOnTheScreen();
+    expect(card("a1").getByText("02:56")).toBeOnTheScreen();
+    expect(card("b2").getByText("04:36")).toBeOnTheScreen();
     expect(harness.adsb.queries).toHaveLength(1);
 
     await elapse(harness.clock, SECOND);
-    expect(card("a1").getByText("02:54")).toBeOnTheScreen();
-    expect(card("b2").getByText("04:34")).toBeOnTheScreen();
+    expect(card("a1").getByText("02:55")).toBeOnTheScreen();
+    expect(card("b2").getByText("04:35")).toBeOnTheScreen();
     await elapse(harness.clock, 9 * SECOND);
-    expect(card("a1").getByText("02:45")).toBeOnTheScreen();
+    expect(card("a1").getByText("02:46")).toBeOnTheScreen();
     expect(harness.adsb.queries).toHaveLength(1);
   });
 
   it("CA14 : turns the card into the overhead card, first in the list, when the countdown reaches zero", async () => {
     const harness = setup({
-      aircraft: [plane("a1", "AFR1506", -40, 0, 90), plane("b2", "IBE3457", -60, 0, 90)],
+      aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("b2", "IBE3457", -60.1, 0, 90)],
     });
     await render(<harness.App />);
     await settle();
     expect(cardIds()).toEqual(["a1", "b2"]);
 
-    await elapse(harness.clock, 174 * SECOND);
+    await elapse(harness.clock, 175 * SECOND);
     expect(cardIds()).toEqual(["a1", "b2"]);
     expect(card("a1").getByText("00:01")).toBeOnTheScreen();
     expect(screen.queryByText("00:00")).toBeNull();
@@ -251,9 +255,9 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA15 : shows the overhead card with the gauge, the remaining time and the three values", async () => {
-    // h1 est déjà dans sa fenêtre : entrée il y a 10 s, fin dans 40 s (cap est, 720 km/h).
+    // h1 est déjà dans sa fenêtre : entrée il y a 10,5 s, fin dans 39,5 s (cap est, 720 km/h).
     const harness = setup({
-      aircraft: [plane("h1", "AFR1506", -3, 1, 90, { altitudeM: 7850 })],
+      aircraft: [plane("h1", "AFR1506", -3.1, 1, 90, { altitudeM: 7850 })],
     });
     await render(<harness.App />);
     await settle();
@@ -263,7 +267,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     expect(view.getByText("EN CE")).toBeOnTheScreen();
     expect(view.getByText("MOMENT")).toBeOnTheScreen();
     const gauge = view.getByRole("progressbar", { name: "Visibilité" });
-    expect(gauge.props.accessibilityValue).toMatchObject({ min: 0, max: 100, now: 20 });
+    expect(gauge.props.accessibilityValue).toMatchObject({ min: 0, max: 100, now: 21 });
     expect(view.getByText("Visible encore")).toBeOnTheScreen();
     expect(view.getByText("00:40")).toBeOnTheScreen();
     expect(view.getByText("Altitude")).toBeOnTheScreen();
@@ -274,20 +278,22 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     expect(view.getByText("E")).toBeOnTheScreen();
     expect(view.getByText("AF1506")).toBeOnTheScreen();
     expect(view.queryByText("Passe à")).toBeNull();
+    // Seul `MM:SS` de la carte est le temps restant : aucun compte à rebours vers un passage.
+    expect(view.getAllByText(/^\d{2,}:\d{2}$/)).toHaveLength(1);
   });
 
   it("CA15 : moves the gauge and the remaining time with the clock", async () => {
-    const harness = setup({ aircraft: [plane("h1", "AFR1506", -3, 1, 90)] });
+    const harness = setup({ aircraft: [plane("h1", "AFR1506", -3.1, 1, 90)] });
     await render(<harness.App />);
     await settle();
     await elapse(harness.clock, 15 * SECOND);
     const view = card("h1");
-    expect(view.getByRole("progressbar", { name: "Visibilité" }).props.accessibilityValue).toMatchObject({ now: 50 });
+    expect(view.getByRole("progressbar", { name: "Visibilité" }).props.accessibilityValue).toMatchObject({ now: 51 });
     expect(view.getByText("00:25")).toBeOnTheScreen();
   });
 
   it("CA16 : rotates the arrow with the phone heading and hides it while the heading is unknown", async () => {
-    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40, 0, 90)] });
+    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40.1, 0, 90)] });
     await render(<harness.App />);
     await settle();
     expect(screen.queryByTestId("passage-arrow-a1")).toBeNull();
@@ -298,6 +304,11 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
       harness.location.setHeading(30);
     });
     expect(rotation("passage-arrow-a1")).toBeCloseTo(240, 0);
+    // Décorative : sans nom propre et masquée aux lecteurs d'écran, le point cardinal porte l'information.
+    const arrow = screen.getByTestId("passage-arrow-a1");
+    expect(arrow.props.accessibilityLabel).toBeUndefined();
+    expect(arrow.props.accessibilityElementsHidden).toBe(true);
+    expect(arrow.props.importantForAccessibility).toBe("no-hide-descendants");
     await act(async () => {
       harness.location.setHeading(300);
     });
@@ -306,7 +317,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA16 : points the overhead arrow toward the track of the aircraft", async () => {
-    const harness = setup({ aircraft: [plane("h1", "AFR1506", -3, 1, 90)] });
+    const harness = setup({ aircraft: [plane("h1", "AFR1506", -3.1, 1, 90)] });
     await render(<harness.App />);
     await settle();
     expect(screen.queryByTestId("passage-arrow-h1")).toBeNull();
@@ -318,28 +329,28 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
 
   it("CA17 : follows a new snapshot: removes a passage, adds one in time order, keeps the identity of moved cards", async () => {
     const harness = setup({
-      aircraft: [plane("a1", "AFR1506", -40, 0, 90), plane("b2", "IBE3457", -60, 0, 90)],
+      aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("b2", "IBE3457", -60.1, 0, 90)],
     });
     await render(<harness.App />);
     await settle();
     expect(cardIds()).toEqual(["a1", "b2"]);
 
-    // c3 passe avant a1 ; b2 est parti.
-    harness.adsb.setAircraft([plane("a1", "AFR1506", -40, 0, 90), plane("c3", "RYR9", -30, 0, 90)]);
+    // c3 passe avant a1 ; b2 est parti. L'identité d'une carte est son `testID` (la clé de la liste est le `hex`).
+    harness.adsb.setAircraft([plane("a1", "AFR1506", -40.1, 0, 90), plane("c3", "RYR9", -30.1, 0, 90)]);
     await act(async () => {
       harness.lifecycle.enterForeground();
     });
     await settle();
     expect(cardIds()).toEqual(["c3", "a1"]);
     expect(screen.queryByTestId("passage-card-b2")).toBeNull();
-    expect(card("c3").getByText("02:05")).toBeOnTheScreen();
+    expect(card("c3").getByText("02:06")).toBeOnTheScreen();
   });
 
   it("CA17 : never shows more than 11 cards", async () => {
     const crowd = Array.from({ length: 14 }, (_, index) =>
       plane(`f${String(index).padStart(2, "0")}`, "AFR1506", -20 - index, 0, 90),
     );
-    const harness = setup({ aircraft: [...crowd, plane("h1", "IBE3457", -3, 1, 90)] });
+    const harness = setup({ aircraft: [...crowd, plane("h1", "IBE3457", -3.1, 1, 90)] });
     await render(<harness.App />);
     await settle();
     const ids = cardIds();
@@ -351,7 +362,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA18 : renders no card and does not crash when the permission is denied", async () => {
-    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40, 0, 90)], permission: "denied" });
+    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40.1, 0, 90)], permission: "denied" });
     await render(<harness.App />);
     await settle();
     await elapse(harness.clock, 5 * SECOND);
@@ -359,7 +370,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA18 : renders no card and does not crash when the source is unavailable and nothing was received", async () => {
-    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40, 0, 90)], unavailable: true });
+    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40.1, 0, 90)], unavailable: true });
     await render(<harness.App />);
     await settle();
     await elapse(harness.clock, 5 * SECOND);
@@ -374,10 +385,10 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
   });
 
   it("CA18 : keeps the last cards, and their countdown, when the source fails after a first snapshot", async () => {
-    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40, 0, 90)] });
+    const harness = setup({ aircraft: [plane("a1", "AFR1506", -40.1, 0, 90)] });
     await render(<harness.App />);
     await settle();
-    expect(card("a1").getByText("02:55")).toBeOnTheScreen();
+    expect(card("a1").getByText("02:56")).toBeOnTheScreen();
 
     harness.adsb.setUnavailable(true);
     await act(async () => {
@@ -386,7 +397,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     await settle();
     await elapse(harness.clock, 5 * SECOND);
     expect(cardIds()).toEqual(["a1"]);
-    expect(card("a1").getByText("02:50")).toBeOnTheScreen();
+    expect(card("a1").getByText("02:51")).toBeOnTheScreen();
   });
 
   it("CA19 : reports nothing to the error tracker and logs nothing during a whole run", async () => {
@@ -395,7 +406,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     );
     try {
       const harness = setup({
-        aircraft: [plane("a1", "AFR1506", -40, 0, 90), plane("h1", "IBE3457", -3, 1, 90)],
+        aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("h1", "IBE3457", -3.1, 1, 90)],
       });
       await render(<harness.App />);
       await settle();

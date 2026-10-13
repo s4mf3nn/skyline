@@ -84,19 +84,19 @@ describe("SPEC-0006 scénarios cachés : écran Prochains passages", () => {
   });
 
   it("walks a flight from its first countdown, through the overhead card, to its disappearance", async () => {
-    const harness = setup([plane("i1", "ICE451", -30, 3, 90), plane("i2", "DLH441", -75, 0, 90)]);
+    const harness = setup([plane("i1", "ICE451", -30.1, 3, 90), plane("i2", "DLH441", -75.1, 0, 90)]);
     await render(<harness.App />);
     await settle();
     expect(cardIds()).toEqual(["i1", "i2"]);
-    expect(card("i1").getByText("02:05")).toBeOnTheScreen();
-    expect(card("i2").getByText("05:50")).toBeOnTheScreen();
+    expect(card("i1").getByText("02:06")).toBeOnTheScreen();
+    expect(card("i2").getByText("05:51")).toBeOnTheScreen();
 
-    await elapse(harness.clock, 125 * SECOND);
+    await elapse(harness.clock, 126 * SECOND);
     expect(card("i1").getByText("Au-dessus de vous")).toBeOnTheScreen();
     expect(card("i2").getByText("03:45")).toBeOnTheScreen();
     expect(screen.queryByText("00:00")).toBeNull();
 
-    // Fin de la fenêtre à +175 s (point le plus proche à +150 s, demi-fenêtre de 25 s).
+    // Fin de la fenêtre à +175,5 s (point le plus proche à +150,5 s, demi-fenêtre de 25 s).
     await elapse(harness.clock, 50 * SECOND);
     expect(cardIds()).toEqual(["i2"]);
     expect(card("i2").queryByText("Au-dessus de vous")).toBeNull();
@@ -104,7 +104,7 @@ describe("SPEC-0006 scénarios cachés : écran Prochains passages", () => {
   });
 
   it("replaces the overhead card by the next aircraft and keeps the unknown airline fallback", async () => {
-    const harness = setup([plane("o1", "ICE451", -3, 1, 90), plane("o2", null, 30, -2, 270, { altitudeM: null })]);
+    const harness = setup([plane("o1", "ICE451", -3.1, 1, 90), plane("o2", null, 30.1, -2, 270, { altitudeM: null })]);
     await render(<harness.App />);
     await settle();
     expect(cardIds()).toEqual(["o1", "o2"]);
@@ -114,10 +114,10 @@ describe("SPEC-0006 scénarios cachés : écran Prochains passages", () => {
     );
     expect(card("o2").getByText(resolveAirline(null).name)).toBeOnTheScreen();
 
-    // o1 sort de sa fenêtre à +40 s ; o2 y entre à +125 s : le carrousel n'a plus qu'une carte à venir entre-temps.
+    // o1 sort de sa fenêtre à +39,5 s ; o2 y entre à +125,5 s : le carrousel n'a plus qu'une carte à venir entre-temps.
     await elapse(harness.clock, 45 * SECOND);
     expect(cardIds()).toEqual(["o2"]);
-    await elapse(harness.clock, 80 * SECOND);
+    await elapse(harness.clock, 81 * SECOND);
     expect(cardIds()).toEqual(["o2"]);
     expect(card("o2").getByText("Au-dessus de vous")).toBeOnTheScreen();
     // Altitude inconnue, vol sans indicatif et appareil non fourni : trois tirets.
@@ -129,7 +129,7 @@ describe("SPEC-0006 scénarios cachés : écran Prochains passages", () => {
       jest.spyOn(console, method).mockImplementation(() => undefined),
     );
     try {
-      const harness = setup([plane("r1", "ICE451", -40, 0, 90)]);
+      const harness = setup([plane("r1", "ICE451", -40.1, 0, 90)]);
       await render(<harness.App />);
       await settle();
       expect(cardIds()).toEqual(["r1"]);
@@ -139,10 +139,10 @@ describe("SPEC-0006 scénarios cachés : écran Prochains passages", () => {
       });
       await settle();
       await elapse(harness.clock, 10 * SECOND);
-      expect(card("r1").getByText("02:45")).toBeOnTheScreen();
+      expect(card("r1").getByText("02:46")).toBeOnTheScreen();
 
       harness.adsb.setUnavailable(false);
-      harness.adsb.setAircraft([plane("r1", "ICE451", -40, 0, 90), plane("r2", "RYR9", -45, 0, 90)]);
+      harness.adsb.setAircraft([plane("r1", "ICE451", -40.1, 0, 90), plane("r2", "RYR9", -45.1, 0, 90)]);
       await act(async () => {
         harness.lifecycle.enterForeground();
       });

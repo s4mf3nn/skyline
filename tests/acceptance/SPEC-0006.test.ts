@@ -180,6 +180,14 @@ describe.skip("SPEC-0006 logique du carrousel Prochains passages", () => {
     expect(visibilityProgress(window, NOW - 5 * SECOND)).toBe(0);
   });
 
+  it("CA4 : a window of zero length is complete once it has started, and not started before", async () => {
+    const { visibilityProgress } = await passages();
+    const empty = { passageTimeMs: NOW, windowEndMs: NOW };
+    expect(visibilityProgress(empty, NOW - 1)).toBe(0);
+    expect(visibilityProgress(empty, NOW)).toBe(1);
+    expect(visibilityProgress(empty, NOW + 1)).toBe(1);
+  });
+
   it("CA4 : computes the remaining visibility, never below zero", async () => {
     const { visibilityRemainingMs } = await passages();
     const window = { passageTimeMs: NOW, windowEndMs: NOW + 50 * SECOND };
@@ -217,6 +225,8 @@ describe.skip("SPEC-0006 logique du carrousel Prochains passages", () => {
     expect(flightLabel("AF1506", resolveAirline("AF1506"))).toBe("AF1506");
     expect(flightLabel("ZZZ123", UNKNOWN_AIRLINE)).toBe("ZZZ123");
     expect(flightLabel("F-HBXA", UNKNOWN_AIRLINE)).toBe("F-HBXA");
+    // Seuls les blancs de début et de fin sont retirés : `AFR 1506` reste inconnu (SPEC-0002 CA8).
+    expect(flightLabel("AFR 1506", UNKNOWN_AIRLINE)).toBe("AFR 1506");
     expect(flightLabel(null, UNKNOWN_AIRLINE)).toBe("—");
     expect(flightLabel("", UNKNOWN_AIRLINE)).toBe("—");
   });
@@ -337,6 +347,11 @@ describe.skip("SPEC-0006 logique du carrousel Prochains passages", () => {
 describe.skip("SPEC-0006 source de démonstration", () => {
   const POSITION: Position = { latitude: 45.764, longitude: 4.836 };
   const QUERY = { ...POSITION, radiusKm: 80 };
+
+  it("CA9 : is not exported by the public adsb entry point, so it stays out of delivered builds", async () => {
+    const entry = await load<Record<string, unknown>>("src/shared/adsb/index.ts");
+    expect(entry).not.toHaveProperty("createDemoAdsbSource");
+  });
 
   it("CA9 : answers the same list at the same time and a different one when the clock advances", async () => {
     const { createDemoAdsbSource } = await demoModule();

@@ -63,7 +63,7 @@ describe("SPEC-0002 hidden scenarios", () => {
 
   it("resolves a messy callsign list, falling back to the unknown airline without losing any entry", async () => {
     const { resolveAirline, airlineTheme, UNKNOWN_AIRLINE } = await airlines();
-    const raw = ["eju52qr", "  ruk44 ", "RK44", "XX1234", null, "GEZWX", "N3456", "N3456A"];
+    const raw = ["eju52qr", "  ruk44 ", "FR1234", "XX1234", null, "GEZWX", "N3456", "Y4123B"];
 
     const resolved = raw.map((callsign) => resolveAirline(callsign));
 

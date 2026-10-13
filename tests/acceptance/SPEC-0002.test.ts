@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -41,6 +42,17 @@ interface AirlinesModule {
 }
 const airlines = () => load<AirlinesModule>("src/shared/airlines/index.ts");
 
+// Instantané du catalogue airlines-scraper versionné avec la spec (CA5).
+interface CatalogEntry {
+  name: string;
+  iata: string[];
+  icao: string[];
+}
+const catalog = (): CatalogEntry[] =>
+  JSON.parse(fs.readFileSync(path.resolve("specs/SPEC-0002-theme-compagnies/catalogue.json"), "utf8")).airlines;
+// Noms du handoff qui remplacent ceux du catalogue.
+const HANDOFF_NAMES: Record<string, string> = { EZY: "easyJet", TAP: "TAP Air Portugal" };
+
 describe.skip("SPEC-0002 airline theme and table", () => {
   it("CA1 : mixes two colors channel by channel and rounds to uppercase #RRGGBB", async () => {
     const { mix } = await airlines();
@@ -68,6 +80,7 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(fitColor("#F6C344", "#C8102E", 3)).toBe("#F6C344");
     expect(fitColor("#808080", "#FFFFFF", 3)).toBe("#808080");
     expect(fitColor("#000000", "#FFFFFF", 21)).toBe("#000000");
+    expect(fitColor("#f6c344", "#C8102E", 3)).toBe("#f6c344");
   });
 
   it("CA3 : moves the foreground toward white or black in steps of 0.02 until the target is reached", async () => {
@@ -140,6 +153,16 @@ describe.skip("SPEC-0002 airline theme and table", () => {
       expect(airline.primary).toMatch(/^#[0-9A-F]{6}$/);
       expect(airline.secondary).toMatch(/^#[0-9A-F]{6}$/);
     }
+  });
+
+  it("CA5 : contains exactly the catalog airlines, in its order, with the same names and codes", async () => {
+    const { AIRLINES } = await airlines();
+    const expected = catalog().map((entry) => ({
+      name: HANDOFF_NAMES[entry.icao[0] as string] ?? entry.name,
+      iata: entry.iata,
+      icao: entry.icao,
+    }));
+    expect(AIRLINES.map(({ name, iata, icao }) => ({ name, iata, icao }))).toEqual(expected);
   });
 
   it("CA5 : gives the handoff name, country, colors and tail palette to the eight handoff airlines", async () => {
@@ -304,6 +327,13 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(resolveAirline("KLM1234").name).toBe("KLM");
   });
 
+  it("CA7 : ignores whatever follows the first digit after an OACI prefix", async () => {
+    const { resolveAirline } = await airlines();
+    expect(resolveAirline("RUK7KM").name).toBe("Ryanair");
+    expect(resolveAirline("AFR1 506").name).toBe("Air France");
+    expect(resolveAirline("EJU1234")).toBe(resolveAirline("EZY4617"));
+  });
+
   it("CA7 : falls back to the IATA prefix, and cleans the callsign first", async () => {
     const { resolveAirline } = await airlines();
     expect(resolveAirline("AF1506").name).toBe("Air France");
@@ -311,6 +341,7 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(resolveAirline("TP433").name).toBe("TAP Air Portugal");
     expect(resolveAirline("RK44").name).toBe("Ryanair");
     expect(resolveAirline("  afr1506 ").name).toBe("Air France");
+    expect(resolveAirline("\tAFR1506\n").name).toBe("Air France");
   });
 
   it("CA8 : returns the unknown airline for a missing, empty or unmatched callsign", async () => {
@@ -347,5 +378,12 @@ describe.skip("SPEC-0002 airline theme and table", () => {
     expect(() => mix("#000000", "#FFF", 0.5)).toThrow(invalidColor);
     expect(() => contrastRatio("", "#000000")).toThrow(invalidColor);
     expect(() => fitColor("#12345G", "#000000", 3)).toThrow(invalidColor);
+  });
+
+  it("CA4 : raises INVALID_COLOR when the airline has an invalid primary or secondary color", async () => {
+    const { airlineTheme, UNKNOWN_AIRLINE } = await airlines();
+    const invalidColor = expect.objectContaining({ code: "INVALID_COLOR" });
+    expect(() => airlineTheme({ ...UNKNOWN_AIRLINE, primary: "nope" })).toThrow(invalidColor);
+    expect(() => airlineTheme({ ...UNKNOWN_AIRLINE, secondary: "#F2E8D" })).toThrow(invalidColor);
   });
 });

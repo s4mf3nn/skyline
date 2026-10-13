@@ -24,10 +24,10 @@ Logique (Vitest) :
 - **CA6** : `selectPages(features)` rend les deux features de plus petit `order`, triées par `order` croissant (à `order` égal, dans l'ordre de la liste reçue), ou toutes celles qu'il y a s'il y en a moins de deux. Il ne modifie pas la liste reçue.
 
 Rendu (Jest, par `createApp`) :
-- **CA7** : avec au moins deux features, l'application rend le pager : les écrans des deux premières features (CA6) sont montés dans la bande, de gauche à droite par `order` croissant, quel que soit l'ordre du registre ; l'application s'ouvre sur la première page (Ciel). Une troisième feature n'est pas montée.
+- **CA7** : avec au moins deux features, l'application rend le pager : les écrans des deux premières features (CA6) sont montés dans la bande, de gauche à droite par `order` croissant, quel que soit l'ordre du registre ; l'application s'ouvre sur la première page (Ciel), et sur elle à chaque montage : la page courante n'est jamais persistée. Une troisième feature n'est pas montée.
 - **CA8** : avec une seule feature, l'application rend son écran seul, sans pager ni indicateur ; sans feature, l'écran d'accueil « Skyline » (SPEC-0000 CA1 et CA3 inchangés).
-- **CA9** : le pager est un élément réglable (`accessibilityRole="adjustable"`) de nom « Pages » dont la valeur accessible est « Page 1 sur 2 » ou « Page 2 sur 2 ». Ses actions d'accessibilité `increment` et `decrement` passent à la page suivante ou précédente ; sur la dernière page `increment`, sur la première `decrement`, ne changent rien.
-- **CA10** : l'indicateur est un élément de nom « Indicateur de page » avec deux traits (`testID` `pager-indicator-trait-0` et `pager-indicator-trait-1`, éléments sans nom propre) ; leur couleur de fond est l'accent de la page active. L'accent d'une page est la couleur crème `#F4F1EA`, ou celle que la page déclare par `usePagerAccent(color)` (l'écran Ciel y passera le `small` de la compagnie, SPEC-0005). Le trait de la page active prend l'accent de cette page, y compris quand la page change de couleur pendant qu'elle est affichée ; `usePagerAccent(null)` revient au crème ; hors pager (une seule feature), le hook est sans effet et ne lève pas.
+- **CA9** : l'indicateur de page est l'élément accessible du pager : un élément réglable (`accessibilityRole="adjustable"`) de nom « Indicateur de page », dont la valeur accessible est « Page 1 sur 2 » ou « Page 2 sur 2 ». Il n'englobe pas la bande : les contrôles et les textes des pages restent des éléments accessibles distincts. Ses actions d'accessibilité `increment` et `decrement` passent à la page suivante ou précédente ; sur la dernière page `increment`, sur la première `decrement`, ne changent rien.
+- **CA10** : l'indicateur a deux traits (`testID` `pager-indicator-trait-0` et `pager-indicator-trait-1`, éléments sans nom propre). Leur largeur, hauteur et opacité sont celles de `indicatorTraits(page)` pour la page active (CA5) ; l'animation de 300 ms entre deux états n'est pas contrôlée par le contrat, seule la valeur d'arrivée l'est. Leur couleur de fond est l'accent de la page active, appliqué tel qu'il est reçu, sans transformation (`#RRGGBB`, casse conservée). L'accent d'une page est la couleur crème `#F4F1EA`, ou celle que la page déclare par `usePagerAccent(color)` (l'écran Ciel y passera le `small` de la compagnie, SPEC-0005). Le trait de la page active prend l'accent de cette page, y compris quand la page change de couleur pendant qu'elle est affichée ; `usePagerAccent(null)` revient au crème ; hors pager (une seule feature), le hook est sans effet et ne lève pas.
 
 ## Cas limites
 - Glissement vers l'extérieur depuis la première ou la dernière page : résistance ×0,3, retour à la page d'origine au relâchement quelle que soit la distance (CA3, CA4).
@@ -37,8 +37,8 @@ Rendu (Jest, par `createApp`) :
 - Registre vide, ou une seule feature : jamais de pager (CA8).
 - Registre de plus de deux features : les features d'`order` plus grand sont ignorées sans erreur (CA6, CA7) ; l'extension du pager au MVP est tranchée par un nouveau cadrage (`docs/brief/cahier-des-charges-v0.md`, section 10).
 - Deux features de même `order` : ordre du registre (CA6).
-- Page courante : état en mémoire seulement, jamais persisté ; l'application s'ouvre toujours sur Ciel. Un retour au premier plan garde la page affichée.
-- Les deux écrans restent montés pendant toute la session : changer de page ne les démonte pas (leur état et leurs comptes à rebours continuent).
+- Page courante : état en mémoire seulement, jamais persisté ; l'application s'ouvre toujours sur Ciel (CA7). Un retour au premier plan garde la page affichée : aucun code ne la réinitialise, vérifié à la main sur cible réelle (pas de test).
+- Les deux écrans restent montés pendant toute la session : changer de page ne les démonte pas (leur état et leurs comptes à rebours continuent ; testé par un écran qui garde un état, CA9).
 
 ## Contrat d'interface
 Point d'entrée : `src/shared/pager/index.ts` (logique pure ; le seul import non natif autorisé est `react`, pour le hook d'accent).
@@ -69,11 +69,11 @@ usePagerAccent(color: string | null): void    // hook React, appelé par l'écra
 ## Écrans
 Pas de maquette dédiée (décision du propriétaire du 2026-10-13) : le handoff fait foi (`docs/brief/design_handoff_skyline_ciel_passages/README.md`, section « Navigation et interactions », et captures 02 à 05). Le pager n'a pas d'écran propre, il porte les deux pages.
 - **Bande de pages** : 2 × la largeur de l'écran (393 pt dans le handoff), transition `transform` de 380 ms, courbe `cubic-bezier(.2, .8, .2, 1)`. Glisser vers la gauche : Passages ; vers la droite : Ciel. Aucun état de chargement, vide ou d'erreur : ceux des pages relèvent de leurs specs.
-- **Indicateur de page** : deux traits en haut, `top` 50, centrés, espacement 5. Trait actif 18 × 4, inactif 6 × 4 à 40 % d'opacité, transition de largeur de 300 ms. Couleur : `small` de la compagnie sur Ciel, crème `#F4F1EA` sur Passages (CA10). Sans nom propre pour les traits ; l'ensemble porte le nom « Indicateur de page » et la valeur de page.
+- **Indicateur de page** : deux traits en haut, `top` 50, centrés, espacement 5. Trait actif 18 × 4, inactif 6 × 4 à 40 % d'opacité, transition de largeur de 300 ms. Couleur : `small` de la compagnie sur Ciel, crème `#F4F1EA` sur Passages (CA10). Sans nom propre pour les traits ; l'ensemble porte le nom « Indicateur de page » et la valeur de page (CA9). `top` 50, centrage et espacement 5 ne sont pas testés : vérifiés par la capture du parcours sur cible réelle.
 - **Actions** : glissement horizontal (seuil, résistance et verrouillage d'axe : CA2 à CA4) ; actions d'accessibilité `increment` et `decrement` (CA9). Aucune autre action, pas de bouton.
 
 ## Parcours sur cible réelle
-- Sur simulateur iPhone, le glissement à la main change de page avec la transition du handoff, résiste au bord et laisse le défilement vertical de la page à la page. Vérifié à la main dans la PR de la dernière tâche (capture jointe) : le geste lui-même (Gesture Handler) n'est pas joué sous Jest, pas de test automatisé sur simulateur en v0.
+- Sur simulateur iPhone, le glissement à la main change de page avec la transition du handoff, résiste au bord et laisse le défilement vertical de la page à la page ; l'indicateur est à `top` 50, ses traits espacés de 5 ; un retour au premier plan garde la page affichée. Vérifié à la main dans la PR de la dernière tâche (capture jointe) : le geste lui-même (Gesture Handler) n'est pas joué sous Jest, pas de test automatisé sur simulateur en v0.
 
 ## Hors périmètre
 - Contenu des pages : écrans Ciel (SPEC-0005) et Prochains passages (SPEC-0006) ; une page de test suffit ici.
@@ -86,10 +86,7 @@ Pas de maquette dédiée (décision du propriétaire du 2026-10-13) : le handoff
 - Aucune dépendance nouvelle : Reanimated et Gesture Handler sont dans l'ADR-0001 (« Pager horizontal à deux pages »). Le geste et l'animation tournent sur le fil d'interface (worklets) ; les calculs de seuil et de résistance appellent les fonctions pures du module, jamais une copie.
 - Le pager se rend sous `jest-expo` : le réglage de test de Reanimated et de Gesture Handler (`jest.config.cjs`, fichier de mise en place) fait partie de la tâche.
 - Aucun calcul dans un `.tsx` (règle par extension de `docs/factory/UI.md`) ; pas de valeur de couleur ou de mesure en dur hors de `PAGER_METRICS` et des tokens de style.
-- Chaque contrôle interactif a un nom accessible (`docs/factory/UI.md`) : l'indicateur et le pager en ont un (CA9, CA10).
+- Chaque contrôle interactif a un nom accessible (`docs/factory/UI.md`) : l'indicateur, élément réglable du pager, en a un (CA9). Le conteneur de la bande n'est pas un élément accessible (il masquerait les contrôles des pages).
 
 ## Questions ouvertes
-Décisions de rédaction à confirmer à la lecture de la PR (le handoff ne les tranche pas) :
-- « Après 8 pt » et « seuil de 60 pt » s'entendent bornes incluses (`>= 8`, `>= 60`) ; à égalité d'axe (`|dx| = |dy|`), le geste est vertical (CA2).
-- Les deux écrans restent montés en permanence (bande de 2 × la largeur) : les comptes à rebours de Passages tournent aussi quand Ciel est affiché.
-- Au-delà de deux features, les suivantes sont ignorées en silence plutôt que refusées.
+Aucune. Décisions du propriétaire du 2026-10-13 : bornes incluses et égalité d'axe = vertical (CA2, CA4), les deux écrans toujours montés, features au-delà de deux ignorées en silence (CA6, CA7), pages = deux plus petits `order`, module `src/shared/pager/`, `usePagerAccent`, actions d'accessibilité, distance seule, pas de nouvelle maquette.

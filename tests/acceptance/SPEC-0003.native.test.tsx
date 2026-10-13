@@ -56,6 +56,17 @@ function ChangingAccentScreen() {
   );
 }
 
+// Écran qui garde un état local : il prouve que changer de page ne le démonte pas.
+function CounterScreen() {
+  const [count, setCount] = useState(0);
+  return (
+    <>
+      <Text>{`count ${count}`}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Count" onPress={() => setCount(count + 1)} />
+    </>
+  );
+}
+
 function feature(name: string, order: number, screenComponent: Feature["screen"]): Feature {
   return { name, order, screen: screenComponent };
 }
@@ -65,7 +76,7 @@ async function renderApp(features: readonly Feature[]) {
   await render(<App />);
 }
 
-const pagerElement = () => screen.getByRole("adjustable", { name: "Pages" });
+const pagerElement = () => screen.getByRole("adjustable", { name: "Indicateur de page" });
 const fireAccessibilityAction = (name: "increment" | "decrement") =>
   fireEvent(pagerElement(), "accessibilityAction", { nativeEvent: { actionName: name } });
 const trait = (index: 0 | 1) => screen.getByTestId(`pager-indicator-trait-${index}`);
@@ -89,6 +100,20 @@ describe.skip("SPEC-0003 pager (rendering)", () => {
     expect(pagerElement()).toHaveAccessibilityValue({ text: "Page 1 sur 2" });
   });
 
+  it("CA7 : opens on the first page at every mount, the current page is never persisted", async () => {
+    const features = [
+      feature("sky", 1, textScreen("screen sky")),
+      feature("passages", 2, textScreen("screen passages")),
+    ];
+    await renderApp(features);
+    await fireAccessibilityAction("increment");
+    expect(pagerElement()).toHaveAccessibilityValue({ text: "Page 2 sur 2" });
+    await screen.unmount();
+
+    await renderApp(features);
+    expect(pagerElement()).toHaveAccessibilityValue({ text: "Page 1 sur 2" });
+  });
+
   it("CA7 : does not mount a third feature", async () => {
     await renderApp([
       feature("later", 9, textScreen("screen later")),
@@ -103,14 +128,14 @@ describe.skip("SPEC-0003 pager (rendering)", () => {
   it("CA8 : renders a single feature alone, with neither pager nor indicator", async () => {
     await renderApp([feature("sky", 1, textScreen("screen sky"))]);
     expect(screen.getByText("screen sky")).toBeOnTheScreen();
-    expect(screen.queryByRole("adjustable", { name: "Pages" })).toBeNull();
+    expect(screen.queryByRole("adjustable", { name: "Indicateur de page" })).toBeNull();
     expect(screen.queryByLabelText("Indicateur de page")).toBeNull();
   });
 
   it("CA8 : renders the home screen without any feature", async () => {
     await renderApp([]);
     expect(screen.getByText("Skyline")).toBeOnTheScreen();
-    expect(screen.queryByRole("adjustable", { name: "Pages" })).toBeNull();
+    expect(screen.queryByRole("adjustable", { name: "Indicateur de page" })).toBeNull();
   });
 
   it("CA9 : moves to the next page, then back to the previous one, with the accessibility actions", async () => {
@@ -144,6 +169,35 @@ describe.skip("SPEC-0003 pager (rendering)", () => {
     await fireAccessibilityAction("increment");
     expect(screen.getByText("screen sky")).toBeOnTheScreen();
     expect(screen.getByText("screen passages")).toBeOnTheScreen();
+  });
+
+  it("CA9 : does not unmount a screen when the page changes, its local state survives", async () => {
+    await renderApp([feature("sky", 1, CounterScreen), feature("passages", 2, textScreen("screen passages"))]);
+    await fireEvent.press(screen.getByRole("button", { name: "Count" }));
+    expect(screen.getByText("count 1")).toBeOnTheScreen();
+
+    await fireAccessibilityAction("increment");
+    await fireAccessibilityAction("decrement");
+    expect(screen.getByText("count 1")).toBeOnTheScreen();
+  });
+
+  it("CA9 : keeps the screens of the pages accessible apart from the indicator", async () => {
+    await renderApp([feature("sky", 1, CounterScreen), feature("passages", 2, textScreen("screen passages"))]);
+    expect(screen.getByRole("button", { name: "Count" })).toBeOnTheScreen();
+    expect(screen.getByRole("adjustable", { name: "Indicateur de page" })).toBeOnTheScreen();
+  });
+
+  it("CA10 : sizes the traits as indicatorTraits does for the active page", async () => {
+    await renderApp([
+      feature("sky", 1, textScreen("screen sky")),
+      feature("passages", 2, textScreen("screen passages")),
+    ]);
+    expect(trait(0)).toHaveStyle({ width: 18, height: 4, opacity: 1 });
+    expect(trait(1)).toHaveStyle({ width: 6, height: 4, opacity: 0.4 });
+
+    await fireAccessibilityAction("increment");
+    expect(trait(0)).toHaveStyle({ width: 6, height: 4, opacity: 0.4 });
+    expect(trait(1)).toHaveStyle({ width: 18, height: 4, opacity: 1 });
   });
 
   it("CA10 : names the indicator and gives it two traits in the cream accent by default", async () => {

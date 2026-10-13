@@ -48,7 +48,7 @@ function ExtraScreen() {
   return <Text>extra screen</Text>;
 }
 
-const pagerElement = () => screen.getByRole("adjustable", { name: "Pages" });
+const pagerElement = () => screen.getByRole("adjustable", { name: "Indicateur de page" });
 const move = (name: "increment" | "decrement") =>
   fireEvent(pagerElement(), "accessibilityAction", { nativeEvent: { actionName: name } });
 const trait = (index: 0 | 1) => screen.getByTestId(`pager-indicator-trait-${index}`);

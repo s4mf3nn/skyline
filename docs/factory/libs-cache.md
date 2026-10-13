@@ -48,3 +48,8 @@ Source : lecture de `node_modules` et exécution de `expo start` le 2026-10-13.
 - Archivo : le dépôt google/fonts ne publie que la police variable ; l'instance statique est extraite avec `fontTools.varLib.instancer` (`wght=700 wdth=100`).
 - pnpm : `react-native-css-interop@0.2.7` (moteur de NativeWind) doit être une dépendance directe, sinon `babel-preset-expo` ne résout pas `react-native-css-interop/jsx-runtime` ; `pnpm dedupe` après installation évite un second `react` / `react-native` (19.3.0 / 0.87.1).
 - Types : `expo/types/metro-require.d.ts` rend `process.env.NODE_ENV` obligatoire dans `NodeJS.ProcessEnv` pour tout le programme TypeScript : un `spawnSync(..., { env: { PATH } })` doit fournir `NODE_ENV`.
+
+## expo-location 57.0.21
+Source : `node_modules/expo-location/build/Location.d.ts` et `Location.types.d.ts` le 2026-10-13.
+- `watchHeadingAsync(callback, errorHandler?)` renvoie `Promise<LocationSubscription>` (`remove()`) ; `LocationHeadingObject.trueHeading` vaut `-1` si le cap vrai est indisponible, `magHeading` est toujours renseigné.
+- `PermissionStatus.GRANTED | DENIED | UNDETERMINED` : seul `GRANTED` vaut accordé ; `getCurrentPositionAsync()` renvoie `{ coords: { latitude, longitude, ... }, timestamp }`.

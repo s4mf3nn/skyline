@@ -90,7 +90,7 @@ createFakeErrorReporter(): ErrorReporter & { events: { error: unknown; context: 
 - [ ] Disposition du dépôt : une application, un registre généré (`src/features.gen.ts`)
 - [ ] Projet Expo SDK 57 : `app.json` ou `app.config.ts`, `babel.config.js`, `metro.config.js`, dossier `app/`, dépendances installées par `npx expo install` aux versions de l'ADR-0001
 - [ ] `tsconfig.json` et `tsconfig.test.json` (`jsx`, `lib`, `types`, alias `@/`), typage des fichiers `*.native.test.tsx`
-- [ ] Vitest pour la logique ; Jest (`jest-expo`, RNTL) pour le rendu : `factory.contractRunners` (`native` vers `test:native`), exclusion explicite du rendu des seuils de couverture et de l'étape de mutation de la CI, retrait de l'exclusion provisoire `*.native.test.*` de `vitest.config.ts` et de `tsconfig.test.json`
+- [ ] Vitest pour la logique ; Jest (`jest-expo`, RNTL) pour le rendu : `factory.contractRunners` (`native` vers `test:native`), exclusion explicite du rendu des seuils de couverture et de l'étape de mutation de la CI, retrait de l'exclusion provisoire `*.native.test.*` de `vitest.config.ts` et de `tsconfig.test.json`, sauf `SPEC-0001.native.test.tsx`, qui reste exclu du typage jusqu'à SPEC-0001 (il utilise l'option `build` de `createApp`, ajoutée par SPEC-0001)
 - [ ] Isolation des tests sur la ressource de données : sans objet (aucune ressource)
 - [ ] `scripts/workspace-data.sh`, `db:migrate` : sans objet
 - [ ] Interfaces et faux de l'horloge, de la localisation, de la source ADS-B et du suivi des erreurs (CA5)

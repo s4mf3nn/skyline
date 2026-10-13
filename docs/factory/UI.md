@@ -1,25 +1,32 @@
 # Interface
 
-<!-- Rempli par SPEC-0000 pour une application avec interface (web ou mobile), supprimé par `/init-project` sinon.
 Lu par l'agent qui code un écran et par le `reviewer` sur tout diff `.tsx`. Il fixe ce qui doit être identique d'un
-écran à l'autre ; les maquettes de chaque spec (`specs/SPEC-XXXX-*/maquettes/`) fixent la disposition. Rester court. -->
+écran à l'autre ; les maquettes de chaque spec (`specs/SPEC-XXXX-*/maquettes/`) fixent la disposition.
 
 ## Tokens de style
-<!-- Couleurs, typographie, espacements, rayons : noms des tokens Tailwind (ou NativeWind) et leur rôle. Pas de
-valeur en dur dans un écran. -->
+Définis dans `tailwind.config.cjs` (NativeWind 4, Tailwind 3.4). Pas de valeur en dur dans un écran : un nouveau token
+du handoff s'ajoute au fichier de configuration et à cette liste.
+
+| Token | Rôle |
+|---|---|
+| `ground` (`#0C0C0C`) | fond des écrans |
+| `ink` (`#F4F1EA`) | texte et éléments principaux |
+| `font-archivo` | police unique (Archivo, instance Bold embarquée) |
+
+Les couleurs de compagnie sont calculées à l'exécution et passées en `style` : c'est une donnée, pas un token.
+Rayons, mesures et graisses condensées : ajoutés par la spec du thème.
 
 ## Composants de base
-<!-- Chemin et rôle de chaque composant partagé (bouton, champ, carte, liste, modale, en-tête). Un écran les réutilise ;
-un nouveau composant partagé passe par une tâche dont le périmètre contient ce dossier. -->
+Aucun à ce stade. Un composant partagé vit dans `src/shared/` et est listé ici avec son rôle.
 
 ## États standard
-<!-- Rendu commun des états de la section « Écrans » des specs : chargement, vide, erreur (message et action de
-reprise), accès refusé. Un écran les réutilise au lieu de les redessiner. -->
+Aucun à ce stade. Chargement, vide et erreur sont définis par la première spec qui les affiche, puis réutilisés.
 
 ## Accessibilité
-<!-- Règles vérifiables sur un diff, par exemple : chaque contrôle a un nom accessible ; les tests sélectionnent par
-rôle et par nom, pas par classe ; contraste des tokens de couleur ; cible tactile minimale ; focus visible. -->
+- Chaque contrôle interactif a un nom accessible (`accessibilityLabel`) et un rôle (`accessibilityRole`).
+- Les tests sélectionnent par rôle et par nom, jamais par classe ni par `testID` quand un nom existe.
+- Le contraste texte/fond respecte au moins 4,5:1 (`ink` sur `ground` : conforme).
+- Cible tactile d'au moins 44 × 44 pt.
 
 ## Tests d'interface
-<!-- Environnement (ex. jsdom), bibliothèque de rendu, faux des API du navigateur ou de l'appareil (géolocalisation,
-caméra, stockage), ce qui part en `tests/e2e/` (gestes, installation, permissions réelles). -->
+<!-- Rempli par T3 (Jest, jest-expo, RNTL). -->

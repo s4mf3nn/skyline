@@ -9,3 +9,7 @@ reports/
 .factory/
 *.gen.ts
 .context/
+.expo/
+ios/
+android/
+expo-env.d.ts

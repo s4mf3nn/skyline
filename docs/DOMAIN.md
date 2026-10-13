@@ -23,9 +23,10 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 | Trajectoire extrapolée | `projectedTrack` | Droite issue de la position de l'avion, suivant son cap à vitesse sol constante |
 | Point le plus proche | `closestApproach` | Point de la trajectoire extrapolée le plus proche de l'observateur, avec sa distance et son heure |
 | Heure de passage | `passageTime` | Heure à laquelle l'avion atteint son point le plus proche |
+| Cap de l'avion | `trackDeg` | Direction vers laquelle l'avion se dirige (0 au nord, sens horaire), affichée en point cardinal sur Ciel et sur la carte « En ce moment » (« repart vers ») |
 | Gisement d'arrivée | `arrivalBearingDeg` | Direction, vue de l'observateur, depuis laquelle l'avion arrive (0 au nord, sens horaire) |
 | Point cardinal | `CardinalPoint` | L'un des huit secteurs N, NE, E, SE, S, SO, O, NO, de 45° chacun |
-| Angle de la flèche | `arrowAngleDeg` | Gisement visé moins le cap du téléphone, ramené dans [0, 360) |
+| Angle de la flèche | `arrowAngleDeg` | Direction visée moins le cap du téléphone, ramené dans [0, 360). Direction visée : le gisement d'arrivée sur une carte de passage ; le cap de l'avion sur Ciel et sur la carte « En ce moment » (handoff) |
 | Fenêtre « En ce moment » | `overheadWindow` | Intervalle de temps pendant lequel l'avion parcourt les ±5 km de sa trajectoire autour du point le plus proche |
 | Survol en cours | `overhead` | L'avion montré par Ciel et par la carte « En ce moment » (INV1) |
 | Passage | `Passage` | Prévision pour un avion : heure de passage, distance au point le plus proche, gisement d'arrivée, fenêtre |
@@ -44,7 +45,8 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
   de 80 km. Un avion au sol, sans cap ou de vitesse sol nulle ou inconnue n'a pas de passage. (garantie par : fonction
   pure d'extrapolation, testée sur les cas du brief : approche, éloignement, passage à côté, vitesse nulle)
 - **INV3** : les prochains passages sont au plus 10, triés par heure de passage croissante, sans doublon d'avion, et
-  sans le survol en cours. (garantie par : fonction pure de calcul de la scène)
+  sans aucun avion dont la fenêtre « En ce moment » est en cours : le survol en cours a sa carte dédiée, un autre
+  avion en fenêtre (éclipsé par INV1) n'est montré nulle part ; aucun compte à rebours n'est donc négatif. (garantie par : fonction pure de calcul de la scène)
 - **INV4** : un compte à rebours se calcule à chaque tick comme `heure de passage − horloge`, jamais par décrément d'un
   compteur : il se corrige de lui-même à chaque rafraîchissement. (garantie par : horloge injectée `src/shared/clock/`,
   test avec l'horloge factice)
@@ -62,10 +64,15 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
   `UNKNOWN_AIRLINE`, une compagnie sans image autorisée prend la dérive générique SVG. (garantie par : résolution de la
   compagnie dans une fonction pure, testée sur un indicatif inconnu)
 
+Conséquences d'INV1, acceptées par le propriétaire : un avion sans cap ou sans vitesse (hélicoptère en stationnaire)
+n'est jamais le survol en cours, même à 1 km ; la distance actuelle d'un survol en cours peut atteindre environ
+6,4 km (√(5² + 4²)), au-delà du seuil de 4 km du brief.
+
 **Point à trancher par la spec des calculs de passage.** Le brief fait basculer la carte en « En ce moment » à 00:00
 et définit la fenêtre comme ±5 km autour du point le plus proche : si le compte à rebours vise le point le plus proche,
 l'avion entre dans la fenêtre (≈ 23 s à 780 km/h) avant 00:00. Recommandation : le compte à rebours et « Passe à »
-visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et avec INV1.
+visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et avec INV1. Le « passage réel » de H3
+(`docs/PRODUCT.md`) suit le même choix.
 
 ## Cycles de vie
 ### Passage (carte du carrousel)
@@ -73,8 +80,8 @@ visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et a
 |---|---|---|---|
 | (aucun) | à venir | Un rafraîchissement prévoit un passage qui entre dans les 10 premiers | Carte ajoutée à sa place dans l'ordre des heures |
 | à venir | à venir | Rafraîchissement | Heure, gisement et compte à rebours recalculés ; la carte peut changer de rang |
-| à venir | en ce moment | L'horloge atteint le début de la fenêtre (compte à rebours à 00:00) et l'avion devient le survol en cours (INV1) | La carte passe en tête, en version « En ce moment » ; Ciel montre cet avion |
-| à venir | retiré | Rafraîchissement qui ne prévoit plus le passage (virage, sortie du rayon, rang > 10) | Carte retirée sans animation particulière |
+| à venir | en ce moment | Le compte à rebours atteint 00:00 (cible fixée par SPEC-0004) et l'avion devient le survol en cours (INV1) | La carte passe en tête, en version « En ce moment » ; Ciel montre cet avion |
+| à venir | retiré | Rafraîchissement qui ne prévoit plus le passage (virage, sortie du rayon, rang > 10), ou entrée dans sa fenêtre alors qu'un autre avion est le survol en cours (INV3) | Carte retirée sans animation particulière |
 | en ce moment | terminé | L'horloge dépasse la fin de la fenêtre, ou un autre avion devient le survol en cours | Carte retirée ; Ciel passe au survol suivant ou à « aucun avion au-dessus » |
 
 ### Données affichées
@@ -83,9 +90,11 @@ visent l'entrée dans la fenêtre, pour que 00:00 coïncide avec la bascule et a
 | chargement | à jour | Premier instantané reçu | Les écrans affichent la scène |
 | chargement | localisation refusée | Permission refusée | Explication en une phrase et bouton vers les réglages, sur les deux écrans |
 | chargement | hors ligne | Premier appel à la source en échec | Message court, sans données |
+| hors ligne | à jour | Rafraîchissement réussi (les tentatives continuent toutes les 10 s hors ligne) | Les écrans affichent la scène |
 | à jour | à jour | Rafraîchissement réussi | Nouvelle scène |
 | à jour | périmées | Rafraîchissements en échec | Dernières données affichées avec leur heure, puis message au-delà du délai fixé par la spec des états |
 | périmées | à jour | Rafraîchissement réussi | Nouvelle scène, message retiré |
+| à jour, périmées ou hors ligne | localisation refusée | Permission retirée en cours d'usage (constatée au retour au premier plan) | Données effacées de la mémoire, explication et bouton vers les réglages |
 | localisation refusée | chargement | Permission accordée au retour au premier plan | Reprise du cycle |
 | tout état | en pause | L'app passe en arrière-plan | Aucun rafraîchissement ni tick |
 | en pause | état précédent | Retour au premier plan | Rafraîchissement immédiat |

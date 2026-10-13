@@ -21,15 +21,20 @@ Options examinées le 2026-10-13 :
 ## Décision
 Option 2, retenue par le propriétaire le 2026-10-13 : les routes viennent d'adsbdb.com, `https://api.adsbdb.com`.
 - La requête ne porte que l'indicatif de l'avion, jamais la position de l'observateur (INV7).
-- Un indicatif est demandé au plus une fois par session de l'app : le résultat, route trouvée ou inconnue, est gardé en
-  mémoire. Les routes sont demandées hors du cycle de 10 s, seulement pour les avions affichés.
+- L'indicatif entre dans le chemin de l'URL : il est validé avant tout appel (`trim`, majuscules, format
+  `^[A-Z0-9]{2,8}$`) ; un indicatif hors format n'est jamais envoyé et donne « route inconnue ». L'hôte est une
+  constante, jamais une donnée reçue. Un test de contrat sur le faux des routes le vérifie avec un indicatif hostile.
+- Un indicatif est demandé au plus une fois par session de l'app : seules les réponses définitives (route trouvée,
+  indicatif inconnu de la base) sont gardées en mémoire ; un échec réseau n'est pas mis en cache et sera retenté. Les routes sont demandées hors du cycle de 10 s, seulement pour les avions affichés.
 - La réponse est validée à la frontière (INV6). Route absente, indicatif inconnu ou erreur réseau : repli « route
   inconnue », sans bloquer l'affichage de l'avion.
 - La source passe par une interface avec un faux, injectée par les tests, dans `src/shared/routes/`.
 - Les heures de départ et d'arrivée et la progression du vol ne viennent pas d'adsbdb : voir ADR-0003.
 
 ## Conséquences
-- `api.adsbdb.com` rejoint adsb.lol dans la liste des hôtes sortants autorisés (`docs/factory/DOMAIN-SECURITY.md`).
+- `api.adsbdb.com` rejoint adsb.lol dans la liste des hôtes sortants autorisés, et la règle « l'adresse n'est jamais
+  construite à partir d'une donnée reçue » de `docs/factory/DOMAIN-SECURITY.md` distingue l'hôte (jamais reçu) du
+  segment de chemin (validé) : PR `factory`, préalable de SPEC-0009.
 - Nouvelle zone sensible à déclarer : `**/shared/routes/` (réponse externe à valider), par une PR `factory`.
 - Les coordonnées des aéroports permettent d'estimer la progression du vol sans autre source (ADR-0003, option 1).
 - Cette ADR remplace la ligne « Source des routes de vol » (`à décider`) de l'ADR-0001 une fois acceptée.

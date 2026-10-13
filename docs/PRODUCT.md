@@ -18,8 +18,8 @@ plusieurs fois par jour ? Mesure pendant deux semaines d'usage par Sam et quelqu
 
 | Hypothèse | Signal qui la valide | Seuil |
 |---|---|---|
-| H1 : l'écran Ciel et la prévision des passages donnent envie d'ouvrir l'app plusieurs fois par jour | Sessions par utilisateur et par jour (suivi des sessions de Sentry, statistiques TestFlight et test interne Google Play) | Médiane ≥ 3 sessions par jour et par testeur, sur 14 jours consécutifs (seuil à confirmer par l'humain) |
-| H2 : l'usage tient dans la durée, au-delà de l'effet de nouveauté | Testeurs actifs chaque jour pendant les deux semaines | Sam et au moins la moitié des testeurs actifs au moins 12 jours sur 14 |
+| H1 : l'écran Ciel et la prévision des passages donnent envie d'ouvrir l'app plusieurs fois par jour | Sessions par testeur et par jour dans TestFlight (seule source qui relie une session à un testeur) ; sessions Sentry par release en contrôle global | Médiane ≥ 3 sessions par jour et par testeur, sur 14 jours consécutifs (seuil à confirmer par l'humain) |
+| H2 : l'usage tient dans la durée, au-delà de l'effet de nouveauté | Testeurs actifs chaque jour pendant les deux semaines, lus dans TestFlight | Sam et au moins la moitié des testeurs actifs au moins 12 jours sur 14 |
 | H3 : la prévision en ligne droite est assez juste pour lever les yeux au bon moment | Écart entre la bascule « En ce moment » et le survol réel, relevé à la main lors du parcours sur cible réelle | ≤ 10 s pour un avion en croisière, sans virage |
 
 ## Utilisateurs et rôles
@@ -50,7 +50,9 @@ interne de Google Play.
 - Nettoyage des écrans hors v0 (étape 6 du brief) : sans objet, le dépôt part de zéro (ADR-0001).
 - Mentions légales dans l'app (attribution ODbL, licence d'Archivo, non-affiliation, crédits des dérives) : réalisées
   par le propriétaire lui-même, hors roadmap des agents (décision du 2026-10-13). Les specs ne les reprennent pas,
-  mais la spec des dérives réelles fournit le texte de crédit à afficher.
+  mais la spec des dérives réelles fournit le texte de crédit à afficher. Ces mentions sont une obligation de licence
+  (ODbL) : elles doivent être dans l'app avant la première image de dérive et avant toute livraison aux testeurs
+  (critères de sortie de SPEC-0010 et SPEC-0011). Si un agent y touche, il passe par le mode hors spec de la factory.
 - Le matériel, le site vitrine, le checkout et le multi-devises (hors périmètre durable).
 
 ## Données personnelles
@@ -66,13 +68,15 @@ l'observateur. Aucune donnée n'est montrée à un autre utilisateur : il n'y en
 ## KPI et événements produit
 La v0 n'émet **aucun événement produit** : pas de SDK d'analytique, aucune nouvelle donnée sortante (décision du
 propriétaire le 2026-10-13). Les KPI se lisent dans le suivi des sessions de Sentry (actif par défaut dans
-`@sentry/react-native`, anonyme) et dans les statistiques de TestFlight et de Google Play. Une spec qui voudrait un
+`@sentry/react-native`, anonyme) et dans les statistiques par testeur de TestFlight (le test interne de Google Play ne donne pas de sessions par testeur : les
+testeurs Android ne comptent que dans le total Sentry). Les sessions Sentry sont anonymes. SPEC-0011 vérifie qu'une
+session apparaît dans Sentry pour la release livrée. Une spec qui voudrait un
 événement produit amende d'abord ce document.
 
 | KPI | Calcul | Événements |
 |---|---|---|
-| Sessions par testeur et par jour (H1) | Médiane, sur 14 jours, du nombre de sessions par appareil et par jour | Sessions Sentry, sessions TestFlight |
-| Testeurs actifs chaque jour (H2) | Nombre de jours sur 14 avec au moins une session, par appareil | Sessions Sentry |
+| Sessions par testeur et par jour (H1) | Médiane, sur 14 jours, du nombre de sessions par testeur et par jour | Sessions TestFlight ; total Sentry en contrôle |
+| Testeurs actifs chaque jour (H2) | Nombre de jours sur 14 avec au moins une session, par testeur | Sessions TestFlight |
 | Précision de la bascule « En ce moment » (H3) | Écart relevé à la main entre bascule et survol réel | Aucun (relevé manuel) |
 | Taux de sessions sans plantage | Sessions sans erreur fatale / sessions | Sessions Sentry |
 

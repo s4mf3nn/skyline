@@ -33,7 +33,8 @@ Worker) qui garde la clé, met en cache par indicatif et par jour, et ne reçoit
 À décider par le propriétaire avant d'écrire SPEC-0009. Recommandation : **option 1 en v0** (heures et progression
 estimées, libellées comme telles), et **option 3 au MVP** derrière le backend prévu par le brief, qui gardera la clé
 sans créer d'infrastructure dédiée à la v0. Si les horaires réels sont jugés nécessaires dès la v0 pour valider H1,
-retenir l'option 3 avec un relais minimal, ce qui demande une ADR de plus pour le relais (hébergement, secret, coût).
+retenir l'option 3 avec un relais minimal, ce qui demande une ADR de plus pour le relais (hébergement, secret, coût) et un amendement de `docs/PRODUCT.md`
+(qui exclut tout backend en v0) et de la roadmap avant SPEC-0009.
 
 ## Conséquences
 - Option 1 : SPEC-0009 porte le calcul, pur et testé sous Vitest ; aucun nouvel hôte ni secret.

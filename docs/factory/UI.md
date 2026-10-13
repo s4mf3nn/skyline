@@ -29,4 +29,8 @@ Aucun à ce stade. Chargement, vide et erreur sont définis par la première spe
 - Cible tactile d'au moins 44 × 44 pt.
 
 ## Tests d'interface
-<!-- Rempli par T3 (Jest, jest-expo, RNTL). -->
+Jest (`jest-expo`) et React Native Testing Library 14 jouent les tests de rendu ; Vitest garde la logique.
+- Règle par extension : un `.tsx` de `src/` est du rendu, testé par un `*.native.test.tsx` placé à côté (`pnpm test:render`) ; un `.ts` est de la logique, testée par Vitest. Aucun calcul dans un `.tsx`.
+- RNTL 14 : `await render(<App />)` est asynchrone ; les matchers (`toBeOnTheScreen`) sont actifs sans fichier de setup.
+- Un écran lit ses services par `useServices()` : le test les fournit par `createApp({ services, features })` avec les faux de `src/shared/`.
+- Sélection par rôle et par nom accessible (voir « Accessibilité »), jamais par classe.

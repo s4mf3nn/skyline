@@ -67,6 +67,8 @@ jobs:
         run: pnpm lint
       - name: Tests et couverture
         run: pnpm test:coverage
+      - name: Tests de rendu
+        run: pnpm test:render
       - name: Contrat confié à un autre lanceur que Vitest
         # Sans effet tant que package.json ne déclare pas `factory.contractRunners` (voir scripts/contract-files.mjs).
         run: pnpm test:contract
@@ -87,12 +89,10 @@ jobs:
         env:
           BASE_REF: origin/${{ github.base_ref }}
         run: |
-          # :(glob) pour que `**` inclue aussi les fichiers directement sous src/ (src/app.ts), et `**/src/` les
-          # paquets d'un dépôt à plusieurs applications (web/src/, apps/api/src/).
-          # Un point d'entrée qu'aucun test ne charge (ici src/server.ts, à adapter à la stack) est exclu :
-          # ses mutants seraient NoCoverage. Idem pour un fichier testé par un autre lanceur que Vitest.
-          FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF"...HEAD -- ':(glob)**/src/**/*.ts' ':(glob)**/src/**/*.tsx' \
-            | grep -v -E '(\.(test|gen)\.tsx?|(^|/)src/server\.ts)$' | paste -sd, - || true)
+          # :(glob) pour que `**` inclue aussi les fichiers directement sous src/ (src/app.ts).
+          # Règle par extension : seuls les .ts de src/ sont mutés ; un .tsx est du rendu, joué par Jest (test:render).
+          FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF"...HEAD -- ':(glob)**/src/**/*.ts' \
+            | grep -v -E '\.(test|gen)\.ts$' | paste -sd, - || true)
           if [ -n "$FILES" ]; then pnpm exec stryker run --mutate "$FILES"; else echo "Rien à muter"; fi
       - name: Suppression de la ressource de données du run
         if: always()

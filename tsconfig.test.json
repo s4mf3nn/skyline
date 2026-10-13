@@ -1,9 +1,10 @@
 {
-  "//": "Tests de contrat et sc\u00e9narios cach\u00e9s : ils utilisent Response.json() typ\u00e9 par DOM (any). DOM reste absent du code applicatif par d\u00e9faut (tsconfig.json) : un projet web ou mobile l'ajoute, ou \u00e9tend le preset de son framework, dans SPEC-0000. Les tests de rendu React Native (*.native.test.tsx) sont exclus tant que SPEC-0000 n'a pas pos\u00e9 Jest et leur typage.",
+  "//": "Tests de contrat et scénarios cachés : ils utilisent Response.json() typé par DOM (any). DOM reste absent du code applicatif (tsconfig.json). Les tests de rendu (*.native.test.tsx, Jest) sont typés ici, avec les types de Jest. Exclusion ciblée : le contrat de SPEC-0001 appelle createApp avec l'option `build`, que SPEC-0001 ajoute.",
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2023", "DOM"]
+    "lib": ["ES2023", "DOM"],
+    "types": ["node", "jest"]
   },
-  "include": ["tests/acceptance", "tests/holdout"],
-  "exclude": ["tests/**/*.native.test.tsx"]
+  "include": ["tests/acceptance", "tests/holdout", "src/**/*.native.test.tsx", "nativewind-env.d.ts"],
+  "exclude": ["tests/**/SPEC-0001.native.test.tsx"]
 }

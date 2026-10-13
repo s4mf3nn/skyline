@@ -74,11 +74,13 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
 - **INV9** : Ciel est une page du pager si et seulement s'il a un avion à montrer : le survol en cours, ou un avion
   retenu (cycle « Page Ciel » ci-dessous). Sinon, et notamment en chargement, localisation refusée ou hors ligne sans
   données, le pager n'a qu'une page, Prochains passages, sans indicateur ni glissement ; l'app s'ouvre donc toujours
-  sur Prochains passages. Des données périmées (ou hors ligne avec des données) comptent comme à jour : Ciel suit la
+  sur Prochains passages. Des données périmées (cycle « Données affichées ») comptent comme à jour : Ciel suit la
   scène calculée sur les dernières données. L'apparition de Ciel ne change jamais la page affichée. Son retrait ne la
   change que si Ciel est la page affichée : la bande passe alors à Prochains passages par la transition du pager
   (380 ms). La page affichée est la page de repos du pager, destination comprise d'une transition en cours. Un avion
-  retenu garde les dernières valeurs affichées. (garantie par : une fonction pure de présence de Ciel, qui reçoit le
+  retenu garde les dernières valeurs affichées, y compris après un passage en arrière-plan. Un retrait de Ciel pendant
+  un glissement en cours annule le geste : l'offset du doigt est abandonné et la bande rejoint la page restante par la
+  transition de 380 ms. (garantie par : une fonction pure de présence de Ciel, qui reçoit le
   survol en cours, la liste des prochains passages, l'avion retenu, l'état des données et la page affichée, testée
   sous Vitest ; décisions du propriétaire du 2026-10-13)
 
@@ -130,7 +132,9 @@ du tableau qui s'applique l'emporte.
 | survol | survol | Un autre avion devient le survol en cours | Ciel montre le nouvel avion |
 | survol | absent | Le survol se termine pendant que Prochains passages est affichée | Ciel retiré |
 | survol | retenu | Le survol se termine pendant que Ciel est affichée | Ciel garde l'avion et ses dernières valeurs ; plus de carte « En ce moment » |
-| retenu | absent | L'observateur glisse vers Prochains passages | Ciel retiré à la fin de la transition |
+| retenu | absent | L'observateur glisse vers Prochains passages | Ciel retiré à la fin de la transition ; si un survol commence avant, le retrait est annulé : Ciel reste et montre le nouvel avion, la page affichée reste Prochains passages |
 | retenu | absent | L'avion retenu redevient un passage à venir (virage puis nouvelle prévision) | Ciel retiré, la bande passe à Prochains passages |
 
-Il n'y a pas de transition vers `retenu` depuis `absent` : un avion n'est retenu que s'il était affiché.
+Il n'y a pas de transition vers `retenu` depuis `absent` : un avion n'est retenu que s'il était affiché. Exemple de
+priorité : si l'avion retenu redevient le survol en cours au même tick qu'il redevient prévisible, la ligne
+`absent ou retenu → survol` l'emporte et Ciel reste.

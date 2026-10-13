@@ -1,6 +1,8 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "target": "ES2023",
+    "jsx": "react-jsx",
     "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -14,7 +16,10 @@
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src", "tests/unit", "*.config.ts"]
+  "include": ["src", "app", "tests/unit", "*.config.ts", "nativewind-env.d.ts"]
 }

@@ -38,3 +38,13 @@ Source : Context7 `/nativewind/nativewind/nativewind_4.2.0` le 2026-10-13, versi
 Source : Context7 `/websites/sentry_io_platforms_react-native` le 2026-10-13 (doc non versionnée ; version du SDK Expo 57).
 - `sendDefaultPii` vaut `false` par défaut : ne pas l'activer (l'exemple d'installation de la doc le met à `true`). Filtrer le reste dans `beforeSend(event)`, qui renvoie l'événement nettoyé.
 - Expo : plugin de configuration `@sentry/react-native/expo` dans `app.json`, composant racine enveloppé par `Sentry.wrap`.
+
+## Installation du socle Expo 57 (pnpm)
+Source : lecture de `node_modules` et exécution de `expo start` le 2026-10-13.
+- `package.json` est en `"type": "module"` : `babel.config.cjs`, `metro.config.cjs` et `tailwind.config.cjs` (CommonJS), chargés tels quels par Babel, Metro et Tailwind.
+- Babel : `presets: [["babel-preset-expo", { jsxImportSource: "nativewind" }], "nativewind/babel"]` ; `@babel/core` doit être épinglé en `^7` (pnpm résout sinon la version 8, hors pairs d'Expo).
+- Pairs d'Expo Router à installer par `npx expo install` : `expo-constants`, `expo-linking`, `react-native-safe-area-context`, `react-native-screens`, `@expo/metro-runtime`, `@expo/log-box`.
+- `expo-location` : options du plugin `locationWhenInUsePermission`, `isIosBackgroundLocationEnabled`, `isAndroidBackgroundLocationEnabled` (les deux derniers à `false`).
+- Archivo : le dépôt google/fonts ne publie que la police variable ; l'instance statique est extraite avec `fontTools.varLib.instancer` (`wght=700 wdth=100`).
+- pnpm : `react-native-css-interop@0.2.7` (moteur de NativeWind) doit être une dépendance directe, sinon `babel-preset-expo` ne résout pas `react-native-css-interop/jsx-runtime` ; `pnpm dedupe` après installation évite un second `react` / `react-native` (19.3.0 / 0.87.1).
+- Types : `expo/types/metro-require.d.ts` rend `process.env.NODE_ENV` obligatoire dans `NodeJS.ProcessEnv` pour tout le programme TypeScript : un `spawnSync(..., { env: { PATH } })` doit fournir `NODE_ENV`.

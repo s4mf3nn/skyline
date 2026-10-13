@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "echo \"pnpm dev : à définir par SPEC-0000 (bootstrap), voir docs/adr/0001-stack.md\" && exit 1",
+    "dev": "pnpm gen && expo start --port $PORT",
     "gen": "node scripts/gen-features.mjs",
     "typecheck": "pnpm gen && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "lint": "biome check .",
@@ -22,14 +22,17 @@
     "prepare": "lefthook install || true"
   },
   "devDependencies": {
+    "@babel/core": "^7",
     "@biomejs/biome": "^2.5.15",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@stryker-mutator/core": "^10.0.0",
     "@stryker-mutator/vitest-runner": "^10.0.0",
     "@types/node": "^22.20.4",
+    "@types/react": "~19.2",
     "@vitest/coverage-v8": "^4.1.11",
     "lefthook": "^2.1.15",
+    "tailwindcss": "^3.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
   },
@@ -37,6 +40,36 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "lefthook"
+    ]
+  },
+  "dependencies": {
+    "@expo/log-box": "^57.0.4",
+    "@expo/metro-runtime": "~57.0.16",
+    "expo": "57.0.28",
+    "expo-constants": "~57.0.21",
+    "expo-font": "~57.0.4",
+    "expo-linking": "~57.0.12",
+    "expo-location": "~57.0.21",
+    "expo-router": "~57.0.26",
+    "nativewind": "4.2.7",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-css-interop": "0.2.7",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-worklets": "0.10.1"
+  },
+  "main": "expo-router/entry",
+  "factory": {
+    "routeDirs": [
+      "app"
+    ],
+    "routeIgnore": [
+      "_layout.tsx",
+      "+*"
     ]
   }
 }

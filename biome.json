@@ -26,6 +26,14 @@
   },
   "overrides": [
     {
+      "includes": ["global.css"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noUnknownAtRules": "off" }
+        }
+      }
+    },
+    {
       "includes": ["src/**", "**/src/**"],
       "linter": {
         "rules": {

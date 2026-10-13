@@ -36,6 +36,8 @@ function run(dir: string, args: string[], env: Record<string, string> = {}) {
     cwd: dir,
     encoding: "utf8",
     env: {
+      // NODE_ENV : les types d'Expo le rendent obligatoire dans ProcessEnv.
+      NODE_ENV: "test",
       PATH: process.env.PATH ?? "",
       GITHUB_RUN_ID: "42",
       GITHUB_RUN_ATTEMPT: "2",

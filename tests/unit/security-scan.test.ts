@@ -28,7 +28,8 @@ function run(bin: string, args: string[] = [], env: Record<string, string> = {})
   // PATH réduit au dossier factice : node est lancé par chemin absolu, les outils réels sont invisibles.
   const res = spawnSync(process.execPath, [script, ...args], {
     encoding: "utf8",
-    env: { PATH: bin, ...env },
+    // NODE_ENV : les types d'Expo le rendent obligatoire dans ProcessEnv.
+    env: { NODE_ENV: "test", PATH: bin, ...env },
   });
   const log = path.join(bin, "args.log");
   return {

@@ -1,0 +1,7 @@
+// Preset Expo avec NativeWind : `className` est compilé en style natif.
+module.exports = (api) => {
+  api.cache(true);
+  return {
+    presets: [["babel-preset-expo", { jsxImportSource: "nativewind" }], "nativewind/babel"],
+  };
+};

@@ -99,7 +99,11 @@ describe.skip("SPEC-0002 airline theme (rendering)", () => {
     const shapes = paintedShapes(rootOf());
     expect(shapes.map((node) => node.props.fill)).toEqual(["#F4F1EA", "#2B5BD6", "#E1251B"]);
     expect(shapes.map((node) => node.type)).toEqual(["Path", "Path", "Path"]);
-    expect(shapes[0]?.props.d).toBe("M 36 14 Q 40 2 54 2 L 150 2 L 460 440 L 116 440 Z");
+    expect(shapes.map((node) => node.props.d)).toEqual([
+      "M 36 14 Q 40 2 54 2 L 150 2 L 460 440 L 116 440 Z",
+      "M 0 300 L 320 160 L 320 236 L 0 376 Z",
+      "M 0 394 L 320 254 L 320 286 L 0 426 Z",
+    ]);
   });
 
   it("CA10 : skips the colors set to none and draws the disc as a circle", async () => {
@@ -121,7 +125,9 @@ describe.skip("SPEC-0002 airline theme (rendering)", () => {
     expect(outline?.props.d).toBe("M 36 14 Q 40 2 54 2 L 150 2 L 460 440 L 116 440 Z");
     expect(outline?.props.fill).toBeUndefined();
     const group = nodes.find((node) => node.type === "G");
-    expect(group).toBeDefined();
-    if (group !== undefined) expect(paintedShapes(group).map((node) => node.props.fill)).toEqual(["#8E0A22"]);
+    if (group === undefined) throw new TypeError("expected a G");
+    expect(typeof clip.props.id).toBe("string");
+    expect(group.props.clipPath).toBe(`url(#${clip.props.id})`);
+    expect(paintedShapes(group).map((node) => node.props.fill)).toEqual(["#8E0A22"]);
   });
 });

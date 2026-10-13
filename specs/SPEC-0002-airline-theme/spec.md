@@ -72,9 +72,9 @@ const TAIL_OUTLINE_PATH: string   // contour de la dérive, aussi chemin de la c
 GenericTail(props: TailColors & { width: number }): ReactElement
 // Racine : <View> de style { width, height: width * 440 / 300, transform: [{ scaleX: -1 }] },
 // accessibilityElementsHidden et importantForAccessibility="no-hide-descendants", contenant le SVG.
-// Éléments de react-native-svg : `Svg` (prop viewBox = TAIL_VIEWBOX), `Defs` et `ClipPath` portant un `Path` de d = TAIL_OUTLINE_PATH
+// Éléments de react-native-svg : `Svg` (prop viewBox = TAIL_VIEWBOX), `Defs` et `ClipPath` (prop `id`, par exemple "tail-clip") portant un `Path` de d = TAIL_OUTLINE_PATH
 // sans prop `fill`, puis un `Path` ou `Circle` par couche avec la prop `fill` de la couche ; les couches autres que base
-// sont dans un `G` rogné par le `ClipPath`. Seules les formes des couches portent une prop `fill`.
+// sont dans un `G` dont la prop `clipPath` vaut `url(#<id du ClipPath>)`. Seules les formes des couches portent une prop `fill`.
 ```
 
 Dérive générique (géométrie de `Fin.dc.html`, repère 300 × 440, recopiée ici car le handoff n'est pas embarqué) :

@@ -16,6 +16,9 @@ const pkg = JSON.parse(readFileSync("package.json", "utf8")) as FactoryPackage;
 const otherRunners = Object.keys(pkg.factory?.contractRunners ?? {}).map(
   (suffix) => `tests/**/SPEC-*.${suffix}.test.{ts,tsx}`,
 );
+// Provisoire : les tests de rendu React Native (`*.native.test.tsx`) attendent Jest, posé par SPEC-0000, qui déclare
+// le lanceur `native` dans `factory.contractRunners` et retire cette ligne.
+otherRunners.push("tests/**/SPEC-*.native.test.{ts,tsx}");
 
 export default defineConfig({
   test: {

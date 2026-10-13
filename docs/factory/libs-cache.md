@@ -22,3 +22,19 @@ Source : Context7 `/vitest-dev/vitest/v4.1.6` (version la plus proche disponible
 Source : Context7 `/getsentry/sentry-mcp` le 2026-10-03, version lue sur le registre npm le même jour.
 - Lancement stdio : `npx @sentry/mcp-server`, jeton dans `SENTRY_ACCESS_TOKEN` ; `SENTRY_HOST` seulement pour un Sentry auto-hébergé.
 - Lecture seule : `MCP_SKILLS=inspect` (issues, événements, traces, releases) ; le skill `triage` demande `event:write`. Droits minimaux du jeton : `org:read`, `project:read`, `team:read`, `event:read`.
+
+
+## expo 57.0.28
+Source : `bundledNativeModules.json` d'`expo@57.0.28` (registre npm) le 2026-10-13 ; Context7 `/expo/expo/__branch__sdk-56` pour les API (pas de branche `sdk-57` disponible : forme à confirmer dans `node_modules` après installation).
+- Versions natives alignées sur le SDK : `react-native` 0.86.3, `react` 19.2.3, `react-native-reanimated` 4.5.1, `react-native-worklets` 0.10.1, `react-native-gesture-handler` ~2.32.0, `react-native-svg` 15.15.4, `@sentry/react-native` ~7.11.0. Installer avec `npx expo install`, pas `pnpm add` de la dernière version npm.
+- `expo-location` : `requestForegroundPermissionsAsync()` déclenche la demande, `getForegroundPermissionsAsync()` lit seulement l'état. iOS n'a pas de `timeInterval` : seul `distanceInterval` règle la fréquence de `watchPositionAsync`.
+
+## nativewind 4.2.7
+Source : Context7 `/nativewind/nativewind/nativewind_4.2.0` le 2026-10-13, version lue sur le registre npm le même jour.
+- NativeWind 4 fonctionne avec Tailwind **3** (moteur `react-native-css-interop`) ; Tailwind 4 demande NativeWind 5, encore en préversion.
+- Configuration : `presets: [require("nativewind/preset")]` dans `tailwind.config.js`, `withNativeWind(config, { input: "./global.css" })` dans `metro.config.js`, preset `babel-preset-expo`.
+
+## @sentry/react-native 7.11
+Source : Context7 `/websites/sentry_io_platforms_react-native` le 2026-10-13 (doc non versionnée ; version du SDK Expo 57).
+- `sendDefaultPii` vaut `false` par défaut : ne pas l'activer (l'exemple d'installation de la doc le met à `true`). Filtrer le reste dans `beforeSend(event)`, qui renvoie l'événement nettoyé.
+- Expo : plugin de configuration `@sentry/react-native/expo` dans `app.json`, composant racine enveloppé par `Sentry.wrap`.

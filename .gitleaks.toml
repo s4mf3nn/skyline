@@ -1,4 +1,4 @@
-title = "{{PROJECT_NAME}}"
+title = "skyline"
 
 [extend]
 useDefault = true

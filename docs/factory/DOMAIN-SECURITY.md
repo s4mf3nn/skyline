@@ -15,31 +15,21 @@ Chaque règle doit pouvoir être contrôlée sur un diff, et dit ce qui la véri
 
 ## Règles par défaut selon le type d'application
 
-<!-- `/init-project` garde les blocs qui s'appliquent au projet et supprime les autres. -->
-
 | Concerne | Règle | Vérifiée par |
 |---|---|---|
-| API | Toute route d'écriture passe par la limitation de débit | Test de contrat (réponse au-delà du seuil) |
-| API | Toute entrée est validée à la frontière, avant tout traitement | Test de contrat sur une entrée invalide, relecteur |
-| Web ou mobile | Les jetons de session vivent dans un stockage sûr (cookie `HttpOnly`, trousseau du système), jamais en clair | Relecteur, test du client |
-| Web ou mobile | Un deep link ou un paramètre d'URL est validé comme une entrée utilisateur | Test |
-| Authentification par lien ou par code | Lien ou code à usage unique, expiration courte, limitation de débit par destinataire et par adresse, même réponse que le compte existe ou non | Test de contrat (réutilisation, expiration, réponse identique) |
-| Lien d'accès à une ressource, sans compte (ex. page de signature, partage) | Ce n'est pas un lien de connexion : le jeton ne donne accès qu'à une ressource et à un destinataire, il est haché au repos, il vit aussi longtemps que la ressource reste dans l'état qui l'autorise (cycle de vie de `docs/DOMAIN.md`) et il est refusé dès qu'elle en sort ; la page qu'il ouvre ne le transmet à aucun tiers (en-tête `Referer`, suivi des erreurs) | Test de contrat (jeton d'une autre ressource, ressource sortie de l'état, jeton absent de l'événement du faux du suivi des erreurs) |
-| Secrets émis par le produit (clé d'API, secret de webhook) | Montré une seule fois à sa création, haché au repos (chiffré s'il doit être relu, ex. pour signer un envoi), révocable, limité à un compte et à des droits, jamais écrit dans les logs ni dans une réponse ultérieure ; les clés factices des tests suivent le format autorisé par `.gitleaks.toml` | Test de contrat (la clé n'apparaît plus après la création, clé révoquée refusée, droit insuffisant refusé), relecteur |
-| Appel sortant vers une adresse fournie par un client (webhook, import par URL) | Schéma `https` seul, adresse interne ou privée refusée à l'enregistrement et à l'envoi, redirection non suivie, délai maximal ; l'envoi est signé (secret et horodatage) pour que le destinataire le vérifie ; la réponse du destinataire n'est jamais renvoyée telle quelle à un autre client | Test de contrat (adresse refusée, redirection, signature vérifiable) avec le faux du réseau |
-| Fichiers envoyés par les utilisateurs | Taille maximale et type réel (signature du contenu, pas l'extension) vérifiés côté serveur ; nom de stockage généré ; accès privé par défaut, lecture par URL signée à durée courte ; suppression effective | Test de contrat (fichier trop gros, type falsifié, accès sans droit) |
-| Données personnelles | Une donnée personnelle n'est montrée à un autre utilisateur que dans la forme que la spec décrit (ex. distance approximative plutôt que position) | Test de contrat sur la réponse vue par un autre utilisateur |
-| CLI | Aucun secret en argument ni dans les logs | Relecteur |
-| Bibliothèque | Le paquet publié ne contient que les fichiers déclarés (`files` de `package.json`), sans secret ni fichier de test | Test sur la sortie de `npm pack` (cible réelle) |
+| Mobile | Un deep link ou un paramètre d'URL est validé comme une entrée utilisateur | Test |
+| Mobile | Toute réponse d'une source externe (ADS-B, routes de vol) est validée à la frontière, avant tout calcul ; une réponse invalide ou partielle donne un état d'interface prévu, jamais un plantage | Test de contrat avec le faux de la source |
+| Données personnelles | Une donnée personnelle n'est montrée à un autre utilisateur que dans la forme que la spec décrit (ex. distance approximative plutôt que position) ; sans objet en v0 (aucun compte, aucun autre utilisateur), à reprendre au MVP | Test de contrat sur la réponse vue par un autre utilisateur |
 
 ## Règles du domaine
 
-<!-- 3 à 6 règles propres au produit, reprises de `docs/PRODUCT.md` (données personnelles) et de `docs/DOMAIN.md`.
-Exemples (service de raccourcissement d'URL) : seuls `http` et `https` sont acceptés comme URL cible ; les identifiants
-publics sont générés aléatoirement. -->
-
 | Règle | Vérifiée par |
 |---|---|
-| <règle du domaine> | <test, lint, script ou relecteur> |
+| La position de l'utilisateur ne quitte l'appareil que dans la requête à la source ADS-B (latitude, longitude, rayon) ; elle n'est ni stockée, ni loggée, ni envoyée au suivi des erreurs | Test de contrat sur les faux de la source ADS-B et du suivi des erreurs, relecteur |
+| La permission de localisation demandée est « pendant l'utilisation » seulement ; jamais de localisation en arrière-plan | Relecteur sur `app.json` / `app.config.*`, test sur le faux de localisation |
+| Les appels sortants ne visent que les hôtes déclarés dans l'ADR-0001 (source ADS-B, source des routes), en `https` ; l'adresse n'est jamais construite à partir d'une donnée reçue | Test avec le faux du réseau, relecteur |
+| Aucune image de compagnie (dérive, logo) n'entre dans `assets/tails/` sans autorisation consignée dans la spec qui l'ajoute et notice de crédit dans l'application ; sinon, dérive générique SVG | Relecteur, revue humaine (zone sensible) |
+| Aucun secret sous le préfixe `EXPO_PUBLIC_` ni dans `app.json` / `app.config.*` : tout ce qui s'y trouve est livré dans le bundle | gitleaks, relecteur |
+| Les mentions obligatoires figurent dans l'application : attribution ODbL, licence de la police, non-affiliation aux compagnies, crédits des images | Test de rendu de l'écran qui les porte |
 
 Les zones correspondantes sont classées **risque élevé** : voir `docs/factory/RISK.md`. Résume ces règles en une phrase dans `CLAUDE.md` (section « Sécurité propre au domaine »).

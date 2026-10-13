@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<svg viewBox="0 0 300 440" width="100%" style="display:block">
+  <defs><clipPath id="fn-clip"><path d="M 36 14 Q 40 2 54 2 L 150 2 L 460 440 L 116 440 Z"></path></clipPath></defs>
+  <path d="M 36 14 Q 40 2 54 2 L 150 2 L 460 440 L 116 440 Z" fill="{{ base }}"></path>
+  <g clip-path="url(#fn-clip)">
+    <path d="M 0 300 L 320 160 L 320 236 L 0 376 Z" fill="{{ a1 }}"></path>
+    <path d="M 0 394 L 320 254 L 320 286 L 0 426 Z" fill="{{ a2 }}"></path>
+    <circle cx="176" cy="196" r="66" fill="{{ disc }}"></circle>
+  </g>
+</svg>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:300,&quot;height&quot;:440},&quot;base&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F6C344&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;a1&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#8E0A22&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    return { base: p.base || '#F6C344', a1: p.a1 || 'none', a2: p.a2 || 'none', disc: p.disc || 'none' };
+  }
+}
+</script>
+</body>
+</html>

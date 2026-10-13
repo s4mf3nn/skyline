@@ -1,4 +1,4 @@
-# Domaine : {{PROJECT_NAME}}
+# Domaine : skyline
 
 <!-- Rédigé par `/roadmap <brief>`, validé par l'humain dans la PR de cadrage, lu par `/new-spec`, le `planner` et le
 `spec-reviewer`. Une spec qui contredit un invariant ou un cycle de vie amende d'abord ce document. -->

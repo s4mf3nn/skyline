@@ -1,22 +1,28 @@
 # Propriétaire des chemins sensibles ci-dessous (zones `risk:high` de docs/factory/RISK.md).
 # Avec la règle "Require review from Code Owners", ces chemins ne fusionnent jamais sans toi.
-# Ajoute ici les zones sensibles du domaine (voir docs/factory/DOMAIN-SECURITY.md).
+# Zones sensibles du domaine : voir docs/factory/DOMAIN-SECURITY.md.
 # `**/` : vaut pour `src/` comme pour un paquet (`web/src/`, `apps/api/src/`).
-**/migrations/               @{{GITHUB_OWNER}}
-**/features/auth/            @{{GITHUB_OWNER}}
-**/shared/**/auth*           @{{GITHUB_OWNER}}
-**/features/admin/           @{{GITHUB_OWNER}}
-**/shared/monitoring/        @{{GITHUB_OWNER}}
-**/sentry.*                  @{{GITHUB_OWNER}}
-**/.sentryclirc              @{{GITHUB_OWNER}}
-**/config/                   @{{GITHUB_OWNER}}
-/tests/acceptance/           @{{GITHUB_OWNER}}
-/tests/holdout/              @{{GITHUB_OWNER}}
-/specs/                      @{{GITHUB_OWNER}}
-/docs/PRODUCT.md             @{{GITHUB_OWNER}}
-/docs/DOMAIN.md              @{{GITHUB_OWNER}}
-/docs/adr/                   @{{GITHUB_OWNER}}
-/.github/                    @{{GITHUB_OWNER}}
-/scripts/                    @{{GITHUB_OWNER}}
-/CLAUDE.md                   @{{GITHUB_OWNER}}
-/.claude/                    @{{GITHUB_OWNER}}
+**/shared/location/          @s4mf3nn
+**/shared/adsb/              @s4mf3nn
+**/assets/tails/             @s4mf3nn
+/app.json                    @s4mf3nn
+/app.config.*                @s4mf3nn
+/eas.json                    @s4mf3nn
+**/migrations/               @s4mf3nn
+**/features/auth/            @s4mf3nn
+**/shared/**/auth*           @s4mf3nn
+**/features/admin/           @s4mf3nn
+**/shared/monitoring/        @s4mf3nn
+**/sentry.*                  @s4mf3nn
+**/.sentryclirc              @s4mf3nn
+**/config/                   @s4mf3nn
+/tests/acceptance/           @s4mf3nn
+/tests/holdout/              @s4mf3nn
+/specs/                      @s4mf3nn
+/docs/PRODUCT.md             @s4mf3nn
+/docs/DOMAIN.md              @s4mf3nn
+/docs/adr/                   @s4mf3nn
+/.github/                    @s4mf3nn
+/scripts/                    @s4mf3nn
+/CLAUDE.md                   @s4mf3nn
+/.claude/                    @s4mf3nn

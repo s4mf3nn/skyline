@@ -1,10 +1,10 @@
-# CLAUDE.md : {{PROJECT_NAME}}
+# CLAUDE.md : skyline
 
 Ce fichier est lu par chaque agent au démarrage de chaque workspace Conductor. Il décrit le projet, les conventions et les règles de la software factory. Il doit rester court : les détails vivent dans `docs/`.
 
 ## Le projet
 
-<!-- À compléter : deux ou trois phrases sur ce que fait le produit et pour qui. -->
+Skyline est une application mobile Expo (iOS et Android) qui dit en une seconde quel avion passe au-dessus de toi et lesquels vont passer ensuite. La v0 se limite à deux écrans, Ciel et Prochains passages, sans backend ni compte. Le cahier des charges et le handoff de design font foi : `docs/brief/` (les fichiers HTML y sont des références, jamais embarqués dans l'application).
 Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont décrits dans `docs/adr/0001-stack.md`.
 
 ## Commandes
@@ -43,7 +43,7 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 
 ## Sécurité propre au domaine
 
-<!-- À compléter : une phrase qui résume les règles et nomme les zones qui déclenchent la lecture du détail. -->
+La position de l'utilisateur ne quitte l'appareil que pour interroger la source ADS-B, n'est jamais loggée ni envoyée au suivi des erreurs, et aucune image de compagnie n'est embarquée sans autorisation consignée : les zones `src/shared/location/`, `src/shared/adsb/`, `src/shared/monitoring/`, `assets/tails/` et les fichiers de livraison (`app.json`, `app.config.*`, `eas.json`) déclenchent la lecture du détail.
 Détail et zones à risque élevé : `docs/factory/DOMAIN-SECURITY.md` (à lire avant toute tâche sur une entrée utilisateur, une écriture exposée (route, formulaire, commande) ou une zone à risque élevé) et `docs/factory/RISK.md`.
 
 ## Questions à l'humain

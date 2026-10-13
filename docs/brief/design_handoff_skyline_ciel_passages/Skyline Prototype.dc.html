@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&amp;family=DM+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <script src="data.js"></script>
+  <style>body{margin:0;background:#E7E6E1}a{color:inherit}a:hover{opacity:.8}</style>
+</helmet>
+<div style="display:flex;gap:56px;padding:56px;align-items:flex-start;flex-wrap:wrap;font-family:'DM Sans',sans-serif;color:#1C1B19">
+  <div data-screen-label="Prototype" style="position:relative;flex-shrink:0;width:393px;height:852px;border-radius:52px;overflow:hidden;background:#0C0C0C;user-select:none;-webkit-user-select:none;box-shadow:0 40px 80px -40px rgba(0,0,0,.4)">
+    <div onPointerDown="{{ down }}" onPointerMove="{{ move }}" onPointerUp="{{ up }}" onPointerLeave="{{ up }}" onPointerCancel="{{ up }}" style="position:absolute;inset:0;touch-action:pan-y">
+      <div style="position:absolute;top:0;left:0;width:786px;height:852px;display:flex;transform:{{ stripT }};transition:{{ stripTr }}">
+        <div onClick="{{ cielTap }}" data-screen-label="Ciel" style="position:relative;flex-shrink:0;width:393px;height:852px;overflow:hidden;background:{{ c.bg }};color:{{ c.big }};font-family:Archivo;cursor:pointer;transition:background-color .6s cubic-bezier(.4,0,.2,1)">
+  <dc-import name="StatusBar" color="{{ c.small }}" time="9:41" style="position:absolute;top:0;left:0;right:0;z-index:3" hint-size="393px,54px"></dc-import>
+  <div style="position:absolute;left:16px;top:70px;font-size:140px;font-weight:800;font-stretch:72%;line-height:.84;letter-spacing:-0.04em">{{ c.from }}<br>{{ c.to }}</div>
+  <div style="position:absolute;left:24px;top:316px;font-size:22px;font-weight:700;font-stretch:85%;white-space:nowrap">{{ c.cities }}</div>
+  <div style="position:absolute;left:24px;right:24px;top:360px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;justify-content:space-between;font-size:22px;font-weight:700;font-stretch:85%;line-height:1"><span>{{ c.dep }}</span><span>{{ c.arr }}</span></div>
+    <div style="height:6px;border-radius:3px;background:{{ c.track }};margin-top:8px"><div style="height:6px;border-radius:3px;width:{{ c.progW }};background:{{ c.big }}"></div></div>
+  </div>
+  <sc-for list="{{ c.imgList }}" as="im" hint-placeholder-count="0"><div style="position:absolute;left:-260px;bottom:0;width:521px;height:400px;z-index:0;pointer-events:none;background-image:url({{ im.src }});background-size:contain;background-repeat:no-repeat;background-position:left bottom"></div></sc-for>
+  <sc-if value="{{ c.noImg }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:-60px;bottom:0;width:272px;height:399px;transform:scaleX(-1)"><dc-import name="Fin" base="{{ c.fin.base }}" a1="{{ c.fin.a1 }}" a2="{{ c.fin.a2 }}" disc="{{ c.fin.disc }}" style="width:100%" hint-size="272px,399px"></dc-import></div></sc-if>
+  <div style="position:absolute;z-index:1;right:24px;top:448px;display:flex;flex-direction:column;align-items:flex-end;gap:10px;text-align:right">
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:13px;font-weight:700;opacity:.7">Vitesse</span><span style="font-size:40px;font-weight:800;font-stretch:70%;line-height:.95;letter-spacing:-0.02em">{{ c.speed }}</span></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:13px;font-weight:700;opacity:.7">Altitude</span><span style="font-size:40px;font-weight:800;font-stretch:70%;line-height:.95;letter-spacing:-0.02em;white-space:nowrap">{{ c.alt }}</span></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:13px;font-weight:700;opacity:.7">Cap</span><span style="font-size:40px;font-weight:800;font-stretch:70%;line-height:.95;letter-spacing:-0.02em">{{ c.cap }}</span></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:13px;font-weight:700;opacity:.7">Compagnie</span><span style="font-size:40px;font-weight:800;font-stretch:70%;line-height:.95;letter-spacing:-0.02em;white-space:nowrap">{{ c.name }}</span></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:13px;font-weight:700;opacity:.7">Vol</span><span style="font-size:40px;font-weight:800;font-stretch:70%;line-height:.95;letter-spacing:-0.02em">{{ c.flight }}</span></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:13px;font-weight:700;opacity:.7">Appareil</span><span style="font-size:40px;font-weight:800;font-stretch:70%;line-height:.95;letter-spacing:-0.02em">{{ c.type }}</span></div>
+  </div>
+  <div style="position:absolute;bottom:8px;left:50%;margin-left:-67px;width:134px;height:5px;border-radius:3px;background:{{ c.small }}"></div>
+</div>
+        <div data-screen-label="Prochains passages" style="position:relative;flex-shrink:0;width:393px;height:852px;overflow:hidden;background:#0C0C0C;color:#F4F1EA;font-family:Archivo">
+        <dc-import name="StatusBar" color="#F4F1EA" time="13:40" style="position:absolute;top:0;left:0;right:0;z-index:3" hint-size="393px,54px"></dc-import>
+        
+        <div ref="{{ scRef }}" style="position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;scroll-padding-top:100px;scrollbar-width:none;padding:100px 12px 200px;box-sizing:border-box">
+          <sc-for list="{{ overList }}" as="s" hint-placeholder-count="1">
+            <div style="position:relative;height:650px;margin-bottom:12px;border-radius:36px;overflow:hidden;background:{{ s.bg }};color:{{ s.big }};scroll-snap-align:start;scroll-snap-stop:always">
+              <sc-for list="{{ s.imgList }}" as="im" hint-placeholder-count="0"><div style="position:absolute;left:-160px;bottom:0;width:330px;height:253px;background-image:url({{ im.src }});background-size:contain;background-repeat:no-repeat;background-position:left bottom"></div></sc-for>
+              <sc-if value="{{ s.noImg }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:-40px;bottom:0;width:170px;height:249px;transform:scaleX(-1)"><dc-import name="Fin" base="{{ s.fin.base }}" a1="{{ s.fin.a1 }}" a2="{{ s.fin.a2 }}" disc="{{ s.fin.disc }}" style="width:100%" hint-size="170px,249px"></dc-import></div></sc-if>
+              <div style="position:absolute;left:18px;right:22px;top:22px;display:flex;flex-direction:column;gap:10px">
+                <span style="font-size:13px;font-weight:700;color:{{ s.small }};padding-left:4px">Au-dessus de vous</span>
+                <span style="font-size:104px;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;letter-spacing:-0.045em">EN CE<br>MOMENT</span>
+                <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0 6px 4px">
+                  <div style="height:8px;border-radius:4px;background:{{ s.track }}"><div style="height:8px;border-radius:4px;width:{{ s.passW }};background:{{ s.big }}"></div></div>
+                  <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:{{ s.small }}"><span>Visible encore</span><span style="font-variant-numeric:tabular-nums">{{ s.left }}</span></div>
+                </div>
+                <div style="display:flex;align-items:stretch;justify-content:space-between;padding-left:4px">
+                  <div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:700;color:{{ s.small }}">Altitude</span><span style="font-size:48px;white-space:nowrap;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">{{ s.alt }}</span></div>
+                  <div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:700;color:{{ s.small }}">Vitesse</span><span style="font-size:48px;white-space:nowrap;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">{{ s.speed }}</span></div>
+                  <div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:700;color:{{ s.small }}">Direction</span><span style="display:flex;align-items:center;gap:6px;font-size:48px;white-space:nowrap;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">{{ s.abbr }}<svg width="36" height="36" viewBox="0 0 96 96" style="transform:{{ s.rot }};flex-shrink:0"><path d="M48 4 L82 64 L56 54 L56 92 L40 92 L40 54 L14 64 Z" fill="currentColor"></path></svg></span></div>
+                </div>
+              </div>
+              <div style="position:absolute;z-index:2;right:22px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:10px">
+                <div style="display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:6px"><span style="font-size:64px;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;letter-spacing:-0.04em">{{ s.from }}<br>{{ s.to }}</span><span style="font-size:13px;font-weight:700;color:{{ s.small }};white-space:nowrap">{{ s.cities }}</span></div>
+                <div style="display:flex;gap:14px">
+                  <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:11px;font-weight:700;color:{{ s.small }}">Compagnie</span><span style="font-size:15px;font-weight:800;white-space:nowrap">{{ s.name }}</span></div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:11px;font-weight:700;color:{{ s.small }}">Vol</span><span style="font-size:15px;font-weight:800">{{ s.flight }}</span></div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:11px;font-weight:700;color:{{ s.small }}">Appareil</span><span style="font-size:15px;font-weight:800;white-space:nowrap">{{ s.type }}</span></div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+          <sc-for list="{{ items }}" as="s" hint-placeholder-count="1">
+            <div style="position:relative;height:650px;margin-bottom:12px;border-radius:36px;overflow:hidden;background:{{ s.bg }};color:{{ s.big }};scroll-snap-align:start;scroll-snap-stop:always">
+              <sc-for list="{{ s.imgList }}" as="im" hint-placeholder-count="0"><div style="position:absolute;left:-160px;bottom:0;width:330px;height:253px;background-image:url({{ im.src }});background-size:contain;background-repeat:no-repeat;background-position:left bottom"></div></sc-for>
+              <sc-if value="{{ s.noImg }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:-40px;bottom:0;width:170px;height:249px;transform:scaleX(-1)"><dc-import name="Fin" base="{{ s.fin.base }}" a1="{{ s.fin.a1 }}" a2="{{ s.fin.a2 }}" disc="{{ s.fin.disc }}" style="width:100%" hint-size="170px,249px"></dc-import></div></sc-if>
+              <div style="position:absolute;left:18px;right:22px;top:22px;display:flex;flex-direction:column;gap:10px">
+                <span style="font-size:150px;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">{{ s.cd }}</span>
+                <div style="display:flex;align-items:stretch;justify-content:space-between;padding-left:4px">
+                  <div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:700;color:{{ s.small }}">Passe à</span><span style="font-size:48px;white-space:nowrap;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">{{ s.time }}</span></div>
+                  <div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:700;color:{{ s.small }}">Regardez</span><span style="display:flex;align-items:center;gap:6px;font-size:48px;white-space:nowrap;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">{{ s.abbr }}<svg width="36" height="36" viewBox="0 0 96 96" style="transform:{{ s.rot }};flex-shrink:0"><path d="M48 4 L82 64 L56 54 L56 92 L40 92 L40 54 L14 64 Z" fill="currentColor"></path></svg></span></div>
+                </div>
+              </div>
+              <div style="position:absolute;z-index:2;right:22px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:10px">
+                <div style="display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:6px"><span style="font-size:64px;font-weight:800;font-stretch:64%;line-height:.86;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;letter-spacing:-0.04em">{{ s.from }}<br>{{ s.to }}</span><span style="font-size:13px;font-weight:700;color:{{ s.small }};white-space:nowrap">{{ s.cities }}</span></div>
+                <div style="display:flex;gap:14px">
+                  <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:11px;font-weight:700;color:{{ s.small }}">Compagnie</span><span style="font-size:15px;font-weight:800;white-space:nowrap">{{ s.name }}</span></div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:11px;font-weight:700;color:{{ s.small }}">Vol</span><span style="font-size:15px;font-weight:800">{{ s.flight }}</span></div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font-size:11px;font-weight:700;color:{{ s.small }}">Appareil</span><span style="font-size:15px;font-weight:800;white-space:nowrap">{{ s.type }}</span></div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;z-index:20;top:50px;left:0;right:0;display:flex;justify-content:center;gap:5px;pointer-events:none">
+      <sc-for list="{{ dots }}" as="d" hint-placeholder-count="2"><span style="width:{{ d.w }};height:4px;border-radius:2px;background:{{ dotC }};opacity:{{ d.o }};transition:width .3s"></span></sc-for>
+    </div>
+  </div>
+  <div style="flex:1;min-width:260px;max-width:360px;display:flex;flex-direction:column;gap:20px;padding-top:8px">
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#6B6760">Skyline · prototype</span><span style="font-size:32px;font-weight:600;letter-spacing:-0.02em;line-height:1.1">Ciel et prochains passages</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.45;color:#4A4741">
+      <span><b style="color:#1C1B19">Glisser à gauche</b> depuis le Ciel : prochains passages</span>
+      <span><b style="color:#1C1B19">Glisser à droite</b> : retour au Ciel</span>
+      <span><b style="color:#1C1B19">Faire défiler</b> les cartes de passage, une par une</span>
+      <span><b style="color:#1C1B19">Toucher le Ciel</b> : changer d'avion (Iberia, Air France, easyJet)</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{ nav }}" as="b" hint-placeholder-count="2"><span onClick="{{ b.go }}" style="padding:9px 14px;border-radius:20px;border:1.5px solid #1C1B19;background:{{ b.bg }};color:{{ b.fg }};font-size:14px;font-weight:600;cursor:pointer">{{ b.label }}</span></sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;airline&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ib&quot;,&quot;af&quot;,&quot;u2&quot;],&quot;default&quot;:&quot;ib&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;night&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const PASS = [
+  ['u2', 134, 225, 31], ['af', 312, 30, 52], ['lh', 505, 110, 61], ['kl', 690, 300, 74], ['fr', 845, 200, 79],
+  ['xx', 1010, 160, 41], ['vy', 1180, 250, 77], ['ib', 1390, 15, 66], ['tp', 1585, 190, 70], ['af', 1790, 80, 58, { flight: 'AF1146', from: 'CDG', to: 'CPH', cities: 'Paris → Copenhague', type: 'A220-300', alt: '10 100' }]
+];
+const NAMES = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
+const ABBR = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+const BASE = 13 * 3600 + 40 * 60;
+const pad = n => String(n).padStart(2, '0');
+const pt = (c, r, b) => { const a = b * Math.PI / 180; return [(c + r * Math.sin(a)).toFixed(1), (c - r * Math.cos(a)).toFixed(1)]; };
+const ORDER = ['ib', 'af', 'u2'];
+class Component extends DCLogic {
+  state = { t: 0, page: 0, dx: 0, drag: false, ci: 0 };
+  scRef = React.createRef();
+  down = e => { const sc = this.scRef.current; this.st = { x: e.clientX, y: e.clientY, top: sc ? sc.scrollTop : 0, mouse: e.pointerType === 'mouse' }; this.ax = null; this.moved = false; };
+  move = e => {
+    if (!this.st) return;
+    const dx = e.clientX - this.st.x, dy = e.clientY - this.st.y;
+    if (!this.ax && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) { this.ax = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'; this.moved = true; }
+    const sc = this.scRef.current;
+    if (this.ax === 'y' && this.st.mouse && this.state.page === 1 && sc) { sc.style.scrollSnapType = 'none'; sc.scrollTop = this.st.top - dy; this.dy = dy; }
+    if (this.ax === 'x') { const p = this.state.page, edge = (p === 0 && dx > 0) || (p === 1 && dx < 0); this.setState({ dx: edge ? dx * 0.3 : dx, drag: true }); }
+  };
+  up = () => {
+    if (!this.st) return;
+    if (this.ax === 'x') { const dx = this.state.dx, p = this.state.page; this.setState({ page: dx < -60 ? 1 : dx > 60 ? 0 : p, dx: 0, drag: false }); }
+    const sc = this.scRef.current;
+    if (this.ax === 'y' && this.st.mouse && this.state.page === 1 && sc) {
+      const H = 662, base = Math.round(this.st.top / H), d = this.dy || 0;
+      const idx = Math.max(0, Math.min(Math.round((sc.scrollHeight - sc.clientHeight) / H), base + (d < -50 ? 1 : d > 50 ? -1 : 0)));
+      const from = sc.scrollTop, to = idx * H, t0 = performance.now();
+      const step = now => { const k = Math.min(1, (now - t0) / 320), e = 1 - Math.pow(1 - k, 3); sc.scrollTop = from + (to - from) * e; if (k < 1) requestAnimationFrame(step); else { sc.scrollTop = to; sc.style.scrollSnapType = 'y mandatory'; } };
+      requestAnimationFrame(step);
+    }
+    this.dy = 0;
+    this.st = null; this.ax = null; setTimeout(() => { this.moved = false; }, 50);
+  };
+  cielTap = () => { if (!this.moved) this.setState(s => ({ ci: (s.ci + 1) % ORDER.length })); };
+  go = p => () => this.setState({ page: p });
+  componentDidMount() {
+    const w = () => window.SKY && window.SKY.A.lh ? this.forceUpdate() : setTimeout(w, 50); w();
+    this.iv = setInterval(() => this.setState(s => ({ t: s.t + 1 })), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const S = window.SKY;
+    if (!S || !S.A.lh) return { items: [], overList: [], c: { fin: {} }, stripT: "translateX(0px)", stripTr: "none", down: this.down, move: this.move, up: this.up, cielTap: this.cielTap, nav: [] };
+    const items = PASS.map(([k, eta, b, km, over], i) => {
+      const th = S.theme(k, false), rem = Math.max(0, eta - this.state.t), at = BASE + eta, o = Math.round(b / 45) % 8;
+      const [ax, ay] = pt(75, 62, b), [alx, aly] = pt(75, 14, b), [bx, by] = pt(160, 138, b), [blx, bly] = pt(160, 82, b);
+      const tape = [];
+      for (let d = Math.ceil((b - 76) / 5) * 5; d <= b + 76; d += 5) {
+        const n = ((d % 360) + 360) % 360, card = n % 45 === 0;
+        tape.push({ x: (184.5 + (d - b) * 2.4).toFixed(1) + 'px', h: card ? '26px' : n % 15 === 0 ? '16px' : '9px', l: card ? ABBR[n / 45] : n % 15 === 0 ? String(n) : '', fs: card ? '30px' : '12px' });
+      }
+      return {
+        ...th, ...(over || {}), idx: i + 1, cd: pad(Math.floor(rem / 60)) + ':' + pad(rem % 60), time: pad(Math.floor(at / 3600)) + ':' + pad(Math.floor(at % 3600 / 60)),
+        deg: b, km, dirName: NAMES[o], abbr: ABBR[o], rot: 'rotate(' + b + 'deg)', ax, ay, alx, aly, bx, by, blx, bly, tape,
+        imgList: th.img ? [{ src: th.img }] : [],
+        sectors: ABBR.map((l, j) => ({ l, bg: j === o ? (th.big) : 'transparent', fg: j === o ? th.bg : th.big, w: j === o ? '2' : '1', fs: j === o ? '34px' : '15px' })),
+        tx: (184 + 300 * Math.sin(b * Math.PI / 180)).toFixed(1), ty: (330 - 300 * Math.cos(b * Math.PI / 180)).toFixed(1),
+        tmx: (184 + 120 * Math.sin(b * Math.PI / 180)).toFixed(1), tmy: (330 - 120 * Math.cos(b * Math.PI / 180)).toFixed(1)
+      };
+    });
+    const ot = S.theme('ib', false), el = 23 + this.state.t, win = 75, left = Math.max(0, win - el);
+    const over = {
+      ...ot, imgList: ot.img ? [{ src: ot.img }] : [], rot: 'rotate(205deg)', abbr: 'SSO',
+      el: '+' + pad(Math.floor(el / 60)) + ':' + pad(el % 60), left: pad(Math.floor(left / 60)) + ':' + pad(left % 60),
+      passW: Math.min(100, el / win * 100).toFixed(1) + '%', time: '13:40', km: '2,4'
+    };
+    const ck = ORDER[(ORDER.indexOf(this.props.airline || 'ib') + this.state.ci) % ORDER.length];
+    const ct = S.theme(ck, !!this.props.night);
+    const c = { ...ct, speed: S.A[ck].speed, cap: S.A[ck].cap, imgT: 'none', imgList: ct.img ? [{ src: ct.img }] : [] };
+    const p = this.state.page, dot = on => ({ w: on ? '18px' : '6px', o: on ? 1 : 0.4 });
+    return {
+      items, overList: [over], c,
+      stripT: 'translateX(' + (-p * 393 + this.state.dx) + 'px)', stripTr: this.state.drag ? 'none' : 'transform .38s cubic-bezier(.2,.8,.2,1)',
+      down: this.down, move: this.move, up: this.up, cielTap: this.cielTap, scRef: this.scRef,
+      dotC: p === 0 ? c.small : '#F4F1EA', dots: [dot(p === 0), dot(p === 1)],
+      nav: [{ label: 'Ciel', go: this.go(0), bg: p === 0 ? '#1C1B19' : 'transparent', fg: p === 0 ? '#E7E6E1' : '#1C1B19' }, { label: 'Prochains passages', go: this.go(1), bg: p === 1 ? '#1C1B19' : 'transparent', fg: p === 1 ? '#E7E6E1' : '#1C1B19' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

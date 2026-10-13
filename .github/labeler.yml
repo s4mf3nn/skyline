@@ -5,14 +5,22 @@
 "risk:high":
   - changed-files:
       - any-glob-to-any-file:
-          # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
-          # Valeurs par défaut (authentification, migrations, configuration) : à adapter au type d'application.
+          # Zones sensibles du domaine (voir docs/factory/DOMAIN-SECURITY.md)
+          # Position de l'utilisateur et seul appel sortant qui la porte.
+          - "**/shared/location/**"
+          - "**/shared/adsb/**"
+          # Images de compagnies : aucune sans autorisation consignée.
+          - "**/assets/tails/**"
+          # Permissions de l'appareil, identifiants de l'application et livraison (EAS).
+          - "app.json"
+          - "app.config.*"
+          - "eas.json"
+          - "**/config/**"
+          # Zones par défaut de la factory, sans fichier en v0 : gardées pour le compte et le backend du MVP.
           - "**/migrations/**"
           - "**/features/auth/**"
-          # Contrôle d'accès partagé (middleware, garde de rôle) et surfaces d'administration.
           - "**/shared/**/auth*"
           - "**/features/admin/**"
-          - "**/config/**"
           # Suivi des erreurs (Sentry, imposé par la factory) : filtre des données personnelles et configuration.
           - "**/shared/monitoring/**"
           - "**/sentry.*"
@@ -22,31 +30,35 @@
           - ".claude/**"
           - "CLAUDE.md"
           - "scripts/**"
-          - "docker-compose.yml"
 
 # Niveau de revue `full` (relecteur sur Opus, coûteux) : réservé au code applicatif sensible. Distinct de `risk:high`,
 # qui impose la revue humaine : l'outillage de la factory est risque élevé sans déclencher Opus (lu par scripts/pre-review.mjs).
 "review:full":
   - changed-files:
       - any-glob-to-any-file:
-          # Zones sensibles du domaine : à compléter (voir docs/factory/DOMAIN-SECURITY.md)
+          # Zones sensibles du domaine (voir docs/factory/DOMAIN-SECURITY.md)
+          - "**/shared/location/**"
+          - "**/shared/adsb/**"
+          - "**/assets/tails/**"
+          - "app.json"
+          - "app.config.*"
+          - "eas.json"
+          - "**/config/**"
+          # Zones par défaut de la factory, sans fichier en v0 : gardées pour le compte et le backend du MVP.
           - "**/migrations/**"
           - "**/features/auth/**"
           - "**/shared/**/auth*"
           - "**/features/admin/**"
-          - "**/config/**"
           - "**/shared/monitoring/**"
           - "**/sentry.*"
           - "**/.sentryclirc"
-          - "docker-compose.yml"
 
 "risk:medium":
   - changed-files:
       - any-glob-to-any-file:
-          # Point d'entrée de chaque application (ex. src/app.ts, src/main.tsx) : à ajouter par SPEC-0000.
+          # Dossier de routes d'Expo Router (point d'entrée de l'application, posé par SPEC-0000).
+          - "app/**"
           - "**/features/**/service.ts"
-          - "**/features/**/repo.ts"
-          - "**/db/schema/**"
           # Code partagé entre features (middleware, erreurs, client réseau) : une erreur s'y propage partout.
           - "**/shared/**"
           - "**/package.json"

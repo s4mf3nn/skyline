@@ -1,4 +1,4 @@
-# Produit : {{PROJECT_NAME}}
+# Produit : skyline
 
 <!-- Rédigé par `/roadmap <brief>`, validé par l'humain dans la PR de cadrage. Une spec qui contredit ce document
 demande d'abord de l'amender (même PR de cadrage). Rester court : le détail vit dans les specs. -->

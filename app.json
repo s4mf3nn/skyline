@@ -19,6 +19,13 @@
           "locationAlwaysPermission": false,
           "motionUsagePermission": false
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "samfenn",
+          "project": "skyline"
+        }
       ]
     ],
     "owner": "samfenn",

@@ -4,6 +4,10 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const PROFILES = ["preview", "production"];
+// Même version que la dépendance de @sentry/react-native ~7.11.0.
+const SENTRY_CLI_VERSION = "2.58.4";
+const REMOVE_MAPS =
+  'for (const f of require("fs").readdirSync("dist", { recursive: true })) if (f.endsWith(".map")) require("fs").rmSync("dist/" + f)';
 
 // Sans RELEASE_PROFILE on prend « preview » : jamais de soumission aux stores par défaut.
 export function readProfile(env) {
@@ -21,11 +25,17 @@ export function releaseSteps(profile, sha) {
   }
   return [
     { cmd: "npx", args: build },
-    { cmd: "npx", args: ["expo", "export", "--platform", "all", "--output-dir", "dist"] },
+    { cmd: "npx", args: ["expo", "export", "--platform", "all", "--output-dir", "dist", "--source-maps"] },
+    // SENTRY_AUTH_TOKEN, SENTRY_ORG et SENTRY_PROJECT sont lus dans l'environnement du runner, jamais passés en argument.
+    { cmd: "npx", args: [`--package=@sentry/cli@${SENTRY_CLI_VERSION}`, "sentry-cli", "releases", "new", sha] },
+    { cmd: "npx", args: ["--package=@sentry/react-native", "sentry-expo-upload-sourcemaps", "dist"] },
+    // Aucune sourcemap ne doit être servie : `eas update` publie `dist/` tel quel.
+    { cmd: "node", args: ["-e", REMOVE_MAPS] },
     {
       cmd: "npx",
       args: ["eas", "update", "--channel", profile, "--message", sha, "--skip-bundler", "--non-interactive"],
     },
+    { cmd: "npx", args: [`--package=@sentry/cli@${SENTRY_CLI_VERSION}`, "sentry-cli", "releases", "finalize", sha] },
   ];
 }
 

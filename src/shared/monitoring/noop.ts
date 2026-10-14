@@ -1,6 +1,6 @@
 import type { ErrorReporter } from "./index";
 
-/** Implémentation réelle provisoire : ne transmet rien, en attendant Sentry (SPEC-0001). */
+/** Repli sans DSN (développement, tests, build non configuré) : ne transmet rien. */
 export function createNoopErrorReporter(): ErrorReporter {
   return { report: () => {} };
 }

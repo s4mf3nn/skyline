@@ -36,14 +36,18 @@ describe("scripts/release.mjs releaseSteps", () => {
   it("builds with auto-submit and updates the production channel", () => {
     const steps = release.releaseSteps("production", "abc123").map(line);
     expect(steps[0]).toBe("eas build --platform all --profile production --non-interactive --auto-submit");
-    expect(steps[2]).toBe("eas update --channel production --message abc123 --skip-bundler --non-interactive");
+    expect(steps.find((step) => step.startsWith("eas update"))).toBe(
+      "eas update --channel production --message abc123 --skip-bundler --non-interactive",
+    );
   });
 
   it("builds without submission and updates the preview channel", () => {
     const steps = release.releaseSteps("preview", "abc123").map(line);
     expect(steps[0]).toBe("eas build --platform all --profile preview --non-interactive");
     expect(steps[0]).not.toContain("--auto-submit");
-    expect(steps[2]).toBe("eas update --channel preview --message abc123 --skip-bundler --non-interactive");
+    expect(steps.find((step) => step.startsWith("eas update"))).toBe(
+      "eas update --channel preview --message abc123 --skip-bundler --non-interactive",
+    );
   });
 
   it("exports the bundle before publishing it with --skip-bundler", () => {
@@ -52,6 +56,26 @@ describe("scripts/release.mjs releaseSteps", () => {
     const updateIndex = steps.findIndex((step) => step.startsWith("eas update"));
     expect(exportIndex).toBeGreaterThan(-1);
     expect(exportIndex).toBeLessThan(updateIndex);
+  });
+
+  it("uploads the sourcemaps and removes them before publishing, then finalizes the release", () => {
+    const steps = release.releaseSteps("production", "abc123").map((step) => `${step.cmd} ${line(step)}`);
+    const position = (needle: string) => steps.findIndex((step) => step.includes(needle));
+    const order = [
+      "expo export",
+      "releases new abc123",
+      "sentry-expo-upload-sourcemaps dist",
+      ".map",
+      "eas update",
+      "releases finalize abc123",
+    ].map(position);
+    expect(order.every((index) => index > -1)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it("exports the sourcemaps that the upload step reads", () => {
+    const exportStep = release.releaseSteps("preview", "abc123").find((step) => step.args[0] === "expo");
+    expect(exportStep?.args).toContain("--source-maps");
   });
 
   it("never passes a secret as an argument", () => {

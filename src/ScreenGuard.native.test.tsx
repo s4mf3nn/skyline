@@ -5,6 +5,13 @@ import { createFakeClock } from "./shared/clock";
 import { createFakeLocation } from "./shared/location";
 import { createFakeErrorReporter } from "./shared/monitoring";
 
+// L'écran d'accueil de repli est remplacé par un écran qui lève, pour prouver qu'il est gardé.
+jest.mock("./HomeScreen", () => ({
+  HomeScreen: () => {
+    throw new RangeError("render failed");
+  },
+}));
+
 function fakeServices() {
   return {
     clock: createFakeClock(0),
@@ -45,7 +52,11 @@ describe("ScreenGuard", () => {
     const services = fakeServices();
     const App = createApp({ services, features: [] });
     await render(<App />);
-    expect(screen.getByText("Skyline")).toBeOnTheScreen();
-    expect(services.monitoring.events).toEqual([]);
+    expect(screen.getByText("Une erreur est survenue.")).toBeOnTheScreen();
+    expect(services.monitoring.events[0]?.context).toEqual({
+      release: "dev",
+      environment: "development",
+      feature: "home",
+    });
   });
 });

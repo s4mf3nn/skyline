@@ -1,7 +1,9 @@
 import type { ComponentType } from "react";
 import { features as registry } from "./features.gen";
 import { HomeScreen } from "./HomeScreen";
+import { guardFeatures, guardScreen } from "./ScreenGuard";
 import { type Feature, pickScreen } from "./shared/feature";
+import { type BuildInfo, DEFAULT_BUILD } from "./shared/monitoring";
 import { type AppServices, ServicesProvider } from "./shared/services";
 
 export type { Feature } from "./shared/feature";
@@ -11,11 +13,15 @@ export interface AppOptions {
   services: AppServices;
   /** Registre des features ; celui de `src/features.gen.ts` par défaut. */
   features?: readonly Feature[];
+  /** Version et environnement joints aux erreurs transmises ; `DEFAULT_BUILD` par défaut. */
+  build?: BuildInfo;
 }
 
 /** Construit le composant racine : les services sont donnés par l'appelant, jamais lus dans un module global. */
-export function createApp({ services, features }: AppOptions): ComponentType {
-  const Screen = pickScreen(features ?? registry, HomeScreen);
+export function createApp({ services, features, build }: AppOptions): ComponentType {
+  const buildInfo = build ?? DEFAULT_BUILD;
+  // Chaque écran est gardé avant la sélection : la sélection n'a rien à savoir du suivi des erreurs.
+  const Screen = pickScreen(guardFeatures(features ?? registry, buildInfo), guardScreen(HomeScreen, "home", buildInfo));
   return function App() {
     return (
       <ServicesProvider services={services}>

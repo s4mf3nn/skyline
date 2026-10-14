@@ -4,7 +4,7 @@ Statut : PRÊT
 Constats partagés par les tâches :
 - **Emplacement** : tout vit dans `src/shared/airlines/` (spec, CA ; pas de feature, pas de `pnpm gen`). Zone `**/shared/` : risque moyen d'après `docs/factory/RISK.md`, d'où un bloc `Conception` par tâche.
 - **Types figés** (posés par T1 dans `src/shared/airlines/types.ts`, recopiés du « Contrat d'interface » de la spec, noms de `docs/DOMAIN.md`) : `TailPalette`, `Airline`, `AirlineTheme`. Aucune autre tâche ne les modifie.
-- **Point d'entrée** : `src/shared/airlines/index.ts` est logique pure (aucun import de React Native ni de `react-native-svg`), chargé par chemin par le contrat Vitest. T1 le crée, seule T4 le complète. `tail.tsx` n'est **pas** réexporté par `index.ts` : les écrans l'importent par `@/shared/airlines/tail`.
+- **Point d'entrée** : `src/shared/airlines/index.ts` est logique pure (aucun import de React Native ni de `react-native-svg`), chargé par chemin par le contrat Vitest. T1 le crée, T2 y ajoute `AIRLINES` et `UNKNOWN_AIRLINE`, T4 y ajoute `resolveAirline`. `tail.tsx` n'est **pas** réexporté par `index.ts` : les écrans l'importent par `@/shared/airlines/tail`.
 - **Erreur typée** : T1 ajoute `"INVALID_COLOR"` à l'union `ErrorCode` de `src/shared/errors.ts`. D'autres specs ajoutent aussi des codes à cette union : un conflit d'une ligne s'y résout en gardant tous les codes, et `/resolve` le consigne dans `docs/factory/HOTSPOTS.md`.
 - **Contrat** : `tests/acceptance/SPEC-0002.test.ts` garde son `describe.skip` jusqu'à T4. Une tâche peut retirer le `.skip` en local pour vérifier ses critères, sans le commiter. `tests/acceptance/SPEC-0002.catalogue.json` se lit, ne se modifie pas.
 - **Mutation** : Stryker mute les fichiers modifiés ; les seuils et comparaisons du handoff (`0.03928`, `0.6001`, `>=`, égalité crème/encre) doivent chacun être pris par un test unitaire à la frontière.
@@ -15,7 +15,7 @@ Constats partagés par les tâches :
 - Dépend de : aucune
 - Risque : moyen (code partagé par Ciel et Passages : une erreur d'arrondi ou de seuil casse la lisibilité garantie par INV5 sur les deux écrans)
 - Critères de la spec couverts : CA1, CA2, CA3, CA4
-- Définition de fini : `pnpm verify` vert ; `color.test.ts` couvre les cas limites de la spec (couleur invalide `rouge`, `#FFF`, chaîne vide, minuscules acceptées, cible pile atteinte, contraste insoluble, repli crème ou encre à égalité) et l'accumulation flottante de `t` (exemples `#C0B12C`/`#59EF48` et `#748CC1`/`#9B9658` du contrat) ; `theme.test.ts` couvre Iberia, Air France, easyJet construits en littéraux et une couleur invalide dans la compagnie ; les tests CA1 à CA3 et « Edge » du contrat passent en local une fois le `.skip` retiré (non commité ; les tests qui passent par `resolveAirline` attendent T4). Les types figés ci-dessus s'appliquent.
+- Définition de fini : `pnpm verify` vert ; `color.test.ts` couvre les cas limites de la spec (couleur invalide `rouge`, `#FFF`, chaîne vide, minuscules acceptées, cible pile atteinte, contraste insoluble, repli crème ou encre à égalité) et l'accumulation flottante de `t` (exemples `#C0B12C`/`#59EF48` et `#748CC1`/`#9B9658` du contrat) ; `theme.test.ts` couvre Iberia, Air France, easyJet construits en littéraux et une couleur invalide dans la compagnie ; les tests CA1 à CA3 et « Edge » du contrat passent en local une fois le `.skip` retiré (non commité). CA4 n'est vérifié en T1 que par `theme.test.ts` (valeurs attendues en littéraux) : les tests CA4 du contrat passent par `resolveAirline` ou `AIRLINES` et ne sont vérifiés qu'en T4. Les types figés ci-dessus s'appliquent.
 - Conception :
   ```diff
    src/shared
@@ -60,16 +60,17 @@ Constats partagés par les tâches :
 
 ## Groupe 2 (après fusion du groupe 1)
 ### T2 : Table des 145 compagnies et compagnie inconnue
-- Périmètre : src/shared/airlines/table.ts, src/shared/airlines/table.test.ts
+- Périmètre : src/shared/airlines/table.ts, src/shared/airlines/table.test.ts, src/shared/airlines/index.ts
 - Dépend de : T1
 - Risque : moyen (donnée partagée par les deux écrans ; un code mal recopié affiche une mauvaise compagnie et viole INV8)
 - Critères de la spec couverts : CA5, CA6
-- Définition de fini : `pnpm verify` vert ; `table.test.ts` vérifie, sans passer par `index.ts` ni `resolveAirline` : 145 entrées, `code === icao[0]`, codes IATA et OACI uniques et bien formés, les huit compagnies du handoff (nom, pays, couleurs, dérive de `data.js`), 137 autres avec les couleurs et la dérive d'`UNKNOWN_AIRLINE` et un pays `null`, `UNKNOWN_AIRLINE` égale à l'entrée `xx`, et le contraste INV5 de `airlineTheme` (importé de `./theme`) sur toute la table ; les tests CA5 et CA6 du contrat qui n'appellent pas `resolveAirline` passent en local (`.skip` retiré, non commité). La table est recopiée de `tests/acceptance/SPEC-0002.catalogue.json` dans son ordre, sans dépendance d'exécution au catalogue ; aucune couleur inventée. Les types figés ci-dessus s'appliquent.
+- Définition de fini : `pnpm verify` vert ; `table.test.ts` vérifie, sans passer par `index.ts` ni `resolveAirline` : 145 entrées, `code === icao[0]`, codes IATA et OACI uniques et bien formés, les huit compagnies du handoff (nom, pays, couleurs, dérive de `data.js`), 137 autres avec les couleurs et la dérive d'`UNKNOWN_AIRLINE` et un pays `null`, `UNKNOWN_AIRLINE` égale à l'entrée `xx`, et le contraste INV5 de `airlineTheme` (importé de `./theme`) sur toute la table ; `index.ts` réexporte `AIRLINES` et `UNKNOWN_AIRLINE` en plus des exports de T1 ; les tests CA5 et CA6 du contrat qui n'appellent pas `resolveAirline` passent en local (`.skip` retiré, non commité). La table est recopiée de `tests/acceptance/SPEC-0002.catalogue.json` dans son ordre, sans dépendance d'exécution au catalogue ; aucune couleur inventée. Les types figés ci-dessus s'appliquent.
 - Conception :
   ```diff
    src/shared/airlines
   +├── table.ts         # NOUVEAU : UNKNOWN_AIRLINE, AIRLINES (ordre du catalogue), helper catalogOnly
-  +└── table.test.ts
+  +├── table.test.ts
+  ~└── index.ts         # MODIFIÉ : + AIRLINES, UNKNOWN_AIRLINE
   ```
   ```ts
   export const UNKNOWN_AIRLINE: Airline   // code "xx", "Inconnue", "France", #1D1D1B / #F2E8D5,
@@ -137,16 +138,16 @@ Constats partagés par les tâches :
 ## Groupe 3 (après fusion du groupe 2)
 ### T4 : Résolution de l'indicatif et activation du contrat
 - Périmètre : src/shared/airlines/resolve.ts, src/shared/airlines/resolve.test.ts, src/shared/airlines/index.ts, tests/acceptance/SPEC-0002.test.ts
-- Dépend de : T1, T2, T3
+- Dépend de : T1, T2
 - Risque : moyen (entrée externe non fiable : l'indicatif vient de la source ADS-B ; `resolveAirline` ne doit jamais lever ni mal attribuer une compagnie)
 - Critères de la spec couverts : CA4, CA5, CA6, CA7, CA8
-- Définition de fini : `pnpm verify` vert ; `resolve.test.ts` couvre chaque exemple de CA7 et CA8 et les cas limites de la spec (indicatif à deux lettres, préfixe OACI connu sans chiffre, `AC` contre `ACI`, préfixe OACI inconnu dont les deux premières lettres sont un IATA, caractères non ASCII mis en majuscules, entrée très longue) ; `index.ts` réexporte `AIRLINES`, `UNKNOWN_AIRLINE` et `resolveAirline` en plus des exports de T1 ; **le `.skip` du `describe` de `tests/acceptance/SPEC-0002.test.ts` est retiré** (seule modification permise du fichier de contrat) et tout le contrat passe.
+- Définition de fini : `pnpm verify` vert ; `resolve.test.ts` couvre chaque exemple de CA7 et CA8 et les cas limites de la spec (indicatif à deux lettres, préfixe OACI connu sans chiffre, `AC` contre `ACI`, préfixe OACI inconnu dont les deux premières lettres sont un IATA, caractères non ASCII mis en majuscules, entrée très longue) ; `index.ts` réexporte `resolveAirline` en plus des exports de T1 et T2 ; **le `.skip` du `describe` de `tests/acceptance/SPEC-0002.test.ts` est retiré** (seule modification permise du fichier de contrat) et tout le contrat passe.
 - Conception :
   ```diff
    src/shared/airlines
   +├── resolve.ts        # NOUVEAU : resolveAirline et index des codes, construits une fois au chargement
   +├── resolve.test.ts
-  ~└── index.ts          # MODIFIÉ : + AIRLINES, UNKNOWN_AIRLINE, resolveAirline
+  ~└── index.ts          # MODIFIÉ : + resolveAirline
    tests/acceptance
   ~└── SPEC-0002.test.ts # MODIFIÉ : describe.skip -> describe
   ```

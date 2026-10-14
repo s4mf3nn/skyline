@@ -22,7 +22,7 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | SPEC-0001 | Livraison, cible réelle et observabilité | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0002 | Thème et table des compagnies | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0003 | Pager à deux pages | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
-| SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
+| SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ✅ | ⬜ 0/4 | ⬜ | ⬜ | Prêt à implémenter |
 | SPEC-0006 | Carrousel Prochains passages | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0005 | Écran Ciel sur une source ADS-B de démonstration (branchée en dévelop… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | Spec à écrire |
 | SPEC-0007 | Données réelles adsb.lol | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
@@ -43,6 +43,7 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Prochaines actions
 
-- /plan SPEC-0004 : spec fusionnée, dépendances livrées
+- /implement SPEC-0004 T1 : Groupe 1 (parallèle) débloqué
+- /implement SPEC-0004 T2 : Groupe 1 (parallèle) débloqué
 - /new-spec Écran Ciel sur une source ADS-B de démonstration (branchée en développement seulement, jamais dans un build livré) : couleurs de la compagnie survola…
 - workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003

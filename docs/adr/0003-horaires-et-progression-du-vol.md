@@ -1,7 +1,7 @@
 # ADR-0003 : Horaires et progression du vol
 
 Date : 2026-10-13
-Statut : proposée
+Statut : acceptée
 
 ## Contexte
 L'écran Ciel du handoff affiche les heures de départ et d'arrivée (« 13:05 → 15:10 ») et une barre de progression du
@@ -30,7 +30,7 @@ Relais possible pour les options 2 à 4 : une fonction serverless minimale (Supa
 Worker) qui garde la clé, met en cache par indicatif et par jour, et ne reçoit jamais la position de l'observateur.
 
 ## Décision
-À décider par le propriétaire avant d'écrire SPEC-0009. Recommandation : **option 1 en v0** (heures et progression
+Option 1 en v0, retenue par le propriétaire le 2026-10-14. Recommandation d'origine : **option 1 en v0** (heures et progression
 estimées, libellées comme telles), et **option 3 au MVP** derrière le backend prévu par le brief, qui gardera la clé
 sans créer d'infrastructure dédiée à la v0. Si les horaires réels sont jugés nécessaires dès la v0 pour valider H1,
 retenir l'option 3 avec un relais minimal, ce qui demande une ADR de plus pour le relais (hébergement, secret, coût) et un amendement de `docs/PRODUCT.md`

@@ -4,6 +4,7 @@
 # `**/` : vaut pour `src/` comme pour un paquet (`web/src/`, `apps/api/src/`).
 **/shared/location/          @s4mf3nn
 **/shared/adsb/              @s4mf3nn
+**/shared/routes/            @s4mf3nn
 **/assets/tails/             @s4mf3nn
 /app.json                    @s4mf3nn
 /app.config.*                @s4mf3nn

@@ -9,6 +9,8 @@
           # Position de l'utilisateur et seul appel sortant qui la porte.
           - "**/shared/location/**"
           - "**/shared/adsb/**"
+          # Source des routes de vol (adsbdb.com) : réponse externe à valider, indicatif dans le chemin.
+          - "**/shared/routes/**"
           # Images de compagnies : aucune sans autorisation consignée.
           - "**/assets/tails/**"
           # Permissions de l'appareil, identifiants de l'application et livraison (EAS).
@@ -39,6 +41,8 @@
           # Zones sensibles du domaine (voir docs/factory/DOMAIN-SECURITY.md)
           - "**/shared/location/**"
           - "**/shared/adsb/**"
+          # Source des routes de vol (adsbdb.com) : réponse externe à valider, indicatif dans le chemin.
+          - "**/shared/routes/**"
           - "**/assets/tails/**"
           - "app.json"
           - "app.config.*"

@@ -70,6 +70,22 @@ export function restOffset(page: PageIndex, width: number): number {
   return -page * width;
 }
 
+/** Position de la bande pendant un glissement de `dx` pt depuis la page `page`. */
+export function dragPosition(page: PageIndex, width: number, dx: number): number {
+  "worklet";
+  return restOffset(page, width) + draggedOffset(page, dx);
+}
+
+/** Largeur de la bande : une largeur d'écran par page. */
+export function stripWidth(width: number): number {
+  return width * 2;
+}
+
+/** Rayon d'un trait : moitié de sa hauteur, pour des bouts arrondis. */
+export function traitRadius(trait: IndicatorTrait): number {
+  return trait.height / 2;
+}
+
 const ACTIVE_TRAIT: IndicatorTrait = { width: 18, height: 4, opacity: 1 };
 const INACTIVE_TRAIT: IndicatorTrait = { width: 6, height: 4, opacity: 0.4 };
 

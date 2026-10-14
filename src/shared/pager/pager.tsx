@@ -6,7 +6,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import type { Feature } from "../feature";
 import {
   activeAccent,
-  draggedOffset,
+  dragPosition,
   lockAxis,
   PAGER_LAYOUT,
   PAGER_METRICS,
@@ -16,6 +16,7 @@ import {
   restOffset,
   settlePage,
   stepPage,
+  stripWidth,
   withAccent,
 } from "./index";
 import { PageIndicator } from "./indicator";
@@ -62,7 +63,7 @@ export function Pager({ pages }: PagerProps) {
           if (axis === "vertical") state.fail();
         })
         .onUpdate((event) => {
-          offset.value = restOffset(restingPage.value, width) + draggedOffset(restingPage.value, event.translationX);
+          offset.value = dragPosition(restingPage.value, width, event.translationX);
         })
         .onEnd((event) => {
           const target = settlePage(restingPage.value, event.translationX);
@@ -80,7 +81,7 @@ export function Pager({ pages }: PagerProps) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GestureDetector gesture={pan}>
-        <Animated.View style={[{ flex: 1, flexDirection: "row", width: width * 2 }, stripStyle]}>
+        <Animated.View style={[{ flex: 1, flexDirection: "row", width: stripWidth(width) }, stripStyle]}>
           {pages.map((feature, index) => (
             <PageSlot
               key={feature.name}

@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import Animated from "react-native-reanimated";
-import { indicatorTraits, PAGER_LAYOUT, PAGER_METRICS, type PageIndex, pageValueText } from "./index";
+import { indicatorTraits, PAGER_LAYOUT, PAGER_METRICS, type PageIndex, pageValueText, traitRadius } from "./index";
 
 export interface PageIndicatorProps {
   page: PageIndex;
@@ -43,7 +43,7 @@ export function PageIndicator({ page, accent, onStep }: PageIndicatorProps) {
             width: trait.width,
             height: trait.height,
             opacity: trait.opacity,
-            borderRadius: trait.height / 2,
+            borderRadius: traitRadius(trait),
             backgroundColor: accent,
             transitionProperty: ["width", "opacity", "backgroundColor"],
             transitionDuration: PAGER_METRICS.indicatorTransitionMs,

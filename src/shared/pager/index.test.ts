@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Feature } from "../feature";
 import {
   draggedOffset,
+  dragPosition,
   indicatorTraits,
   lockAxis,
   PAGER_LAYOUT,
@@ -12,6 +13,8 @@ import {
   selectPages,
   settlePage,
   stepPage,
+  stripWidth,
+  traitRadius,
 } from "./index";
 
 const Screen = () => null;
@@ -142,5 +145,24 @@ describe("pagerRoot", () => {
     const root = pagerRoot([feature("c", 3), feature("b", 2), feature("a", 1)]);
     expect(root.kind).toBe("pager");
     if (root.kind === "pager") expect(root.pages.map((f) => f.name)).toEqual(["a", "b"]);
+  });
+});
+
+describe("dragPosition", () => {
+  it("adds the drag to the rest offset, resisting beyond the edges", () => {
+    expect(dragPosition(0, 390, -100)).toBe(-100);
+    expect(dragPosition(1, 390, -100)).toBeCloseTo(-420);
+  });
+});
+
+describe("stripWidth", () => {
+  it("is two screen widths", () => {
+    expect(stripWidth(390)).toBe(780);
+  });
+});
+
+describe("traitRadius", () => {
+  it("is half the trait height", () => {
+    expect(traitRadius({ width: 18, height: 4, opacity: 1 })).toBe(2);
   });
 });

@@ -82,7 +82,7 @@ export function pageValueText(page: PageIndex): string {
 }
 
 /** Action d'accessibilité de l'indicateur : bornée aux deux pages, quelle que soit la page de départ. */
-export function stepPage(page: PageIndex, action: "increment" | "decrement"): PageIndex {
+export function stepPage(_page: PageIndex, action: "increment" | "decrement"): PageIndex {
   if (action === "increment") return 1;
   return 0;
 }

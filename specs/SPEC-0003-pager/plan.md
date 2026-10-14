@@ -7,7 +7,7 @@ Le découpage ci-dessous suit la spec actuelle. Il reste valable pour T1 (logiqu
 Constats partagés :
 - **Emplacement** : tout le module vit dans `src/shared/pager/` (zone `**/shared/`, risque moyen d'après `docs/factory/RISK.md`). Ce n'est pas une feature, `pnpm gen` ne s'applique pas. Aucune feature n'existe encore dans `src/features/` : les tests montent des features factices.
 - **Interface figée** (posée par T1, recopiée du « Contrat d'interface » de la spec) : `PageIndex`, `PagerMetrics`, `IndicatorTrait`, `PAGER_METRICS`, `lockAxis`, `draggedOffset`, `settlePage`, `indicatorTraits`, `selectPages`, `usePagerAccent`. T1 ajoute aussi ces exports, consommés par T2 et T3 : `PAGER_LAYOUT`, `restOffset`, `pageValueText`, `stepPage`, `pagerRoot`, `PageAccents`, `activeAccent`, `withAccent`, `PageAccentContext`. `index.ts` n'importe que `react` (et `import type` de `../feature`) : jamais `react-native`, Reanimated ni Gesture Handler.
-- **Worklets** : `lockAxis`, `draggedOffset`, `settlePage` et `restOffset` sont appelés depuis les callbacks du geste, qui tournent sur le fil d'interface. Chacune commence donc par la directive `'worklet';`. Reanimated 4 ne transforme pas automatiquement en worklet une fonction importée d'un autre fichier (Context7 `/software-mansion/react-native-reanimated/4.1.5`, « Manually Workletize Imported Functions »). Sous Vitest, la directive n'a aucun effet.
+- **Worklets** : `lockAxis`, `draggedOffset`, `settlePage` et `restOffset` sont appelés depuis les callbacks du geste, qui tournent sur le fil d'interface. Chacune commence donc par la directive `'worklet';`. Reanimated 4 ne transforme pas automatiquement en worklet une fonction importée d'un autre fichier (Context7 `/software-mansion/react-native-reanimated/4.1.5`, « Manually Workletize Imported Functions »). Sous Vitest, la directive n'a aucun effet. Cette règle est citée pour la 4.1.5 : T2 la revérifie à la 4.5.1 installée (et le pont fil d'interface vers JS pour `setPage` en `onEnd`, par `scheduleOnRN`) avant de l'inscrire au cache.
 - **Contrats** : `tests/acceptance/SPEC-0003.test.ts` et `tests/acceptance/SPEC-0003.native.test.tsx` gardent leur `describe.skip` jusqu'à T3. Une tâche peut retirer un `.skip` en local pour vérifier ses critères, sans commiter ce retrait.
 
 ## Groupe 1 (parallèle)
@@ -20,7 +20,7 @@ Constats partagés :
 - Conception :
   ```diff
    src/shared/pager
-  +├── index.ts        # NOUVEAU : PAGER_METRICS, PAGER_LAYOUT, geste, traits, pages ; réexporte accent.ts
+  +├── index.ts        # NOUVEAU : PAGER_METRICS, PAGER_LAYOUT, geste, traits, pages ; réexporte accent.ts (sens des imports : index.ts importe accent.ts ; accent.ts n'importe rien de index.ts)
   +├── index.test.ts
   +├── accent.ts       # NOUVEAU : contexte d'accent par page, usePagerAccent, activeAccent, withAccent
   +└── accent.test.ts
@@ -41,8 +41,8 @@ Constats partagés :
   interface PageAccentSlot { setAccent(color: string | null): void }
   const PageAccentContext: Context<PageAccentSlot | null>         // null hors pager : hook sans effet
   usePagerAccent(color: string | null): void                      // useContext + useEffect(slot?.setAccent)
-  activeAccent(accents: PageAccents, page: PageIndex): string      // accents[page] ?? defaultAccent
-  withAccent(accents: PageAccents, page: PageIndex, color: string | null): PageAccents
+  activeAccent(accents: PageAccents, page: 0 | 1, fallback: string): string  // accents[page] ?? fallback ; index.ts passe PAGER_LAYOUT.defaultAccent
+  withAccent(accents: PageAccents, page: 0 | 1, color: string | null): PageAccents
   ```
   ```diff
    (aucun appelant dans cette tâche : T2 pour le geste et l'accent, T3 pour pagerRoot)
@@ -63,7 +63,7 @@ Constats partagés :
 - Dépend de : T1
 - Risque : moyen (geste et animation sur le fil d'interface, réglage de test partagé par tous les tests de rendu ; `babel.config.cjs` n'est modifié que si le plugin worklets manque)
 - Critères de la spec couverts : CA9, CA10
-- Définition de fini : `pnpm verify` vert. `pager.native.test.tsx` rend `<Pager pages={[a, b]} />` directement, sans `createApp`. Il montre : les deux écrans montés côte à côte ; la valeur « Page 1 sur 2 » puis « Page 2 sur 2 » après `increment`, sans effet au bord ; l'état local d'un écran gardé après un changement de page ; l'indicateur qui n'englobe pas les contrôles des pages ; les tailles, l'opacité et l'accent des traits (`testID` `pager-indicator-trait-0` et `-1`), y compris un accent changé pendant l'affichage et `null` qui revient au crème. Un glissement simulé avec `fireGestureHandler` (`react-native-gesture-handler/jest-utils`, à confirmer à la version installée) de -60 pt change de page, et un de -59,9 pt n'en change pas. `jest.config.cjs` charge `react-native-gesture-handler/jestSetup.js` (`setupFiles`) et `jest.setup.cjs` (`setupFilesAfterEnv`, `setUpTests()` de Reanimated) ; les tests de rendu existants restent verts. Le cache reçoit les entrées Reanimated 4.5.1 et Gesture Handler 2.32 vérifiées. `docs/factory/UI.md` liste `Pager` dans « Composants de base ». Le `.tsx` ne contient aucun calcul (l'interface figée ci-dessus s'applique) et aucune valeur en dur hors de `PAGER_METRICS`, `PAGER_LAYOUT` et des tokens.
+- Définition de fini : `pnpm verify` vert. `pager.native.test.tsx` rend `<Pager pages={[a, b]} />` directement, sans `createApp`. Il montre : les deux écrans montés côte à côte ; la valeur « Page 1 sur 2 » puis « Page 2 sur 2 » après `increment`, sans effet au bord ; l'état local d'un écran gardé après un changement de page ; l'indicateur qui n'englobe pas les contrôles des pages ; les tailles, l'opacité et l'accent des traits (`testID` `pager-indicator-trait-0` et `-1`), y compris un accent changé pendant l'affichage et `null` qui revient au crème. Un glissement simulé avec `fireGestureHandler` (`react-native-gesture-handler/jest-utils`, à confirmer à la version installée) de -60 pt change de page, et un de -59,9 pt n'en change pas ; ce test exerce `onUpdate` et `onEnd` seulement : l'utilitaire ne joue pas `onTouchesMove`, donc l'activation par `lockAxis` n'est pas couverte ici (elle l'est par les tests purs de T1). Si l'utilitaire est absent ou ne rejoue pas le `Pan`, la définition de fini se replie sur les tests purs de T1 plus le parcours manuel de T3, et T2 le consigne dans le résumé de PR au lieu de s'arrêter. `jest.config.cjs` charge `react-native-gesture-handler/jestSetup.js` (`setupFiles`) et `jest.setup.cjs` (`setupFilesAfterEnv`, `setUpTests()` de Reanimated) ; les tests de rendu existants restent verts. Le cache reçoit les entrées Reanimated 4.5.1 et Gesture Handler 2.32 vérifiées. `docs/factory/UI.md` liste `Pager` dans « Composants de base ». Le `.tsx` ne contient aucun calcul (l'interface figée ci-dessus s'applique) et aucune valeur en dur hors de `PAGER_METRICS`, `PAGER_LAYOUT` et des tokens.
 - Conception :
   ```diff
    jest.config.cjs        # MODIFIÉ : setupFiles (Gesture Handler), setupFilesAfterEnv (jest.setup.cjs)

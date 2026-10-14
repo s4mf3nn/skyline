@@ -71,6 +71,8 @@ interface Harness {
   lifecycle: ReturnType<LifecycleModule["createFakeLifecycle"]>;
   settings: ReturnType<SystemSettingsModule["createFakeSystemSettings"]>;
   releaseFirstResponse(): void;
+  /** La prochaine réponse de la source reste en attente jusqu'à `releaseFirstResponse()`. */
+  holdNextResponse(): void;
 }
 
 interface SetupOptions {
@@ -88,19 +90,20 @@ function setup(options: SetupOptions = {}): Harness {
   const source = createFakeAdsbSource(options.aircraft ?? []);
   source.setUnavailable(options.unavailable ?? false);
   let release: () => void = () => undefined;
-  const firstResponse = options.holdFirstResponse
-    ? new Promise<void>((resolve) => {
-        release = resolve;
-      })
-    : null;
-  let answered = false;
+  let held: Promise<void> | null = null;
+  const hold = () => {
+    held = new Promise<void>((resolve) => {
+      release = () => {
+        held = null;
+        resolve();
+      };
+    });
+  };
+  if (options.holdFirstResponse) hold();
   const adsb: AdsbSource = {
     async fetchAircraft(query) {
       const aircraft = await source.fetchAircraft(query);
-      if (firstResponse !== null && !answered) {
-        answered = true;
-        await firstResponse;
-      }
+      if (held !== null) await held;
       return aircraft;
     },
   };
@@ -127,7 +130,17 @@ function setup(options: SetupOptions = {}): Harness {
   const names = options.features ?? ["passages"];
   const features = names.map((name) => (name === "ciel" ? cielFeature() : passagesFeature()));
   const App = createApp({ services, features });
-  return { App, clock, source, permission, monitoring, lifecycle, settings, releaseFirstResponse: release };
+  return {
+    App,
+    clock,
+    source,
+    permission,
+    monitoring,
+    lifecycle,
+    settings,
+    releaseFirstResponse: () => release(),
+    holdNextResponse: hold,
+  };
 }
 
 const settle = () =>
@@ -168,6 +181,9 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
     expect(screen.getByText("Recherche des avions…")).toBeOnTheScreen();
     expect(cardIds()).toEqual([]);
     expect(screen.queryByTestId("passages-notice-action")).toBeNull();
+    for (const other of ["empty", "unavailable", "denied"]) {
+      expect(screen.queryByTestId(`passages-notice-${other}`)).toBeNull();
+    }
 
     await act(async () => {
       harness.releaseFirstResponse();
@@ -175,6 +191,9 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
     });
     expect(screen.queryByTestId("passages-notice-loading")).toBeNull();
     expect(screen.queryByText("Recherche des avions…")).toBeNull();
+    for (const other of ["empty", "unavailable", "denied"]) {
+      expect(screen.queryByTestId(`passages-notice-${other}`)).toBeNull();
+    }
     expect(cardIds()).toEqual(["passage-card-a1"]);
   });
 
@@ -228,7 +247,9 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
   });
 
   it("CA7 : survives a failing settings service without telling the error reporter or logging", async () => {
-    const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const spies = (["log", "info", "warn", "error"] as const).map((level) =>
+      jest.spyOn(console, level).mockImplementation(() => undefined),
+    );
     const harness = setup({ permission: "denied", settingsFailing: true });
     await render(<harness.App />);
     await settle();
@@ -239,7 +260,7 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
     expect(harness.settings.openCount).toBe(1);
     expect(screen.getByTestId("passages-notice-denied")).toBeOnTheScreen();
     expect(harness.monitoring.events).toHaveLength(0);
-    expect(log).not.toHaveBeenCalled();
+    for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 
   it("CA7 : shows the refused notice without a button when no settings service is provided", async () => {
@@ -285,8 +306,17 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
     expect(screen.getByTestId("passages-notice-action")).toBeOnTheScreen();
 
     harness.permission.current = "granted";
+    harness.holdNextResponse();
     await comeBack(harness);
     expect(screen.queryByTestId("passages-notice-denied")).toBeNull();
+    expect(screen.getByTestId("passages-notice-loading")).toBeOnTheScreen();
+    expect(cardIds()).toEqual([]);
+
+    await act(async () => {
+      harness.releaseFirstResponse();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.queryByTestId("passages-notice-loading")).toBeNull();
     expect(cardIds()).toEqual(["passage-card-a1"]);
   });
 
@@ -324,6 +354,38 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
     expect(cardIds()).toEqual(["passage-card-s1"]);
   });
 
+  it("CA10 : shows the empty notice and the stale line together for a stale empty scene", async () => {
+    const harness = setup({ aircraft: [] });
+    await render(<harness.App />);
+    await settle();
+    harness.source.setUnavailable(true);
+    await elapse(harness.clock, 180 * SECOND);
+    expect(screen.getByTestId("passages-notice-empty")).toBeOnTheScreen();
+    expect(screen.getByTestId("data-stale-notice-passages")).toBeOnTheScreen();
+    expect(screen.queryByTestId("passages-notice-unavailable")).toBeNull();
+  });
+
+  it("CA10 : shows the stale line on return from a long background until a refresh succeeds", async () => {
+    const harness = setup({ aircraft: [LINGERING] });
+    await render(<harness.App />);
+    await settle();
+    expect(screen.queryByTestId("data-stale-notice-passages")).toBeNull();
+
+    await act(async () => {
+      harness.lifecycle.enterBackground();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    harness.source.setUnavailable(true);
+    await elapse(harness.clock, 240 * SECOND);
+    await comeBack(harness);
+    expect(screen.getByTestId("data-stale-notice-passages")).toBeOnTheScreen();
+    expect(cardIds()).toEqual(["passage-card-s1"]);
+
+    harness.source.setUnavailable(false);
+    await elapse(harness.clock, 10 * SECOND);
+    expect(screen.queryByTestId("data-stale-notice-passages")).toBeNull();
+  });
+
   it("CA11 : shows the same stale line on Ciel at the same instant, then removes it on a refresh", async () => {
     const harness = setup({ aircraft: [LINGERING], features: ["ciel", "passages"] });
     await render(<harness.App />);
@@ -347,8 +409,8 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
   });
 
   it("CA11 : shows the stale line only on Prochains passages when Ciel is absent", async () => {
-    // L'avion n'entre dans sa fenêtre qu'à 175,5 s : à 180 s il est le survol en cours, donc Ciel est présent.
-    // On place donc l'avion hors fenêtre : à 80 km, il reste à venir pendant tout le test.
+    // Avion à 79 km à 720 km/h : il n'entre dans sa fenêtre qu'après environ 6 minutes, donc il n'y a pas de survol
+    // en cours pendant les 180 s du test et Ciel est absent (INV9).
     const harness = setup({ aircraft: [plane("f1", -79, 0)], features: ["ciel", "passages"] });
     await render(<harness.App />);
     await settle();
@@ -378,20 +440,27 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
     const spies = (["log", "info", "warn", "error"] as const).map((level) =>
       jest.spyOn(console, level).mockImplementation(() => undefined),
     );
-    const harness = setup({ aircraft: [LINGERING], permission: "denied", holdFirstResponse: true });
+    const harness = setup({ aircraft: [LINGERING], permission: "denied", unavailable: true });
     await render(<harness.App />);
     await settle();
     await act(async () => {
       fireEvent.press(screen.getByTestId("passages-notice-action"));
     });
     harness.permission.current = "granted";
+    harness.holdNextResponse();
     await comeBack(harness);
+    expect(screen.getByTestId("passages-notice-loading")).toBeOnTheScreen();
     await act(async () => {
       harness.releaseFirstResponse();
       await jest.advanceTimersByTimeAsync(0);
     });
+    expect(screen.getByTestId("passages-notice-unavailable")).toBeOnTheScreen();
+    harness.source.setUnavailable(false);
+    await elapse(harness.clock, 10 * SECOND);
+    expect(cardIds()).toEqual(["passage-card-s1"]);
     harness.source.setUnavailable(true);
     await elapse(harness.clock, 200 * SECOND);
+    expect(screen.getByTestId("data-stale-notice-passages")).toBeOnTheScreen();
     harness.source.setUnavailable(false);
     await elapse(harness.clock, 10 * SECOND);
 

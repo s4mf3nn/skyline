@@ -2,7 +2,7 @@
 
 Statut : BROUILLON
 Risque estimé : moyen (écrans seulement ; ajoute le service `SystemSettings` pour ouvrir les réglages du téléphone, hors zone sensible : aucune position ni donnée personnelle n'est lue ou écrite ; modifie l'écran Ciel de SPEC-0005 pour y poser la ligne de données périmées)
-Dépend de : SPEC-0007 (qui dépend de SPEC-0004, SPEC-0005 et SPEC-0006 : Ciel, Prochains passages, la scène et le rafraîchissement existent ; cette spec reste `BROUILLON` tant que SPEC-0007 n'est pas livrée)
+Dépend de : SPEC-0003, SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (le pager et ses indicateurs, la scène, l'écran Ciel, l'écran Prochains passages et le rafraîchissement existent ; cette spec reste `BROUILLON` tant que SPEC-0005 n'est pas écrite et que les autres ne sont pas livrées)
 Tests de contrat : `tests/acceptance/SPEC-0008.test.ts` (Vitest), `tests/acceptance/SPEC-0008.native.test.tsx` (Jest)
 Scénarios cachés : `tests/holdout/SPEC-0008.test.ts` et `tests/holdout/SPEC-0008.native.test.tsx` (ne pas les décrire ici)
 
@@ -44,7 +44,7 @@ Logique pure (Vitest, `tests/acceptance/SPEC-0008.test.ts`) :
 - Une scène périmée **et** vide : la notice `empty` et la ligne de données périmées sont montrées ensemble.
 - Au retour au premier plan après plus de trois minutes, la ligne est montrée jusqu'à la réponse du rafraîchissement immédiat de SPEC-0007 (CA11) ; la scène recalculée à l'heure courante est déjà affichée.
 - Les échecs de rafraîchissement d'avant le délai (10 s à 3 min) ne montrent rien : l'état « Hors ligne » n'existe que sans instantané antérieur.
-- Instantané à `nowMs − snapshotAtMs` négatif (horloge reculée) : pas de ligne (CA1).
+- Instantané à `nowMs − snapshotAtMs` négatif (horloge reculée) : pas de ligne (CA1, logique pure seulement).
 - Heure des données : fuseau de l'appareil, même format que les heures de passage ; changement de fuseau non géré.
 - Bouton « Ouvrir les réglages » sans effet visible quand les réglages sont déjà ouverts : sans conséquence.
 - Permission refusée de façon permanente : le bouton mène aux réglages du téléphone, seul endroit où la changer.
@@ -100,7 +100,8 @@ Réponses du propriétaire (2026-10-14) : délai de péremption de 3 minutes ; r
 - La ligne de données périmées s'applique aussi à une scène vide, et aux données gardées en arrière-plan puis ravivées (le retour au premier plan rafraîchit tout de suite).
 - `formatDataTime` répète `formatLocalTime` de SPEC-0006 : celui-ci vit dans une feature, qu'un module partagé ne peut pas importer ; à la troisième répétition, il montera dans `src/shared/`.
 - `SystemSettings` est un service injecté et facultatif (comme `AppLifecycle`) : sans lui, pas de bouton plutôt qu'un bouton mort.
-- Ciel, quand il montre un avion retenu (INV9), garde son avion et la ligne de données périmées ; il ne se retire pas parce que les données vieillissent.
+- Ciel, quand il montre un avion retenu (INV9), garde son avion et la ligne de données périmées ; il ne se retire pas parce que les données vieillissent. La présence de Ciel relève de SPEC-0005 et n'est pas rejouée ici.
+- Le cycle « Données affichées » de `docs/DOMAIN.md` dit « dernières données avec leur heure, puis message au-delà du délai » : cette spec le lit comme « rien avant 3 minutes, puis une ligne avec l'heure » (réponse du propriétaire du 2026-10-14). Si cette lecture est jugée contraire au cadrage, la reformuler par une PR de cadrage (`/roadmap`) avant `/plan`.
 
 ## Questions ouvertes
 Aucune (les textes sont à valider à la relecture).

@@ -35,7 +35,7 @@ function LeakingScreen(): never {
   throw new RangeError("no aircraft near 45.764, 4.8357");
 }
 
-describe.skip("SPEC-0001 delivery (rendering)", () => {
+describe("SPEC-0001 delivery (rendering)", () => {
   let consoleError: jest.SpyInstance;
 
   // React écrit l'erreur attrapée sur la console : le bruit est attendu dans ces tests.

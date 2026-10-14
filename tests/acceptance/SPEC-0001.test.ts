@@ -14,7 +14,7 @@ interface MonitoringModule {
 }
 const monitoring = () => load<MonitoringModule>("src/shared/monitoring/index.ts");
 
-describe.skip("SPEC-0001 delivery", () => {
+describe("SPEC-0001 delivery", () => {
   it("CA5 : keeps only the allowed context keys", async () => {
     const { scrubContext } = await monitoring();
     const context = {

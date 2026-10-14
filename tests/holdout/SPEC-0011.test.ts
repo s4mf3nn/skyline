@@ -91,18 +91,18 @@ describe("SPEC-0011 scénarios cachés : parcours critique", () => {
     expect(Math.abs((firstOverheadSeconds as number) - entry)).toBeLessThanOrEqual(10);
   });
 
-  it("forecasts a slow turboprop within 10 s even when a snapshot is missed", async () => {
+  it("forecasts a slow turboprop within 10 s from a snapshot taken 7 s before the clock", async () => {
     const flight = flightAt("4b1a02", 40, 450, 2, 700);
     const entry = entrySeconds(450, 700);
-    // Échantillons aux multiples de 10 s sauf un trou de 20 s juste avant l'avance de 60 s.
+    // Dernier échantillon avant l'avance de 60 s, lu 7 s après sa prise (rafraîchissement pas encore arrivé).
     const lastSeconds = Math.floor((entry - 60) / 10) * 10 - 10;
-    const scene = await sceneFor([flight(lastSeconds)], lastSeconds, null);
+    const scene = await sceneFor([flight(lastSeconds)], lastSeconds + 7, null, lastSeconds);
     const passage = scene.upcoming.find((entry2) => entry2.hex === "4b1a02");
     expect(passage).toBeDefined();
     expect(Math.abs((passage as Passage).passageTimeMs - (T0 + entry * 1000))).toBeLessThanOrEqual(10_000);
   });
 
-  it("drops the forecast once the aircraft turns away, and never shows a negative countdown", async () => {
+  it("keeps a forecast only while the line stays within 4 km, and never shows a negative countdown", async () => {
     const straight = flightAt("a1b2c3", 120, 800, 1.5, 600);
     const turned = flightAt("a1b2c3", 120, 800, 60, 600);
     const entry = entrySeconds(800, 600);

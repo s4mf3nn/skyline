@@ -59,3 +59,8 @@ Source : lecture de `node_modules` et exécution de `jest` le 2026-10-13.
 - `package.json` est en `"type": "module"` : `jest.config.cjs` (CommonJS). Preset `jest-expo` ; alias `@/` par `moduleNameMapper`.
 - Pairs à installer : `jest` ~29.7, `@types/jest`, `test-renderer` (pair de RNTL 14), `@react-native/jest-preset` épinglé à `0.86.3` (`expo install` en propose la 0.87.1, hors SDK).
 - RNTL 14 : `render` asynchrone, `toBeOnTheScreen` sans setup. `jest --json --outputFile=$CONTRACT_REPORT` produit le rapport attendu par `scripts/contract-files.mjs`.
+
+## expo-updates 57.0.26 / eas-cli 24.13.0
+Source : `npx expo install expo-updates` (version du SDK 57) et registre npm le 2026-10-14 ; Context7 n'a pas de branche `sdk-57`.
+- `app.json` : `runtimeVersion: { policy: "appVersion" }`, `updates.url` = `https://u.expo.dev/<projectId>`, `extra.eas.projectId`.
+- `eas.json` : le canal se pose par profil de build (`channel`) ; `eas update --skip-bundler` publie `dist/` produit par `expo export`.

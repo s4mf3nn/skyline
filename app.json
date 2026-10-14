@@ -20,6 +20,24 @@
           "motionUsagePermission": false
         }
       ]
-    ]
+    ],
+    "owner": "samfenn",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/47fe4ec7-fa70-4a37-943a-8cdddb7a0c61"
+    },
+    "ios": {
+      "bundleIdentifier": "com.samfenn.skyline"
+    },
+    "android": {
+      "package": "com.samfenn.skyline"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "47fe4ec7-fa70-4a37-943a-8cdddb7a0c61"
+      }
+    }
   }
 }

@@ -45,7 +45,7 @@ export function lockAxis(dx: number, dy: number): "horizontal" | "vertical" | nu
   "worklet";
   const absX = Math.abs(dx);
   const absY = Math.abs(dy);
-  if (Math.max(absX, absY) < 8) return null;
+  if (Math.max(absX, absY) < PAGER_METRICS.axisLockPt) return null;
   return absX > absY ? "horizontal" : "vertical";
 }
 
@@ -53,14 +53,14 @@ export function lockAxis(dx: number, dy: number): "horizontal" | "vertical" | nu
 export function draggedOffset(page: PageIndex, dx: number): number {
   "worklet";
   const towardsOutside = (page === 0 && dx > 0) || (page === 1 && dx < 0);
-  return towardsOutside ? dx * 0.3 : dx;
+  return towardsOutside ? dx * PAGER_METRICS.edgeResistance : dx;
 }
 
 /** Page de repos au relâchement : seule la distance compte, jamais la vitesse. */
 export function settlePage(page: PageIndex, dx: number): PageIndex {
   "worklet";
-  if (page === 0 && dx <= -60) return 1;
-  if (page === 1 && dx >= 60) return 0;
+  if (page === 0 && dx <= -PAGER_METRICS.swipeThresholdPt) return 1;
+  if (page === 1 && dx >= PAGER_METRICS.swipeThresholdPt) return 0;
   return page;
 }
 
@@ -70,16 +70,18 @@ export function restOffset(page: PageIndex, width: number): number {
   return -page * width;
 }
 
+const ACTIVE_TRAIT: IndicatorTrait = { width: 18, height: 4, opacity: 1 };
+const INACTIVE_TRAIT: IndicatorTrait = { width: 6, height: 4, opacity: 0.4 };
+
 export function indicatorTraits(page: PageIndex): readonly [IndicatorTrait, IndicatorTrait] {
-  const active: IndicatorTrait = { width: 18, height: 4, opacity: 1 };
-  const inactive: IndicatorTrait = { width: 6, height: 4, opacity: 0.4 };
-  return page === 0 ? [active, inactive] : [inactive, active];
+  return page === 0 ? [ACTIVE_TRAIT, INACTIVE_TRAIT] : [INACTIVE_TRAIT, ACTIVE_TRAIT];
 }
 
 export function pageValueText(page: PageIndex): string {
   return `Page ${page + 1} sur 2`;
 }
 
+/** Action d'accessibilité de l'indicateur : bornée aux deux pages, quelle que soit la page de départ. */
 export function stepPage(page: PageIndex, action: "increment" | "decrement"): PageIndex {
   if (action === "increment") return 1;
   return 0;

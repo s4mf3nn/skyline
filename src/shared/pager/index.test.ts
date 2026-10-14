@@ -66,6 +66,12 @@ describe("settlePage", () => {
     expect(settlePage(1, 60)).toBe(0);
   });
 
+  it("reads the threshold from PAGER_METRICS", () => {
+    const threshold = PAGER_METRICS.swipeThresholdPt;
+    expect(settlePage(0, -threshold)).toBe(1);
+    expect(settlePage(0, -threshold + 0.1)).toBe(0);
+  });
+
   it("stays put when swiping toward the outside", () => {
     expect(settlePage(0, 400)).toBe(0);
     expect(settlePage(1, -400)).toBe(1);

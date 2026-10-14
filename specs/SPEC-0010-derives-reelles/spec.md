@@ -38,7 +38,7 @@ Partie écran (Jest, `tests/acceptance/SPEC-0010.native.test.tsx`, écrans mont�
 - **CA6** : (carte de passage à venir) pour un avion dont la compagnie a une livrée, la carte `passage-card-<hex>` contient un élément `passage-livery-<hex>` dont la `source` est `getLiverySource(airline)` et dont l'`accessibilityLabel` est « Livrée <nom de la compagnie> » ; la dérive générique `passage-tail-<hex>` n'est pas rendue.
 - **CA7** : (carte « En ce moment ») la carte du survol en cours suit la même règle que CA6, avec les mêmes `testID`.
 - **CA8** : (Ciel) quand Ciel montre un avion dont la compagnie a une livrée, l'élément `ciel-livery` porte la source et l'`accessibilityLabel` de CA6 et la dérive générique `ciel-tail` n'est pas rendue.
-- **CA9** : (repli, INV8) pour un avion sans indicatif, d'indicatif inconnu ou de compagnie de la table sans livrée, aucun élément `*-livery` n'est rendu et la dérive générique de la compagnie est rendue (`passage-tail-<hex>`, `ciel-tail`).
+- **CA9** : (repli, INV8) pour un avion sans indicatif, d'indicatif inconnu ou de compagnie de la table sans livrée (par exemple Citilink, `CTV`), aucun élément `*-livery` n'est rendu et la dérive générique de la compagnie est rendue (`passage-tail-<hex>`, `ciel-tail`).
 - **CA10** : (thème inchangé) avec une livrée, le fond de la carte reste `theme.bg` de la compagnie et ses textes gardent `theme.big` et `theme.small` (SPEC-0002, INV5) : l'image ne modifie aucune couleur.
 - **CA11** : (suit l'avion) quand un rafraîchissement change l'avion montré (autre compagnie au même `hex`, ou autre avion en survol), la livrée affichée est celle de la nouvelle compagnie, ou la dérive générique si elle n'en a pas ; aucune livrée de l'avion précédent ne reste affichée.
 - **CA12** : (hors réseau) afficher des livrées n'émet aucune requête (`fetch` jamais appelé par le rendu, aucune préparation d'image distante), ne prépare aucune image distante (`Image.prefetch`, `Image.queryCache`), n'envoie rien au suivi des erreurs et n'écrit rien dans les logs : les images sont des ressources de l'application.
@@ -65,10 +65,10 @@ LIVERY_CREDIT: string                    // notice de crédit, texte exact ci-de
 
 ```ts
 getLiverySource(airline: Airline): ImageSourcePropType | null   // null sans livrée
-AirlineLivery({ airline, width, height }: { airline: Airline; width: number; height: number }): ReactElement | null
+AirlineLivery({ airline, width, height, testID }: { airline: Airline; width: number; height: number; testID: string }): ReactElement | null
 ```
 
-`AirlineLivery` rend une `Image` (`resizeMode` `contain`, `width` et `height` reçus ; rendu non testé, vérifié par capture sur cible réelle) et rien quand la compagnie n'a pas de livrée. Les écrans choisissent : `AirlineLivery` s'il existe une source, `AirlineTail` (SPEC-0002) sinon. `testID` : `passage-livery-<hex>` (cartes), `ciel-livery` (Ciel) ; le `testID` de la dérive générique est `passage-tail-<hex>` (SPEC-0006) ou `ciel-tail`.
+`AirlineLivery` rend une `Image` portant le `testID` reçu et l'`accessibilityLabel` « Livrée <airline.name> » (posé par le composant) (`resizeMode` `contain`, `width` et `height` reçus ; rendu non testé, vérifié par capture sur cible réelle) et rien quand la compagnie n'a pas de livrée. Les écrans choisissent : `AirlineLivery` s'il existe une source, `AirlineTail` (SPEC-0002) sinon. `testID` : `passage-livery-<hex>` (cartes), `ciel-livery` (Ciel) ; le `testID` de la dérive générique est `passage-tail-<hex>` (SPEC-0006) ou `ciel-tail`. La carte « En ce moment » rend, comme la carte à venir, `AirlineTail` en bas à gauche sous `passage-tail-<hex>` quand la compagnie n'a pas de livrée (précision de cette spec : SPEC-0006 ne le dit que de la carte à venir).
 
 Fichiers : `assets/tails/<code>.<png|webp>`. La table des `require()` statiques que Metro exige est un fichier généré (`src/shared/airlines/liveries.gen.ts`, `pnpm gen`, jamais édité à la main) ; elle est dérivée du contenu de `assets/tails/`.
 
@@ -92,4 +92,4 @@ Pas de maquette : les maquettes viendront plus tard par amendement de cette spec
 - Zone sensible `**/assets/tails/` : `review:full`, revue humaine.
 
 ## Questions ouvertes
-- Maquettes de la livrée (cadre, miroir ou non, taille) : attendues pour l'amendement ; aucun code d'affichage final avant (voir « Hors périmètre »).
+Aucune. Les maquettes sont couvertes par « Écrans » et « Hors périmètre ».

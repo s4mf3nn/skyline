@@ -66,7 +66,9 @@ function plane(hex: string, callsign: string | null, eastKm: number, northKm: nu
 const OVERHEAD_AFR = plane("3944ed", "AFR1015", -1, 1);
 const OVERHEAD_UNKNOWN = plane("3944ed", "ZZZ3", -1, 1);
 const INBOUND_RYR = plane("4ca7b2", "RYR7KM", -40.1, 0);
-const INBOUND_NOLIVERY = plane("406a11", "ZZZ9", -60.1, 0);
+// Citilink (`CTV`) est dans la table des compagnies mais n'a pas de livrée dans le catalogue.
+const INBOUND_NOLIVERY = plane("406a11", "CTV123", -60.1, 0);
+const OVERHEAD_NOLIVERY = plane("3944ed", "CTV456", -1, 1);
 const INBOUND_UNKNOWN = plane("a0b1c2", "ZZZ123", -50.1, 0.3);
 const INBOUND_PRIVATE = plane("a0b1c3", null, -70.1, 0.3);
 
@@ -158,6 +160,18 @@ describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
     await settle();
     for (const hex of ["3944ed", "a0b1c2", "406a11", "a0b1c3"]) {
       expect(screen.getByTestId(`passage-card-${hex}`)).toBeOnTheScreen();
+      expect(livery(hex)).toBeNull();
+      expect(tail(hex)).toBeOnTheScreen();
+    }
+    expect(screen.queryByTestId("ciel-livery")).toBeNull();
+    expect(screen.getByTestId("ciel-tail")).toBeOnTheScreen();
+  });
+
+  it("CA9 : keeps the generic tail, on the card and on Ciel, for a table airline without livery", async () => {
+    const harness = setup([OVERHEAD_NOLIVERY, INBOUND_NOLIVERY]);
+    await render(<harness.App />);
+    await settle();
+    for (const hex of ["3944ed", "406a11"]) {
       expect(livery(hex)).toBeNull();
       expect(tail(hex)).toBeOnTheScreen();
     }

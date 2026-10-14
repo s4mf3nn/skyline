@@ -118,6 +118,10 @@ function setup(options: SetupOptions = {}) {
       holding = false;
       for (const resolve of pending.splice(0)) resolve();
     },
+    /** Libère une seule réponse retenue, par rang d'arrivée parmi les requêtes retenues (0 = la première). */
+    releaseHeld(index: number) {
+      pending[index]?.();
+    },
     failWith(error: Error | null) {
       failure = error;
     },
@@ -389,7 +393,12 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     await settle();
     expect(harness.queries).toHaveLength(3);
 
-    harness.release();
+    // La réponse récente arrive d'abord, l'ancienne une seconde plus tard : elle doit être ignorée.
+    harness.releaseHeld(1);
+    await settle();
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
+    await elapse(harness.clock, 1);
+    harness.releaseHeld(0);
     await settle();
     expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
     expect(readyState().snapshotAtMs).toBe(NOW + 15 * SECOND);
@@ -405,6 +414,7 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
 
     harness.location.state.positionFailure = null;
     await elapse(harness.clock, 10);
+    expect(harness.location.state.permissionRequests).toBe(2);
     expect(harness.location.state.positionReads).toBe(1);
     expect(harness.queries).toHaveLength(1);
     expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["a1"]);
@@ -424,9 +434,14 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
       await jest.advanceTimersByTimeAsync(0);
     });
     expect(harness.queries).toHaveLength(3);
-    harness.release();
+    harness.releaseHeld(1);
     await settle();
     expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
+    await elapse(harness.clock, 1);
+    harness.releaseHeld(0);
+    await settle();
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["b2"]);
+    expect(readyState().snapshotAtMs).toBe(NOW + 10 * SECOND);
   });
 
   it("CA14 : ignores the answer of a request that was in flight when unmounted", async () => {

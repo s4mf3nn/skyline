@@ -70,6 +70,16 @@ async function fetchWith(body: unknown, query: AdsbQuery = LYON): Promise<Aircra
   return createAdsbLolSource({ fetch }).fetchAircraft(query);
 }
 
+/** Rejet d'une promesse, ou `null` si elle réussit. */
+async function rejectionOf(promise: Promise<unknown>): Promise<Error | null> {
+  return promise.then(
+    () => null,
+    (caught: unknown) => caught as Error,
+  );
+}
+
+const COORDINATES = /45\.7|4\.83|-?\d+\.\d{3}/;
+
 function expectNear(actual: number | null, expected: number, tolerance: number) {
   expect(actual).not.toBeNull();
   expect(Math.abs((actual as number) - expected)).toBeLessThanOrEqual(tolerance);
@@ -176,9 +186,15 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
         raw({ hex: "c00001", flight: 1506, alt_baro: "high", gs: -3, track: 400 }),
         raw({ hex: "c00002", alt_baro: Number.NaN, gs: "fast", track: -1 }),
         raw({ hex: "c00003", alt_baro: undefined, gs: undefined, track: undefined, flight: undefined }),
+        raw({
+          hex: "c00004",
+          alt_baro: Number.POSITIVE_INFINITY,
+          gs: Number.POSITIVE_INFINITY,
+          track: Number.POSITIVE_INFINITY,
+        }),
       ],
     });
-    expect(aircraft).toHaveLength(3);
+    expect(aircraft).toHaveLength(4);
     for (const plane of aircraft) {
       expect(plane.callsign).toBeNull();
       expect(plane.altitudeM).toBeNull();
@@ -216,9 +232,9 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
     const bodies: unknown[] = [null, "text", 42, [], {}, { ac: null }, { ac: "none" }, { ac: {} }, { msg: "No error" }];
     for (const body of bodies) {
       const { fetch } = stubFetch(async () => okResponse(body));
-      await expect(createAdsbLolSource({ fetch }).fetchAircraft(LYON)).rejects.toMatchObject({
-        code: "ADSB_UNAVAILABLE",
-      });
+      const error = await rejectionOf(createAdsbLolSource({ fetch }).fetchAircraft(LYON));
+      expect(error).toMatchObject({ code: "ADSB_UNAVAILABLE" });
+      expect(String(error?.message)).not.toMatch(COORDINATES);
     }
     const notJson = stubFetch(async () => ({
       ok: true,
@@ -227,9 +243,9 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
         throw new SyntaxError("Unexpected token <");
       },
     }));
-    await expect(createAdsbLolSource({ fetch: notJson.fetch }).fetchAircraft(LYON)).rejects.toMatchObject({
-      code: "ADSB_UNAVAILABLE",
-    });
+    const unreadable = await rejectionOf(createAdsbLolSource({ fetch: notJson.fetch }).fetchAircraft(LYON));
+    expect(unreadable).toMatchObject({ code: "ADSB_UNAVAILABLE" });
+    expect(String(unreadable?.message)).not.toMatch(COORDINATES);
     await expect(fetchWith({ ac: [], msg: "No error", total: 0 })).resolves.toEqual([]);
   });
 
@@ -255,7 +271,7 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
           (caught: unknown) => caught,
         );
       expect(error).toMatchObject({ code: "ADSB_UNAVAILABLE" });
-      expect(String((error as Error).message)).not.toMatch(/45\.7|4\.83/);
+      expect(String((error as Error).message)).not.toMatch(COORDINATES);
     }
   });
 
@@ -276,17 +292,14 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
             init.signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
           }),
       );
-      const settled = createAdsbLolSource({ fetch })
-        .fetchAircraft(LYON)
-        .then(
-          () => "resolved",
-          (error: { code?: string }) => error.code,
-        );
+      const settled = rejectionOf(createAdsbLolSource({ fetch }).fetchAircraft(LYON));
       await vi.advanceTimersByTimeAsync(ADSB_REQUEST_TIMEOUT_MS - 1);
       expect(calls[0]?.init.signal.aborted).toBe(false);
       await vi.advanceTimersByTimeAsync(1);
       expect(calls[0]?.init.signal.aborted).toBe(true);
-      await expect(settled).resolves.toBe("ADSB_UNAVAILABLE");
+      const error = await settled;
+      expect(error).toMatchObject({ code: "ADSB_UNAVAILABLE" });
+      expect(String(error?.message)).not.toMatch(COORDINATES);
     });
   });
 
@@ -306,9 +319,9 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
     ];
     for (const query of invalid) {
       const { fetch, calls } = stubFetch(async () => okResponse({ ac: [] }));
-      await expect(createAdsbLolSource({ fetch }).fetchAircraft(query)).rejects.toMatchObject({
-        code: "ADSB_UNAVAILABLE",
-      });
+      const error = await rejectionOf(createAdsbLolSource({ fetch }).fetchAircraft(query));
+      expect(error).toMatchObject({ code: "ADSB_UNAVAILABLE" });
+      expect(String(error?.message)).not.toMatch(COORDINATES);
       expect(calls).toHaveLength(0);
       expect(() => buildAdsbLolUrl(query)).toThrow(expect.objectContaining({ code: "ADSB_UNAVAILABLE" }));
     }

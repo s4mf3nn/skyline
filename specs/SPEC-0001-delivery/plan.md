@@ -1,12 +1,15 @@
 # Plan SPEC-0001
-Statut : BLOQUÉ
-Questions : les préalables de l'humain ci-dessous restent à inscrire (valeurs `<à fournir>`). Le découpage et la conception sont prêts à relire ; le statut passe à `PRÊT` dans cette même PR une fois les valeurs inscrites (`plan-gate.mjs check` n'accepte que `PRÊT` sur `main`).
+Statut : PRÊT
+Questions : aucune. `ascAppId`, la clé App Store Connect et le compte de service Google Play sont reportés à la première publication sur les stores (décision de l'humain : test sous Expo Go d'abord, comptes Apple Developer et Google Play pas encore créés) ; ils ne bloquent aucune tâche, voir « Préalables à la publication ».
 
 Préalables de l'humain (valeurs à inscrire dans cette PR de plan avant sa fusion ; aucun agent ne les invente) :
-- **Identifiants de l'application** : `ios.bundleIdentifier` = `<à fournir>`, `android.package` = `<à fournir>` (SPEC-0000 les a laissés à cette spec).
-- **Projet EAS** : `extra.eas.projectId` = `<à fournir>` (sortie de `eas init` sur le compte du propriétaire) ; identifiants de soumission (clé App Store Connect, compte de service Google Play) rangés dans EAS par `eas credentials`, `ascAppId` = `<à fournir>`.
-- **Projet Sentry** : organisation `<à fournir>`, projet `<à fournir>` (non secrets).
-- **Environnement GitHub `production`** : secrets `EXPO_TOKEN`, `SENTRY_AUTH_TOKEN` ; variables non secrètes `EXPO_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`. **Variable d'environnement EAS** `EXPO_PUBLIC_SENTRY_DSN` (profils `preview` et `production`, visibilité « plain text ») pour le bundle embarqué du binaire construit chez EAS.
+- **Identifiants de l'application** : `ios.bundleIdentifier` = `com.samfenn.skyline`, `android.package` = `com.samfenn.skyline` (SPEC-0000 les a laissés à cette spec).
+- **Projet EAS** : `extra.eas.projectId` = `47fe4ec7-fa70-4a37-943a-8cdddb7a0c61`, `owner` = `samfenn` (sortie de `eas init` sur le compte du propriétaire).
+- **Projet Sentry** : organisation `samfenn`, projet `skyline`, DSN `https://52bb9ffee00077edf99374e5d56e93df@o4510499886071808.ingest.de.sentry.io/4512254100832336` (non secrets).
+- **Environnement GitHub `production`** (créé, secrets et variables enregistrés, variable EAS créée) : secrets `EXPO_TOKEN`, `SENTRY_AUTH_TOKEN` ; variables non secrètes `EXPO_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`. **Variable d'environnement EAS** `EXPO_PUBLIC_SENTRY_DSN` (profils `preview` et `production`, visibilité « plain text ») pour le bundle embarqué du binaire construit chez EAS.
+
+Préalables à la publication (reportés, à fournir par l'humain avant le premier `pnpm release` en profil `production`, jamais inventés par un agent) :
+- **Identifiants de soumission** : clé App Store Connect et compte de service Google Play rangés dans EAS par `eas credentials`, `ascAppId` = `<à fournir>`. Tant que `ascAppId` manque, le profil `production` ne peut pas soumettre ; le profil `preview` et les tests sous Expo Go n'en dépendent pas.
 
 Constats partagés par les tâches :
 - **Point d'entrée de `src/shared/monitoring/`** (figé par SPEC-0000) : `index.ts` n'exporte que l'interface, les types, le faux et les fonctions pures ; le contrat Vitest le charge par chemin, il n'importe aucun module natif. L'implémentation Sentry vit dans `sentry.ts`, importée par `src/main.tsx` seulement.

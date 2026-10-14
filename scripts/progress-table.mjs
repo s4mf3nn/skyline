@@ -113,6 +113,7 @@ function gh(args) {
   }
 }
 
+// Le workflow est désigné par son fichier : `gh` ne retrouve pas par son nom un workflow jamais exécuté.
 function lastRun(workflow, ...filters) {
   const runs = gh([
     "run",
@@ -151,7 +152,7 @@ function main() {
   const progress = computeProgress({
     files,
     prs,
-    lastRelease: github ? lastRun("release", "--status", "success") : null,
+    lastRelease: github ? lastRun("release.yml", "--status", "success") : null,
     // `gates` n'est pas lu : le workflow part au push, avant la fin du run `gates` de cette fusion. /land le contrôle.
     now: new Date().toISOString(),
   });

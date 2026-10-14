@@ -92,3 +92,11 @@ Source : lecture de `node_modules` (`jestSetup.js`, `lib/typescript/jestUtils`) 
 Source : `node_modules/react-native/Libraries/AppState/AppState.d.ts` le 2026-10-14.
 - `AppState.addEventListener("change", (state) => ...)` renvoie un objet avec `remove()` ; `AppState.currentState` vaut `active | background | inactive | unknown | extension`.
 - Un retour au premier plan = passage de `background` ou `inactive` à `active`.
+
+## react-native 0.86.3
+Source : Context7 `/react/react-native-website` (doc 0.87, la plus proche de 0.86.3) le 2026-10-14.
+- `FlatList` : `snapToInterval` s'emploie avec `decelerationRate="fast"` ; `FlatList` est un `PureComponent` (re-rendu quand `data` change).
+
+## Hermes (moteur de react-native 0.86.3)
+Source : Context7 `/discord/hermes` (`doc/IntlAPIs.md`) le 2026-10-14.
+- `Intl.DateTimeFormat` : prend `timeZone` et `hourCycle: "h23"` sur iOS et Android, mais le motif iOS est localisé : assembler `HH:MM` depuis `formatToParts`, jamais depuis `format()` ni `toLocaleString`.

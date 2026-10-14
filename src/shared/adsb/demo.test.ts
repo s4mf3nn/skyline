@@ -8,6 +8,7 @@ const START_MS = 1_700_000_000_000;
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("createDemoAdsbSource", () => {
@@ -56,6 +57,11 @@ describe("createDemoAdsbSource", () => {
     for (const spy of spies) {
       expect(spy).not.toHaveBeenCalled();
     }
-    vi.unstubAllGlobals();
+  });
+
+  it("answers no aircraft when the radius is too small for a lane", async () => {
+    const source = createDemoAdsbSource(createFakeClock(START_MS));
+    expect(await source.fetchAircraft({ ...QUERY, radiusKm: 4 })).toEqual([]);
+    expect(await source.fetchAircraft({ ...QUERY, radiusKm: 1 })).toEqual([]);
   });
 });

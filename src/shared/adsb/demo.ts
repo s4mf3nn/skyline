@@ -72,6 +72,10 @@ function laneAircraft(lane: DemoLane, index: number, query: AdsbQuery, nowMs: nu
 export function createDemoAdsbSource(clock: Clock): AdsbSource {
   return {
     async fetchAircraft(query) {
+      // Rayon trop petit pour y tracer une voie : aucune démonstration plutôt que des positions fausses.
+      if (query.radiusKm <= RADIUS_MARGIN_KM) {
+        return [];
+      }
       const nowMs = clock.now();
       return DEMO_LANES.map((lane, index) => laneAircraft(lane, index, query, nowMs));
     },

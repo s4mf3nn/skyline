@@ -67,7 +67,9 @@ export function renderProgress(progress, { source, generatedAt }) {
   const header = "| Spec | Titre | Spec | Plan | Implémentation | Livrée | Production | Étape |";
   const rows = progress.specs.map((spec) => `| ${specRow(spec).join(" | ")} |`);
   const blockers = progress.blockers.map((b) => `- ${b.spec ? `${b.spec} : ` : ""}${short(b.message, 160)}`);
-  const next = progress.nextActions.map((a) => `- ${short(typeof a === "string" ? a : (a.message ?? a.command ?? JSON.stringify(a)), 160)}`);
+  const next = progress.nextActions.map(
+    (a) => `- ${short(typeof a === "string" ? a : (a.message ?? a.command ?? JSON.stringify(a)), 160)}`,
+  );
   return [
     "# Avancement du projet",
     "",
@@ -99,14 +101,28 @@ export function renderProgress(progress, { source, generatedAt }) {
 
 function gh(args) {
   try {
-    return JSON.parse(execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 }));
+    return JSON.parse(
+      execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 }),
+    );
   } catch {
     return null;
   }
 }
 
 function lastRun(workflow, ...filters) {
-  const runs = gh(["run", "list", "--workflow", workflow, "--branch", "main", "--limit", "1", "--json", "conclusion,createdAt", ...filters]);
+  const runs = gh([
+    "run",
+    "list",
+    "--workflow",
+    workflow,
+    "--branch",
+    "main",
+    "--limit",
+    "1",
+    "--json",
+    "conclusion,createdAt",
+    ...filters,
+  ]);
   return runs?.[0] ?? null;
 }
 
@@ -116,7 +132,8 @@ function main() {
   const github = !args.includes("--no-github");
   const outIndex = args.indexOf("--out");
   const out = outIndex >= 0 ? args[outIndex + 1] : path.join("docs", "PROGRESS.md");
-  const prs = github ? (gh(["pr", "list", "--state", "all", "--limit", "300", "--json", "number,title,state,mergedAt,headRefName,url,comments"]) ?? []) : [];
+  const prList = ["pr", "list", "--state", "all", "--limit", "300"];
+  const prs = github ? (gh([...prList, "--json", "number,title,state,mergedAt,headRefName,url,comments"]) ?? []) : [];
   if (!local) {
     try {
       execFileSync("git", ["fetch", "--quiet", "origin"], { stdio: "ignore" });

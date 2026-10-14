@@ -1,6 +1,6 @@
 # Plan SPEC-0001
 Statut : PRÊT
-Questions : aucune. `ascAppId`, la clé App Store Connect et le compte de service Google Play sont reportés à la première publication sur les stores (décision de l'humain : test sous Expo Go d'abord, comptes Apple Developer et Google Play pas encore créés) ; ils ne bloquent aucune tâche, voir « Préalables à la publication ».
+Questions : aucune. `ascAppId`, la clé App Store Connect et le compte de service Google Play sont reportés à la première publication sur les stores (décision de l'humain : test sous Expo Go d'abord, comptes Apple Developer et Google Play pas encore créés) ; ils ne bloquent aucune tâche : le profil `preview` est hors stores (APK Android, simulateur iOS) et T4 le prouve sans compte store, voir « Préalables à la publication ». La soumission TestFlight / test interne (CA1 actuel) est reportée à un amendement de la spec, hors de cette PR.
 
 Préalables de l'humain (valeurs à inscrire dans cette PR de plan avant sa fusion ; aucun agent ne les invente) :
 - **Identifiants de l'application** : `ios.bundleIdentifier` = `com.samfenn.skyline`, `android.package` = `com.samfenn.skyline` (SPEC-0000 les a laissés à cette spec).
@@ -9,7 +9,7 @@ Préalables de l'humain (valeurs à inscrire dans cette PR de plan avant sa fusi
 - **Environnement GitHub `production`** (créé, secrets et variables enregistrés, variable EAS créée) : secrets `EXPO_TOKEN`, `SENTRY_AUTH_TOKEN` ; variables non secrètes `EXPO_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`. **Variable d'environnement EAS** `EXPO_PUBLIC_SENTRY_DSN` (profils `preview` et `production`, visibilité « plain text ») pour le bundle embarqué du binaire construit chez EAS.
 
 Préalables à la publication (reportés, à fournir par l'humain avant le premier `pnpm release` en profil `production`, jamais inventés par un agent) :
-- **Identifiants de soumission** : clé App Store Connect et compte de service Google Play rangés dans EAS par `eas credentials`, `ascAppId` = `<à fournir>`. Tant que `ascAppId` manque, le profil `production` ne peut pas soumettre ; le profil `preview` et les tests sous Expo Go n'en dépendent pas.
+- **Identifiants de soumission** : clé App Store Connect et compte de service Google Play rangés dans EAS par `eas credentials`, `ascAppId` = `<à fournir>`. Tant que `ascAppId` manque, le profil `production` ne peut pas soumettre et `eas.json` ne porte aucun `ascAppId` (aucune valeur inventée, pas de placeholder) ; le profil `preview` et les tests sous Expo Go n'en dépendent pas.
 
 Constats partagés par les tâches :
 - **Point d'entrée de `src/shared/monitoring/`** (figé par SPEC-0000) : `index.ts` n'exporte que l'interface, les types, le faux et les fonctions pures ; le contrat Vitest le charge par chemin, il n'importe aucun module natif. L'implémentation Sentry vit dans `sentry.ts`, importée par `src/main.tsx` seulement.
@@ -85,7 +85,7 @@ Constats partagés par les tâches :
 - Conception :
   ```diff
    .
-  +├── eas.json                   # NOUVEAU : build preview / production (channel), submit production (ascAppId, piste internal)
+  +├── eas.json                   # NOUVEAU : build preview hors stores (android.buildType apk, ios.simulator true) / production (channel), submit production sans ascAppId jusqu'à la publication (piste internal)
   ~├── app.json                   # MODIFIÉ : bundleIdentifier, package, runtimeVersion { policy: "appVersion" }, updates.url, extra.eas.projectId
   ~├── package.json               # MODIFIÉ : expo-updates (expo install), eas-cli épinglé en devDependency, script release
   +├── scripts/release.mjs        # NOUVEAU : suite de commandes selon RELEASE_PROFILE, exécutée pas à pas, arrêt au premier échec
@@ -96,7 +96,7 @@ Constats partagés par les tâches :
   ```ts
   // scripts/release.mjs (exports testés, exécution si lancé directement)
   type Profile = "preview" | "production";
-  readProfile(env: NodeJS.ProcessEnv): Profile            // RELEASE_PROFILE absent : "production" ; autre valeur : refus
+  readProfile(env: NodeJS.ProcessEnv): Profile            // RELEASE_PROFILE absent : "preview" (jamais de soumission par défaut) ; autre valeur : refus
   releaseSteps(profile: Profile, sha: string): { cmd: string; args: string[] }[]
   ```
   ```diff
@@ -177,4 +177,4 @@ Constats partagés par les tâches :
 - Risque : faible (documentation et retrait des `.skip` ; la livraison elle-même est lancée par l'humain)
 - Critères de la spec couverts : CA1, CA2, CA4, CA5, CA6
 - Définition de fini : `pnpm verify` vert avec le `describe.skip` retiré des deux fichiers de contrat (`SPEC-0001.test.ts` et `SPEC-0001.native.test.tsx`), ce qui active les scénarios cachés en CI ; `docs/factory/WORKFLOW.md` décrit la livraison (`profile` preview puis production) et le retour arrière (`eas update:republish` de la mise à jour précédente du canal, binaire corrigé par une nouvelle livraison, migrations sans objet) ; la PR cite le run `release` en `preview` lancé par l'humain sur `main` après la fusion de T3 (build, mise à jour, release Sentry au SHA avec sourcemaps), la répétition du retour arrière sur le canal `preview`, et la capture de l'écran d'accueil sur iPhone.
-- Notes : l'agent ne lance ni le workflow ni `eas update:republish` ; il prépare les commandes exactes dans la PR et attend les liens de l'humain.
+- Notes : la preuve CA1 de T4 se limite au build `preview` hors stores et à la mise à jour sur le canal `preview` ; la soumission aux stores n'est pas vérifiée ici (amendement de la spec via `/new-spec`). L'agent ne lance ni le workflow ni `eas update:republish` ; il prépare les commandes exactes dans la PR et attend les liens de l'humain.

@@ -281,6 +281,18 @@ describe.skip("SPEC-0009 Routes de vol (rendering)", () => {
     expect(screen.queryByRole("progressbar", { name: "Progression du vol" })).toBeNull();
   });
 
+  it("CA17 : shows the arrival without the progress bar when only the origin has no coordinates", async () => {
+    const noOrigin: FlightRoute = {
+      origin: { iata: "SPU", city: "Split", latitude: null, longitude: null },
+      destination: SPLIT_PARIS.destination,
+    };
+    const harness = setup({ aircraft: [OVERHEAD], routes: { AFR1015: noOrigin } });
+    await render(<harness.App />);
+    await settle();
+    expect(screen.getByTestId("ciel-route-arrival")).toHaveTextContent(arrivalAfter(harness.clock));
+    expect(screen.queryByRole("progressbar", { name: "Progression du vol" })).toBeNull();
+  });
+
   it("CA18 : does not hold the display for a route that has not answered yet, then shows it on the answer", async () => {
     const harness = setup({
       aircraft: [OVERHEAD, INBOUND],
@@ -352,6 +364,20 @@ describe.skip("SPEC-0009 Routes de vol (rendering)", () => {
     // L'avion sans indicatif montre son type, sans bloc route.
     expect(cardBlock("a0b1c2")).toBeNull();
     expect(within(screen.getByTestId("passage-card-a0b1c2")).getByText("PA28")).toBeOnTheScreen();
+  });
+
+  it("CA20 : asks nothing for the eleventh upcoming passage, which the scene does not show", async () => {
+    // Onze passages à venir, entrant dans leur fenêtre un par un ; le plus lointain n'est pas dans les dix premiers.
+    const fleet = Array.from({ length: 11 }, (_, index) =>
+      plane(`5a00${String(index).padStart(2, "0")}`, `TST${String(index).padStart(2, "0")}`, -40.1 - index, 0),
+    );
+    const harness = setup({ aircraft: fleet });
+    await render(<harness.App />);
+    await settle();
+    expect(screen.queryAllByTestId(/^passage-card-/)).toHaveLength(10);
+    expect(harness.routeSource.routeRequests).toHaveLength(10);
+    expect(harness.routeSource.routeRequests).not.toContain("TST10");
+    expect(harness.routeSource.typeRequests).not.toContain("5a0010");
   });
 
   it("CA21 : sends nothing to the error tracker, logs nothing, and gives the source only callsigns and addresses", async () => {

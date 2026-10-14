@@ -67,8 +67,6 @@ const ZURICH_LISBON: FlightRoute = {
   origin: { iata: "ZRH", city: "Zurich", ...at(2, 98.5) },
   destination: { iata: "LIS", city: "Lisbonne", ...at(2, -211.5) },
 };
-// Deux avions de même indicatif (vol répété) : l'un survole, l'autre arrive.
-const TWIN = plane("4b1806", "SWR1234", 45.1, 0.2, 270);
 const OTHER = plane("3c6444", "DLH9XY", 60.1, 0.1, 270);
 
 function setup(aircraft: Aircraft[], data: Parameters<RoutesModule["createFakeRouteSource"]>[0]) {
@@ -147,30 +145,27 @@ describe("SPEC-0009 hidden scenarios (rendering)", () => {
     expect(harness.monitoring.events).toEqual([]);
   });
 
-  it("asks once for two aircraft sharing a callsign and shows the same route on both, then follows a swapped scene", async () => {
-    const harness = setup([OVERHEAD, TWIN], {
+  it("follows a callsign change on the same aircraft and restores the cached route without a new request", async () => {
+    const harness = setup([OVERHEAD], {
       routes: {
         SWR1234: ZURICH_LISBON,
-        DLH9XY: { ...ZURICH_LISBON, destination: { ...ZURICH_LISBON.destination, iata: "OPO", city: "Porto" } },
+        SWR5678: { ...ZURICH_LISBON, destination: { ...ZURICH_LISBON.destination, iata: "OPO", city: "Porto" } },
       },
-      aircraftTypes: { "4b1805": "A220-300", "4b1806": "BCS3", "3c6444": "A321" },
+      aircraftTypes: { "4b1805": "A220-300" },
     });
     await render(<harness.App />);
     await settle();
-
-    expect(harness.routeSource.routeRequests).toEqual(["SWR1234"]);
-    expect([...harness.routeSource.typeRequests].sort()).toEqual(["4b1805", "4b1806"]);
     expect(screen.getByTestId("passage-route-4b1805")).toHaveTextContent(/ZRH\s*LIS\s*Zurich → Lisbonne/);
-    expect(screen.getByTestId("passage-route-4b1806")).toHaveTextContent(/ZRH\s*LIS\s*Zurich → Lisbonne/);
-    expect(within(screen.getByTestId("passage-card-4b1806")).getByText("BCS3")).toBeOnTheScreen();
 
-    // Le jeu d'avions change : l'ancien indicatif n'est pas redemandé, le nouveau l'est une fois.
-    harness.adsb.setAircraft([OVERHEAD, OTHER]);
+    harness.adsb.setAircraft([{ ...OVERHEAD, callsign: "SWR5678" }]);
     await elapse(harness.clock, 10 * SECOND);
+    expect(screen.getByTestId("passage-route-4b1805")).toHaveTextContent(/ZRH\s*OPO\s*Zurich → Porto/);
+    expect(screen.getByTestId("ciel-route-codes")).toHaveTextContent(/ZRH\s*OPO/);
+
+    harness.adsb.setAircraft([OVERHEAD]);
     await elapse(harness.clock, 10 * SECOND);
-    expect(harness.routeSource.routeRequests).toEqual(["SWR1234", "DLH9XY"]);
-    expect(screen.queryByTestId("passage-card-4b1806")).toBeNull();
-    expect(screen.getByTestId("passage-route-3c6444")).toHaveTextContent(/ZRH\s*OPO\s*Zurich → Porto/);
     expect(screen.getByTestId("passage-route-4b1805")).toHaveTextContent(/ZRH\s*LIS/);
+    expect(harness.routeSource.routeRequests).toEqual(["SWR1234", "SWR5678"]);
+    expect(harness.routeSource.typeRequests).toEqual(["4b1805"]);
   });
 });

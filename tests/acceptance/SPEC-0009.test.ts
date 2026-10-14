@@ -280,13 +280,17 @@ describe.skip("SPEC-0009 adsbdb.com client", () => {
     { label: "a non-JSON body", status: 200, body: undefined, unreadable: true },
     { label: "an array", status: 200, body: [], unreadable: false },
     { label: "a null body", status: 200, body: null, unreadable: false },
-    { label: "a response that is neither object nor the unknown phrase", status: 200, body: { response: "oops" } },
+    {
+      label: "a response that is neither object nor the unknown phrase",
+      status: 200,
+      body: { response: "SECRET-BODY-MARKER" },
+    },
     { label: "a missing flightroute", status: 200, body: { response: {} } },
     { label: "a null flightroute", status: 200, body: { response: { flightroute: null } } },
     { label: "a flightroute that is not an object", status: 200, body: { response: { flightroute: "AFR1015" } } },
     { label: "a 404 that is not the unknown phrase", status: 404, body: { response: "not found" } },
     { label: "a 400 invalid callsign", status: 400, body: { response: "invalid callsign: AFR1015" } },
-    { label: "a 429", status: 429, body: { response: "too many requests" } },
+    { label: "a 429", status: 429, body: { response: "SECRET-BODY-MARKER too many requests" } },
     { label: "a 500", status: 500, body: flightrouteBody() },
   ])("CA6 : rejects with ROUTE_UNAVAILABLE on $label", async ({ status, body, unreadable }) => {
     const { createAdsbdbRouteSource } = await adsbdb();
@@ -302,6 +306,7 @@ describe.skip("SPEC-0009 adsbdb.com client", () => {
     expect(caught?.code).toBe("ROUTE_UNAVAILABLE");
     expect(caught?.message).not.toContain("api.adsbdb.com");
     expect(caught?.message).not.toContain("AFR1015");
+    expect(caught?.message).not.toContain("SECRET-BODY-MARKER");
   });
 
   it("CA6 : rejects with ROUTE_UNAVAILABLE on a network error and on a request that never answers", async () => {
@@ -489,10 +494,9 @@ describe.skip("SPEC-0009 estimates and formats", () => {
     const { estimateFlight } = await routes();
     const past = estimateFlight({ route: route(0, 480), position: at(600), groundSpeedKmh: 720, nowMs: NOW });
     expect(past.progress).toBe(1);
-    // Derrière l'origine, sur le même méridien : la distance parcourue vaut 100 km, pas −100 km.
+    // Derrière l'origine, sur le même méridien : la distance parcourue vaut 100 km (orthodromie, jamais négative).
     const behind = estimateFlight({ route: route(0, 480), position: at(-100), groundSpeedKmh: 720, nowMs: NOW });
-    expect(behind.progress).toBeGreaterThanOrEqual(0);
-    expect(behind.progress).toBeLessThanOrEqual(1);
+    expect(behind.progress).toBeCloseTo(100 / 480, 3);
   });
 
   it("CA11 : estimates the arrival from the remaining distance and the ground speed", async () => {
@@ -573,5 +577,7 @@ describe.skip("SPEC-0009 estimates and formats", () => {
     expect(formatEstimatedArrival(1_800_000_000_000, "Pacific/Auckland")).toBe("~21:00");
     expect(formatEstimatedArrival(1_800_000_000_000, "Asia/Kolkata")).toBe("~13:30");
     expect(formatEstimatedArrival(1_800_000_059_999, "Europe/Paris")).toBe("~09:00");
+    // 23:05 UTC la veille : 00:05 à Paris, jamais « 24:05 ».
+    expect(formatEstimatedArrival(NOW - 32_100_000, "Europe/Paris")).toBe("~00:05");
   });
 });

@@ -94,6 +94,26 @@ Si c'est l'étape « Scénarios cachés » de la CI qui est rouge, le retour à 
 9. On passe au groupe suivant du plan.
 10. **Livraison**, quand tu le décides (après une spec, ou plusieurs) : workflow `release` lancé à la main sur `main`. Il refuse un commit dont `gates` n'est pas vert, attend ton approbation (environnement `production`) puis lance `pnpm release`. Aucun agent ne le déclenche.
 
+## Livraison et retour arrière
+
+La livraison est le workflow `release` (`.github/workflows/release.yml`), lancé à la main sur `main` par l'humain ; il lance `pnpm release` (`scripts/release.mjs`). Aucun agent ne le déclenche. Les secrets (`EXPO_TOKEN`, `SENTRY_AUTH_TOKEN`) viennent de l'environnement GitHub `production`, jamais d'un argument ni du dépôt.
+
+| Profil | Ce qui est fait | Usage |
+|---|---|---|
+| `preview` | Build EAS (APK Android, build simulateur iOS, hors stores), mise à jour EAS Update sur le canal `preview`, release Sentry au SHA avec sourcemaps | Première livraison et répétition du retour arrière : EAS n'a pas de mode à blanc |
+| `production` | Build EAS, soumission à la piste de test de chaque store (TestFlight, test interne Google Play), mise à jour sur le canal `production`, release Sentry au SHA avec sourcemaps | Livraison réelle, après une preview vérifiée |
+
+Ordre : lancer d'abord `preview`, vérifier le build, la mise à jour et la release Sentry, puis `production`.
+
+### Retour arrière
+
+- **Mise à jour (JavaScript et assets)** : republier la mise à jour précédente du canal.
+  1. `eas update:list --branch <canal>` repère la mise à jour précédente (son groupe).
+  2. `eas update:republish --group <id-du-groupe> --branch <canal>` la republie : les appareils la reprennent au prochain lancement.
+  Répéter la procédure une fois sur le canal `preview` avant la première livraison `production`.
+- **Binaire soumis** : un binaire déjà soumis à un store ne se retire pas. Il se corrige par une nouvelle livraison (nouveau build, puis `production`).
+- **Migrations** : sans objet, l'application n'a pas de base de données.
+
 ## Correction d'un bug
 
 Un bug sur du code livré ne passe ni par `/new-spec` ni par `/plan` : `/fix <numéro d'issue | description>` dans un workspace dédié. L'agent lit l'issue (ou la crée avec l'étiquette `bug`), retrouve la spec concernée, puis classe le bug avant d'écrire quoi que ce soit :

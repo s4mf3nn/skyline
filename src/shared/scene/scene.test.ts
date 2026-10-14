@@ -94,21 +94,18 @@ describe("computeScene", () => {
     expect(result).toEqual({ overhead: null, upcoming: [] });
   });
 
-  it("keeps the previous overhead beyond 4 km and 80 km while its window lasts", () => {
+  it("keeps the previous overhead beyond 4 km while its window lasts", () => {
     // Fenêtre en cours, point le plus proche à 4,5 km.
-    const near = compute([plane("a1", -1, 4.5), plane("b2", -1, 1)], T0, "a1");
-    expect(near.overhead?.hex).toBe("a1");
-    // Fenêtre en cours, mais un instantané ancien : à now = T0 + 20 s, plus de 80 km impossible ici ; on vérifie le seuil de 4 km.
-    expect(near.upcoming).toEqual([]);
+    const result = compute([plane("a1", -1, 4.5), plane("b2", -1, 1)], T0, "a1");
+    expect(result.overhead?.hex).toBe("a1");
+    expect(result.upcoming).toEqual([]);
   });
 
-  it("keeps the previous overhead even when beyond 80 km from the observer", () => {
-    // Avion très lent : 36 km/h, fenêtre de 1000 s ; à 90 km mais fenêtre en cours.
-    const slow = plane("a1", -90, 0, { groundSpeedKmh: 36 });
-    // Point le plus proche à 9000 s ; la fenêtre commence à 8500 s.
-    const now = T0 + 8_600_000;
-    const result = compute([slow], now, "a1");
-    expect(result.overhead?.hex).toBe("a1");
+  it("keeps the previous overhead beyond 80 km while its window lasts", () => {
+    // Point le plus proche à 85 km, fenêtre en cours à T0 : distance au sol > 80 km.
+    const far = plane("a1", -1, 85);
+    expect(compute([far], T0, null).overhead).toBeNull();
+    expect(compute([far], T0, "a1").overhead?.hex).toBe("a1");
   });
 
   it("falls back to entry rules when the previous overhead is absent", () => {

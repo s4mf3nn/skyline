@@ -81,7 +81,7 @@ const fireAccessibilityAction = (name: "increment" | "decrement") =>
   fireEvent(pagerElement(), "accessibilityAction", { nativeEvent: { actionName: name } });
 const trait = (index: 0 | 1) => screen.getByTestId(`pager-indicator-trait-${index}`);
 
-describe.skip("SPEC-0003 pager (rendering)", () => {
+describe("SPEC-0003 pager (rendering)", () => {
   it("CA7 : mounts the screens of the two first features side by side, by increasing order", async () => {
     await renderApp([
       feature("passages", 2, textScreen("screen passages")),

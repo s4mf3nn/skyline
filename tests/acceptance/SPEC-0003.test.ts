@@ -40,7 +40,7 @@ function feature(name: string, order: number): FeatureLike {
   return { name, order, screen: () => null };
 }
 
-describe.skip("SPEC-0003 pager (logic)", () => {
+describe("SPEC-0003 pager (logic)", () => {
   it("CA1 : fixes the handoff values", async () => {
     const { PAGER_METRICS } = await pager();
     expect(PAGER_METRICS.swipeThresholdPt).toBe(60);

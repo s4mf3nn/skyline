@@ -180,6 +180,20 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
     expect((aircraft[4] as Aircraft).latitude).toBeGreaterThan(45.7);
   });
 
+  it("CA4 : wraps the longitude at the antimeridian and drops an aircraft pushed out of range at the pole", async () => {
+    const aircraft = await fetchWith({
+      ac: [
+        raw({ hex: "a10001", lat: 10, lon: 179.99, track: 90, gs: 400, seen_pos: 10 }),
+        raw({ hex: "a10002", lat: 89.99, lon: 0, track: 0, gs: 400, seen_pos: 30 }),
+        raw({ hex: "a10003", lat: 90, lon: 0, track: 90, gs: 400, seen_pos: 10 }),
+      ],
+    });
+    expect(aircraft.map((plane) => plane.hex)).toEqual(["a10001"]);
+    const [crossing] = aircraft as [Aircraft];
+    expect(crossing.longitude).toBeGreaterThanOrEqual(-180);
+    expect(crossing.longitude).toBeLessThan(-179.9);
+  });
+
   it("CA5 : turns an invalid field into null without dropping the aircraft", async () => {
     const aircraft = await fetchWith({
       ac: [
@@ -300,6 +314,24 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
       const error = await settled;
       expect(error).toMatchObject({ code: "ADSB_UNAVAILABLE" });
       expect(String(error?.message)).not.toMatch(COORDINATES);
+    });
+  });
+
+  describe("timeout without abort support", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("CA7 : rejects at the deadline even when fetch ignores the abort signal", async () => {
+      const { createAdsbLolSource, ADSB_REQUEST_TIMEOUT_MS } = await adsbLol();
+      const { fetch } = stubFetch(() => new Promise<FetchResponse>(() => undefined));
+      const settled = rejectionOf(createAdsbLolSource({ fetch }).fetchAircraft(LYON));
+      await vi.advanceTimersByTimeAsync(ADSB_REQUEST_TIMEOUT_MS);
+      const error = await settled;
+      expect(error).toMatchObject({ code: "ADSB_UNAVAILABLE" });
     });
   });
 

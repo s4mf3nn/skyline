@@ -110,5 +110,24 @@ describe("PassageCardView overhead", () => {
     expect(view.getByText("Direction")).toBeOnTheScreen();
     expect(view.getByText("E")).toBeOnTheScreen();
     expect(view.queryByText("Passe à")).toBeNull();
+    expect(view.getByText(card.altitude)).toBeOnTheScreen();
+    expect(view.getByText(card.speed)).toBeOnTheScreen();
+    expect(view.getByText("Compagnie")).toBeOnTheScreen();
+    expect(view.getByText("Vol")).toBeOnTheScreen();
+    expect(view.getByText("AF1506")).toBeOnTheScreen();
+    expect(view.getByText("Appareil")).toBeOnTheScreen();
+    expect(screen.getByTestId("passage-tail-h1")).toBeOnTheScreen();
+    expect(styleOf("passage-card-h1").backgroundColor).toBe(card.theme.bg);
+    expect(StyleSheet.flatten(view.getByText("EN CE").props.style).color).toBe(card.theme.big);
+    expect(StyleSheet.flatten(view.getByText("Au-dessus de vous").props.style).color).toBe(card.theme.small);
+    expect(view.queryAllByText(/^\d{2}:\d{2}$/)).toHaveLength(1);
+  });
+
+  it("renders the arrow once the heading is known", async () => {
+    const [card] = cardsOf({ overhead: passage("h1") }, 100);
+    if (!card) throw new Error("missing overhead card");
+    await renderCard(card);
+    const arrow = screen.getByTestId("passage-arrow-h1", { includeHiddenElements: true });
+    expect(StyleSheet.flatten(arrow.props.style).transform).toEqual([{ rotate: `${card.arrowAngleDeg}deg` }]);
   });
 });

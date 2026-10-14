@@ -192,7 +192,7 @@ function expectNear(actual: number, expected: number, tolerance: number) {
   expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tolerance);
 }
 
-describe.skip("SPEC-0004 useScene (rendering)", () => {
+describe("SPEC-0004 useScene (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });

@@ -70,3 +70,8 @@ Source : lecture de `node_modules/@sentry/react-native` et `expo export` le 2026
 - Plugin `app.json` : nom `@sentry/react-native/expo` (le script `sentry-expo-upload-sourcemaps` ne reconnaît que celui-là), options `organization` / `project`, jamais `authToken`. `SENTRY_DISABLE_AUTO_UPLOAD=true` coupe l'envoi pendant les builds EAS.
 - Metro : `getSentryExpoConfig(__dirname)` depuis `@sentry/react-native/metro` remplace `getDefaultConfig` (Debug ID dans les bundles).
 - `expo export` n'écrit les `.map` qu'avec `--source-maps` ; sans eux, `sentry-expo-upload-sourcemaps dist` saute chaque bundle sans échouer. Il lit `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` dans l'environnement. `sentry-cli` : `@sentry/cli` 2.58.4, lancé par `npx --package=@sentry/cli@2.58.4 sentry-cli`.
+
+## react-native-svg 15.15.4
+Source : lecture de `node_modules/react-native-svg` et rendu sous `jest-expo` le 2026-10-14.
+- `G` prend `transform` en chaîne (`"matrix(-1 0 0 1 300 0)"`) ; `ClipPath` va dans `Defs` et s'applique par `clipPath="url(#id)"` sur un `G`.
+- Piège : les `id` de `ClipPath` sont globaux à l'écran, un identifiant par instance (`useId`). Sous Jest, les couleurs sont des entiers ARGB dans `toJSON()`.

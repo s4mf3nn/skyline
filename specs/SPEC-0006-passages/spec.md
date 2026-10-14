@@ -58,7 +58,7 @@ Source de démonstration (Vitest, même fichier) :
 - Instantané en retard ou source indisponible : relève de SPEC-0004 (CA17) et SPEC-0008.
 
 ## Contrat d'interface
-`src/features/passages/service.ts` (logique pure ; seuls imports : `src/shared/airlines/index.ts` et `src/shared/scene/index.ts`) :
+`src/features/passages/service.ts` (logique pure ; seuls imports : `src/shared/airlines/index.ts`, `src/shared/scene/index.ts` et `src/shared/format/index.ts`). `formatMetric` et `flightLabel` sont définies dans `src/shared/format/index.ts` (SPEC-0005, CA18) et ré-exportées par `service.ts`, avec la même signature :
 
 ```ts
 type CardKind = "overhead" | "upcoming"
@@ -139,7 +139,7 @@ buildCards(input: { scene: Scene; nowMs: number; headingDeg: number | null; time
 - Heure de passage en 24 h, fuseau de l'appareil, secondes tronquées ; vol en forme IATA par le premier code IATA de la compagnie ; milliers séparés par une espace insécable.
 - Jauge de visibilité : de l'entrée dans la fenêtre à sa fin, 100 % en fin de fenêtre ; nom accessible « Visibilité ».
 - Page Prochains passages d'`order` 1, toujours présente.
-- `flightLabel` reste dans `src/features/passages/service.ts` : SPEC-0005 en dépend (roadmap amendée) et l'importe par l'`index.ts` de Passages, qui le ré-exporte (voir « Contrat d'interface »).
+- `flightLabel` et `formatMetric` vivent dans `src/shared/format/index.ts` (SPEC-0005, CA18) : Ciel ne peut pas importer l'`index.ts` de Passages sous Vitest. `service.ts` les ré-exporte, donc le contrat de test de cette spec ne change pas (voir « Contrat d'interface »).
 
 ## Questions ouvertes
 Aucune.

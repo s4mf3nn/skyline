@@ -19,6 +19,7 @@
     "verify:quiet": "node scripts/verify-quiet.mjs",
     "tokens": "node scripts/token-report.mjs",
     "dashboard": "node scripts/dashboard.mjs",
+    "progress": "node scripts/progress-table.mjs",
     "prepare": "lefthook install || true",
     "test:native": "jest --json --outputFile=$CONTRACT_REPORT",
     "test:render": "jest --passWithNoTests src",

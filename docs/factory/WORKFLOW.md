@@ -183,3 +183,7 @@ Prérequis de la phase 3, où plus personne ne lit les PR `risk:low` : des scén
 ## Sobriété en tokens
 
 Les mesures qui limitent la consommation (extrait de tâche, cache Context7, vérification silencieuse, pré-revue par script, niveaux de revue, modèles par commande) sont décrites dans `docs/factory/TOKENS.md`.
+
+## Tableau d'avancement
+
+`docs/PROGRESS.md` donne en un coup d'œil, pour chaque spec, où en sont la spec, le plan, l'implémentation, la livraison et la mise en production. Il est généré par `scripts/progress-table.mjs` (`pnpm progress` pour le produire en local) et recommité sur `main` par le workflow `progress` après chaque fusion. Ne jamais l'éditer à la main.

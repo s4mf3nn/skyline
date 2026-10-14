@@ -23,7 +23,7 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | SPEC-0002 | Thème et table des compagnies | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0003 | Pager à deux pages | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
-| SPEC-0006 | Carrousel Prochains passages | ✅ | ✅ | ⬜ 0/4 | ⬜ | ⬜ | Prêt à implémenter |
+| SPEC-0006 | Carrousel Prochains passages | ✅ | ✅ | 🟡 1/4 | ⬜ | ⬜ | En cours |
 | SPEC-0005 | Écran Ciel et présence de Ciel dans le pager | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0007 | Données réelles adsb.lol | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0008 | États d'interface | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
@@ -43,6 +43,5 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Prochaines actions
 
-- /implement SPEC-0006 T1 : Groupe 1 (parallèle) débloqué
-- /implement SPEC-0006 T2 : Groupe 1 (parallèle) débloqué
+- /land 80 : T2 en revue
 - workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004

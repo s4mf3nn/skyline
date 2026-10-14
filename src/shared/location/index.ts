@@ -6,6 +6,9 @@ export interface Position {
   longitude: number;
 }
 
+/** Résultat d'une acquisition de l'observateur : sa position, ou le refus de la permission. */
+export type ObserverFix = { status: "granted"; position: Position } | { status: "denied" };
+
 export interface LocationService {
   requestPermission(): Promise<LocationPermission>;
   /** Rejette avec `LOCATION_DENIED` si la permission est refusée. */
@@ -14,4 +17,5 @@ export interface LocationService {
   watchHeading(onHeading: (degrees: number) => void): () => void;
 }
 
+export { acquireObserver } from "./acquire";
 export { createFakeLocation } from "./fake";

@@ -8,5 +8,8 @@ module.exports = {
   testMatch: holdout
     ? ["<rootDir>/tests/holdout/**/*.native.test.tsx", "<rootDir>/tests/holdout/**/SPEC-*.native.test.tsx"]
     : ["<rootDir>/src/**/*.native.test.tsx", "<rootDir>/tests/acceptance/SPEC-*.native.test.tsx"],
+  // Gesture Handler : module natif remplacé par un faux, pour rejouer les gestes avec `fireGestureHandler`.
+  setupFiles: ["react-native-gesture-handler/jestSetup.js"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.cjs"],
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
 };

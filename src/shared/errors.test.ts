@@ -13,4 +13,9 @@ describe("AppError", () => {
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe("AppError");
   });
+
+  it("carries the INVALID_COLOR code", () => {
+    const error = new AppError("INVALID_COLOR", "Invalid color: rouge");
+    expect(error.code).toBe("INVALID_COLOR");
+  });
 });

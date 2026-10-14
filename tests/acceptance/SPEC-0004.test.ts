@@ -99,7 +99,7 @@ function expectNear(actual: number, expected: number, tolerance: number) {
 }
 const SECOND = 1000;
 
-describe.skip("SPEC-0004 scene computation", () => {
+describe("SPEC-0004 scene computation", () => {
   it("CA1 : measures the ground distance in km, symmetric and zero for the same position", async () => {
     const { groundDistanceKm } = await scene();
     expectNear(groundDistanceKm(OBSERVER, at(30, 40)), 50, 0.1);
@@ -428,7 +428,7 @@ describe.skip("SPEC-0004 scene computation", () => {
   });
 });
 
-describe.skip("SPEC-0004 observer acquisition and foreground", () => {
+describe("SPEC-0004 observer acquisition and foreground", () => {
   const position: Position = { latitude: 45.764, longitude: 4.8357 };
 
   function stub(overrides: Partial<LocationService>): LocationService & { positionReads: number } {

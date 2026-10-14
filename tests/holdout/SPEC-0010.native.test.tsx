@@ -108,8 +108,8 @@ describe("SPEC-0010 holdout : dérives réelles (rendering)", () => {
     expect(screen.getByTestId("ciel-livery").props.source).toEqual(sourceOf("DLH400"));
     expect(livery("bb0002")?.props.source).toEqual(sourceOf("DLH400"));
 
-    // Autre survol, d'une compagnie sans livrée dans l'application : la dérive générique remplace l'image.
-    harness.adsb.setAircraft([plane("bb0003", "TOM812", -1, 1)]);
+    // Autre survol, d'une compagnie inconnue : la dérive générique remplace l'image.
+    harness.adsb.setAircraft([plane("bb0003", "ZZZ812", -1, 1)]);
     await refresh(harness);
     expect(screen.queryByTestId("ciel-livery")).toBeNull();
     expect(screen.getByTestId("ciel-tail")).toBeOnTheScreen();

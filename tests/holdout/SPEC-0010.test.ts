@@ -39,21 +39,23 @@ describe("SPEC-0010 holdout : dérives réelles (logique pure)", () => {
       expect(resolveAirline(callsign).name).toBe(resolveAirline("KLM1234").name);
       expect(hasLivery(resolveAirline(callsign))).toBe(true);
     }
-    for (const callsign of ["VIR3", "VS3", "KLM", "F-HBXA", "N123AB", "", "KLM 1234"]) {
+    for (const callsign of ["KLM", "F-HBXA", "N123AB", "", "KLM 1234"]) {
       expect(hasLivery(resolveAirline(callsign))).toBe(false);
     }
   });
 
-  it("covers every airline of the table consistently, with the unknown airline and the excluded four without image", async () => {
-    const { AIRLINES, UNKNOWN_AIRLINE, LIVERY_CODES, hasLivery } = await airlines();
+  it("covers every airline of the table consistently, with the unknown airline without image, and the shared TUI and Virgin images", async () => {
+    const { AIRLINES, UNKNOWN_AIRLINE, LIVERY_CODES, hasLivery, resolveAirline } = await airlines();
     const withLivery = AIRLINES.filter((airline) => hasLivery(airline));
     expect(withLivery.map((airline) => airline.code).sort()).toEqual([...LIVERY_CODES].sort());
     expect(hasLivery(UNKNOWN_AIRLINE)).toBe(false);
     for (const code of ["JAF", "TOM", "VIR", "VOZ"]) {
       const airline = AIRLINES.find((candidate) => candidate.code === code);
       expect(airline).toBeDefined();
-      expect(hasLivery(airline as Airline)).toBe(false);
+      expect(hasLivery(airline as Airline)).toBe(true);
     }
+    expect(hasLivery(resolveAirline("VIR3"))).toBe(true);
+    expect(hasLivery(resolveAirline("VS3"))).toBe(true);
     // Les compagnies sans livrée existent (le catalogue n'en a pas pour toutes) : le repli reste utile.
     expect(AIRLINES.length).toBeGreaterThan(withLivery.length);
   });

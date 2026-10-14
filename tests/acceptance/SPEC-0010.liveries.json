@@ -1,24 +1,7 @@
 {
   "source": "airlines-scraper, package/data/airlines.json (version 2), images.livery, instantané du 2026-10-14",
-  "note": "Livrées d'Inflight Feed copiées telles quelles (octets identiques). Les compagnies dont l'image est identique à celle d'une autre compagnie sont exclues (INV8).",
-  "excluded": [
-    {
-      "code": "JAF",
-      "name": "TUI Fly Belgium"
-    },
-    {
-      "code": "TOM",
-      "name": "TUI Airways"
-    },
-    {
-      "code": "VIR",
-      "name": "Virgin Atlantic"
-    },
-    {
-      "code": "VOZ",
-      "name": "Virgin Australia"
-    }
-  ],
+  "note": "Livrées d'Inflight Feed copiées telles quelles (octets identiques). Deux paires de compagnies partagent une image identique (TUI : JAF et TOM ; Virgin : VIR et VOZ), décision du propriétaire.",
+  "excluded": [],
   "liveries": [
     {
       "code": "AAL",
@@ -525,6 +508,13 @@
       "sha256": "882e5c7b4488bf3910eb57220b2e0d93449b0e24e76b625fdab33a5a176dc4ed"
     },
     {
+      "code": "JAF",
+      "name": "TUI Fly Belgium",
+      "file": "JAF.png",
+      "bytes": 55833,
+      "sha256": "bf9b1eb813eaf96f4fae53de585e3575fe9215c1482737f2106ecb4557fdc7c4"
+    },
+    {
       "code": "JAL",
       "name": "Japan Airlines",
       "file": "JAL.png",
@@ -875,6 +865,13 @@
       "sha256": "c4dab20aabf174d43ea92df0b06e6c65f3271290f1be9648c29285332e1c6137"
     },
     {
+      "code": "TOM",
+      "name": "TUI Airways",
+      "file": "TOM.png",
+      "bytes": 55833,
+      "sha256": "bf9b1eb813eaf96f4fae53de585e3575fe9215c1482737f2106ecb4557fdc7c4"
+    },
+    {
       "code": "TRA",
       "name": "Transavia",
       "file": "TRA.png",
@@ -917,6 +914,13 @@
       "sha256": "9f52ea86ff9277a0884ccea7f9c9152c286cd72d5949f1f18ac98acdc262b1ce"
     },
     {
+      "code": "VIR",
+      "name": "Virgin Atlantic",
+      "file": "VIR.png",
+      "bytes": 61318,
+      "sha256": "1af80e91848feda5827b4cd8d67655ca76b53430371028cb00ee219397ef963f"
+    },
+    {
       "code": "VJC",
       "name": "Vietjetair",
       "file": "VJC.png",
@@ -936,6 +940,13 @@
       "file": "VOI.png",
       "bytes": 49462,
       "sha256": "2dea09ce092e5225e02ab77477dccb29e9af2353cabcb7be5d204992d5fbfb81"
+    },
+    {
+      "code": "VOZ",
+      "name": "Virgin Australia",
+      "file": "VOZ.png",
+      "bytes": 61318,
+      "sha256": "1af80e91848feda5827b4cd8d67655ca76b53430371028cb00ee219397ef963f"
     },
     {
       "code": "WJA",

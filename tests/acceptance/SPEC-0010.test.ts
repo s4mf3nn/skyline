@@ -39,7 +39,10 @@ const snapshot: Snapshot = JSON.parse(
   fs.readFileSync(path.resolve("tests/acceptance/SPEC-0010.liveries.json"), "utf8"),
 );
 const SNAPSHOT_CODES = snapshot.liveries.map((entry) => entry.code);
-const EXCLUDED_CODES = ["JAF", "TOM", "VIR", "VOZ"];
+const SHARED_PAIRS = [
+  ["JAF", "TOM"],
+  ["VIR", "VOZ"],
+];
 const HANDOFF_CODES = ["IBE", "AFR", "EZY", "DLH", "KLM", "RYR", "VLG", "TAP"];
 const TAILS_DIR = path.resolve("assets/tails");
 const airlines = () => load<AirlinesModule>("src/shared/airlines/index.ts");
@@ -47,13 +50,12 @@ const airlines = () => load<AirlinesModule>("src/shared/airlines/index.ts");
 describe.skip("SPEC-0010 Dérives réelles (logique pure)", () => {
   it("CA1 : lists exactly the codes of the authorized liveries, among the table airlines", async () => {
     const { AIRLINES, UNKNOWN_AIRLINE, LIVERY_CODES } = await airlines();
-    expect(SNAPSHOT_CODES).toHaveLength(133);
+    expect(SNAPSHOT_CODES).toHaveLength(137);
     expect(new Set(LIVERY_CODES).size).toBe(LIVERY_CODES.length);
     expect([...LIVERY_CODES].sort()).toEqual([...SNAPSHOT_CODES].sort());
     const tableCodes = new Set(AIRLINES.map((airline) => airline.code));
     for (const code of LIVERY_CODES) expect(tableCodes.has(code)).toBe(true);
-    for (const code of EXCLUDED_CODES) expect(LIVERY_CODES).not.toContain(code);
-    expect(snapshot.excluded.map((entry) => entry.code).sort()).toEqual([...EXCLUDED_CODES].sort());
+    for (const code of SHARED_PAIRS.flat()) expect(LIVERY_CODES).toContain(code);
     expect(LIVERY_CODES).not.toContain(UNKNOWN_AIRLINE.code);
     for (const code of HANDOFF_CODES) expect(LIVERY_CODES).toContain(code);
   });
@@ -62,17 +64,17 @@ describe.skip("SPEC-0010 Dérives réelles (logique pure)", () => {
     const { AIRLINES, UNKNOWN_AIRLINE, LIVERY_CODES, resolveAirline, hasLivery } = await airlines();
     expect(hasLivery(resolveAirline("AFR1506"))).toBe(true);
     expect(hasLivery(resolveAirline("EZY4617"))).toBe(true);
-    expect(hasLivery(resolveAirline("VIR3"))).toBe(false);
-    expect(hasLivery(resolveAirline("TOM123"))).toBe(false);
+    expect(hasLivery(resolveAirline("VIR3"))).toBe(true);
+    expect(hasLivery(resolveAirline("TOM123"))).toBe(true);
     expect(hasLivery(resolveAirline("ZZZ123"))).toBe(false);
     expect(hasLivery(resolveAirline(null))).toBe(false);
     expect(hasLivery(UNKNOWN_AIRLINE)).toBe(false);
     for (const airline of AIRLINES) expect(hasLivery(airline)).toBe(LIVERY_CODES.includes(airline.code));
     const withoutLivery = AIRLINES.filter((airline) => !LIVERY_CODES.includes(airline.code));
-    expect(withoutLivery.length).toBeGreaterThanOrEqual(EXCLUDED_CODES.length);
+    expect(withoutLivery.length).toBeGreaterThan(0);
   });
 
-  it("CA3 : assets/tails holds exactly the authorized files, byte for byte", () => {
+  it("CA3 : assets/tails holds exactly the authorized files, byte for byte, with only the declared shared images", () => {
     const names = fs.readdirSync(TAILS_DIR).sort();
     expect(names).toEqual(snapshot.liveries.map((entry) => entry.file).sort());
     for (const entry of snapshot.liveries) {
@@ -83,9 +85,11 @@ describe.skip("SPEC-0010 Dérives réelles (logique pure)", () => {
       expect(bytes.length).toBe(entry.bytes);
       expect(crypto.createHash("sha256").update(bytes).digest("hex")).toBe(entry.sha256);
     }
-    for (const code of EXCLUDED_CODES) {
-      expect(names.some((name) => name.startsWith(`${code}.`))).toBe(false);
-    }
+    // Seules les paires déclarées partagent une image : tout autre doublon serait l'image d'une autre compagnie.
+    const byHash = new Map<string, string[]>();
+    for (const entry of snapshot.liveries) byHash.set(entry.sha256, [...(byHash.get(entry.sha256) ?? []), entry.code]);
+    const shared = [...byHash.values()].filter((codes) => codes.length > 1).map((codes) => [...codes].sort());
+    expect(shared.sort()).toEqual(SHARED_PAIRS.map((pair) => [...pair].sort()).sort());
   });
 
   it("CA4 : exposes the credit notice verbatim", async () => {

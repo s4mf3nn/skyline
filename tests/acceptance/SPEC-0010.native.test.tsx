@@ -1,5 +1,5 @@
 import { act, render, screen, within } from "@testing-library/react-native";
-import { StyleSheet } from "react-native";
+import { Image, StyleSheet } from "react-native";
 import { createApp, type Feature } from "../../src/app";
 import { type Aircraft, createFakeAdsbSource } from "../../src/shared/adsb";
 import { createFakeClock } from "../../src/shared/clock";
@@ -64,9 +64,9 @@ function plane(hex: string, callsign: string | null, eastKm: number, northKm: nu
 
 // Survol en cours : dans sa fenêtre de ±5 km dès le départ. Les passages à venir entrent dans leur fenêtre plus tard.
 const OVERHEAD_AFR = plane("3944ed", "AFR1015", -1, 1);
-const OVERHEAD_VIR = plane("3944ed", "VIR3", -1, 1);
+const OVERHEAD_UNKNOWN = plane("3944ed", "ZZZ3", -1, 1);
 const INBOUND_RYR = plane("4ca7b2", "RYR7KM", -40.1, 0);
-const INBOUND_VIR = plane("406a11", "VIR9", -60.1, 0);
+const INBOUND_NOLIVERY = plane("406a11", "ZZZ9", -60.1, 0);
 const INBOUND_UNKNOWN = plane("a0b1c2", "ZZZ123", -50.1, 0.3);
 const INBOUND_PRIVATE = plane("a0b1c3", null, -70.1, 0.3);
 
@@ -138,6 +138,7 @@ describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
     expect(image).toBeOnTheScreen();
     expect(image?.props.source).toEqual(expectedSource("AFR1015"));
     expect(image?.props.accessibilityLabel).toBe(expectedLabel("AFR1015"));
+    expect(within(screen.getByTestId("passage-card-3944ed")).getByTestId("passage-livery-3944ed")).toBeOnTheScreen();
     expect(tail("3944ed")).toBeNull();
   });
 
@@ -151,8 +152,8 @@ describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
     expect(screen.queryByTestId("ciel-tail")).toBeNull();
   });
 
-  it("CA9 : keeps the generic tail without livery for unknown, excluded or callsign-less aircraft", async () => {
-    const harness = setup([OVERHEAD_VIR, INBOUND_UNKNOWN, INBOUND_VIR, INBOUND_PRIVATE]);
+  it("CA9 : keeps the generic tail without livery for unknown or callsign-less aircraft", async () => {
+    const harness = setup([OVERHEAD_UNKNOWN, INBOUND_UNKNOWN, INBOUND_NOLIVERY, INBOUND_PRIVATE]);
     await render(<harness.App />);
     await settle();
     for (const hex of ["3944ed", "a0b1c2", "406a11", "a0b1c3"]) {
@@ -177,6 +178,11 @@ describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
       expect(livery(hex)).toBeOnTheScreen();
       expect(StyleSheet.flatten(screen.getByTestId(`passage-card-${hex}`).props.style).backgroundColor).toBe(theme.bg);
     }
+    // Même géométrie que SPEC-0006 (CA12) : entrée dans la fenêtre à 175,5 s, compte à rebours 02:56.
+    const rynairTheme = airlineTheme(resolveAirline("RYR7KM"));
+    const rynairCard = within(screen.getByTestId("passage-card-4ca7b2"));
+    expect(StyleSheet.flatten(rynairCard.getByText("02:56").props.style).color).toBe(rynairTheme.big);
+    expect(StyleSheet.flatten(rynairCard.getByText("Passe à").props.style).color).toBe(rynairTheme.small);
   });
 
   it("CA11 : follows the aircraft when a refresh changes the airline shown", async () => {
@@ -187,7 +193,7 @@ describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
     expect(livery("4ca7b2")?.props.source).toEqual(expectedSource("RYR7KM"));
 
     // Le survol devient un avion sans livrée, et l'avion à venir change de compagnie (même `hex`).
-    harness.adsb.setAircraft([OVERHEAD_VIR, plane("4ca7b2", "EZY4617", -40.1, 0)]);
+    harness.adsb.setAircraft([OVERHEAD_UNKNOWN, plane("4ca7b2", "EZY4617", -40.1, 0)]);
     await act(async () => {
       harness.lifecycle.enterForeground();
     });
@@ -207,6 +213,8 @@ describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
     const logs = (["log", "info", "warn", "error"] as const).map((level) =>
       jest.spyOn(console, level).mockImplementation(() => undefined),
     );
+    const prefetch = jest.spyOn(Image, "prefetch").mockResolvedValue(true);
+    const queryCache = jest.spyOn(Image, "queryCache").mockResolvedValue({});
     try {
       const harness = setup([OVERHEAD_AFR, INBOUND_RYR]);
       await render(<harness.App />);
@@ -214,6 +222,8 @@ describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
       expect(screen.getByTestId("ciel-livery")).toBeOnTheScreen();
       expect(livery("4ca7b2")).toBeOnTheScreen();
       expect(fetchSpy).not.toHaveBeenCalled();
+      expect(prefetch).not.toHaveBeenCalled();
+      expect(queryCache).not.toHaveBeenCalled();
       expect(harness.monitoring.events).toEqual([]);
       for (const spy of logs) expect(spy).not.toHaveBeenCalled();
     } finally {

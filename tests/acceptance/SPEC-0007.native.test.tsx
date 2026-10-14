@@ -280,6 +280,27 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     expect(readyState().scene.upcoming).toEqual([]);
   });
 
+  it("CA12 : treats an untyped error of the source like an unavailable source, without logging", async () => {
+    const logs = [
+      jest.spyOn(console, "log"),
+      jest.spyOn(console, "info"),
+      jest.spyOn(console, "warn"),
+      jest.spyOn(console, "error"),
+    ];
+    const harness = setup({ aircraft: [INBOUND] });
+    await render(<harness.App />);
+    await settle();
+    const first = readyState();
+
+    harness.failWith(new TypeError("Network request failed"));
+    await elapse(harness.clock, 20);
+    expect(harness.queries).toHaveLength(3);
+    expect(readyState().snapshotAtMs).toBe(first.snapshotAtMs);
+    expect(readyState().scene.upcoming.map((passage) => passage.hex)).toEqual(["a1"]);
+    expect(harness.monitoring.events).toEqual([]);
+    for (const spy of logs) expect(spy).not.toHaveBeenCalled();
+  });
+
   it("CA12 : stays unavailable and keeps retrying every 10 seconds until the first success, without reporting or logging", async () => {
     const logs = [
       jest.spyOn(console, "log"),
@@ -326,7 +347,12 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
   });
 
   it("CA14 : cancels the cadence when unmounted", async () => {
-    const error = jest.spyOn(console, "error");
+    const logs = [
+      jest.spyOn(console, "log"),
+      jest.spyOn(console, "info"),
+      jest.spyOn(console, "warn"),
+      jest.spyOn(console, "error"),
+    ];
     const harness = setup({ aircraft: [INBOUND] });
     const view = await render(<harness.App />);
     await settle();
@@ -335,7 +361,7 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     view.unmount();
     await elapse(harness.clock, 40);
     expect(harness.queries).toHaveLength(1);
-    expect(error).not.toHaveBeenCalled();
+    for (const spy of logs) expect(spy).not.toHaveBeenCalled();
   });
 
   it("CA15 : refresh() queries at once and does not shift the 10 second deadline", async () => {
@@ -445,7 +471,12 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
   });
 
   it("CA14 : ignores the answer of a request that was in flight when unmounted", async () => {
-    const error = jest.spyOn(console, "error");
+    const logs = [
+      jest.spyOn(console, "log"),
+      jest.spyOn(console, "info"),
+      jest.spyOn(console, "warn"),
+      jest.spyOn(console, "error"),
+    ];
     const harness = setup({ aircraft: [INBOUND], holdSource: true });
     const view = await render(<harness.App />);
     await settle();
@@ -455,6 +486,6 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     harness.release();
     await elapse(harness.clock, 30);
     expect(harness.queries).toHaveLength(1);
-    expect(error).not.toHaveBeenCalled();
+    for (const spy of logs) expect(spy).not.toHaveBeenCalled();
   });
 });

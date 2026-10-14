@@ -21,7 +21,7 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | SPEC-0000 | Bootstrap du projet | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0001 | Livraison, cible réelle et observabilité | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0002 | Thème et table des compagnies | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
-| SPEC-0003 | Pager à deux pages | ✅ | ✅ | ⬜ 0/3 | ⬜ | ⬜ | Prêt à implémenter |
+| SPEC-0003 | Pager à deux pages | ✅ | ✅ | 🟡 1/3 | ⬜ | ⬜ | En cours |
 | SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0006 | Carrousel Prochains passages | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0005 | Écran Ciel sur une source ADS-B de démonstration (branchée en dévelop… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | Spec à écrire |
@@ -43,7 +43,7 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Prochaines actions
 
-- /implement SPEC-0003 T1 : Groupe 1 (parallèle) débloqué
+- /implement SPEC-0003 T2 : Groupe 2 (après fusion du groupe 1) débloqué
 - /plan SPEC-0004 : spec fusionnée, dépendances livrées
 - /new-spec Écran Ciel sur une source ADS-B de démonstration (branchée en développement seulement, jamais dans un build livré) : couleurs de la compagnie survola…
 - workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002

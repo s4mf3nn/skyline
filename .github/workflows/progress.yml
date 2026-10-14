@@ -1,0 +1,46 @@
+name: progress
+
+# Régénère docs/PROGRESS.md (tableau d'avancement global) après chaque fusion sur main.
+# Le commit est posé par le jeton du workflow : il ne redéclenche pas de workflow, donc pas de boucle.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/PROGRESS.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: progress
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Régénérer le tableau
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/progress-table.mjs
+      - name: Commiter si le tableau a changé
+        run: |
+          git add docs/PROGRESS.md
+          if git diff --cached --quiet -- docs/PROGRESS.md; then
+            echo "Tableau inchangé."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(factory): mise à jour du tableau d'avancement"
+          git pull --rebase --quiet origin "$(git branch --show-current)"
+          git push

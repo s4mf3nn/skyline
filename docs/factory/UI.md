@@ -17,7 +17,8 @@ Les couleurs de compagnie sont calculées à l'exécution et passées en `style`
 Rayons, mesures et graisses condensées : ajoutés par la spec du thème.
 
 ## Composants de base
-Aucun à ce stade. Un composant partagé vit dans `src/shared/` et est listé ici avec son rôle.
+Un composant partagé vit dans `src/shared/` et est listé ici avec son rôle.
+- `Pager` (`src/shared/pager/`) : deux écrans côte à côte, glissement horizontal et indicateur de page réglable (« Indicateur de page », valeur « Page 1 sur 2 »).
 
 ## États standard
 Aucun à ce stade. Chargement, vide et erreur sont définis par la première spec qui les affiche, puis réutilisés.

@@ -75,3 +75,15 @@ Source : lecture de `node_modules/@sentry/react-native` et `expo export` le 2026
 Source : lecture de `node_modules/react-native-svg` et rendu sous `jest-expo` le 2026-10-14.
 - `G` prend `transform` en chaîne (`"matrix(-1 0 0 1 300 0)"`) ; `ClipPath` va dans `Defs` et s'applique par `clipPath="url(#id)"` sur un `G`.
 - Piège : les `id` de `ClipPath` sont globaux à l'écran, un identifiant par instance (`useId`). Sous Jest, les couleurs sont des entiers ARGB dans `toJSON()`.
+
+## react-native-reanimated 4.5.1 / react-native-worklets 0.10.1
+Source : lecture de `node_modules` (`lib/typescript`) et exécution de `jest` le 2026-10-14 ; Context7 `/software-mansion/react-native-reanimated/4.1.5` pour la règle des worklets importés.
+- Une fonction importée d'un autre fichier n'est pas transformée seule en worklet : elle porte la directive `'worklet';` (vérifiée à la 4.5.1 : le plugin worklets est inclus dans `babel-preset-expo`, aucune modification de `babel.config.cjs`).
+- Pont fil d'interface vers JS : `scheduleOnRN(fn, ...args)` de `react-native-worklets` (`runOnJS` existe encore dans Reanimated mais l'ancien nom).
+- Transition CSS : `transitionProperty` (tableau de propriétés) et `transitionDuration` (ms) dans le `style` d'un `Animated.View` ; `toHaveStyle` lit la valeur d'arrivée sous Jest.
+- Jest : `jest.mock("react-native-worklets", () => require("react-native-worklets/lib/module/mock"))` puis `require("react-native-reanimated").setUpTests()` dans `setupFilesAfterEnv`, sinon le module natif manque (`loadUnpackers`).
+
+## react-native-gesture-handler 2.32
+Source : lecture de `node_modules` (`jestSetup.js`, `lib/typescript/jestUtils`) et exécution de `jest` le 2026-10-14.
+- Jest : `setupFiles: ["react-native-gesture-handler/jestSetup.js"]` ; `fireGestureHandler(getByGestureTestId(id), [{ state }, { translationX }, { translationX, state }])` de `react-native-gesture-handler/jest-utils`, geste nommé par `.withTestId(id)`.
+- `fireGestureHandler` rejoue `onUpdate` / `onEnd`, pas `onTouchesMove` : l'activation manuelle n'est pas couverte. Dans RNTL 14, `fireEvent` et `act` s'attendent (`await`).

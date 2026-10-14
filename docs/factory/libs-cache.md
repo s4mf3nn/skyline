@@ -87,3 +87,8 @@ Source : lecture de `node_modules` (`lib/typescript`) et exécution de `jest` le
 Source : lecture de `node_modules` (`jestSetup.js`, `lib/typescript/jestUtils`) et exécution de `jest` le 2026-10-14.
 - Jest : `setupFiles: ["react-native-gesture-handler/jestSetup.js"]` ; `fireGestureHandler(getByGestureTestId(id), [{ state }, { translationX }, { translationX, state }])` de `react-native-gesture-handler/jest-utils`, geste nommé par `.withTestId(id)`.
 - `fireGestureHandler` rejoue `onUpdate` / `onEnd`, pas `onTouchesMove` : l'activation manuelle n'est pas couverte. Dans RNTL 14, `fireEvent` et `act` s'attendent (`await`).
+
+## react-native 0.86.3 (`AppState`)
+Source : `node_modules/react-native/Libraries/AppState/AppState.d.ts` le 2026-10-14.
+- `AppState.addEventListener("change", (state) => ...)` renvoie un objet avec `remove()` ; `AppState.currentState` vaut `active | background | inactive | unknown | extension`.
+- Un retour au premier plan = passage de `background` ou `inactive` à `active`.

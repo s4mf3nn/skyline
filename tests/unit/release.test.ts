@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -8,6 +10,7 @@ interface Step {
 }
 interface Release {
   readProfile(env: Record<string, string | undefined>): "preview" | "production";
+  removeSourceMaps(dir: string): void;
   releaseSteps(profile: "preview" | "production", sha: string): Step[];
 }
 
@@ -36,14 +39,18 @@ describe("scripts/release.mjs releaseSteps", () => {
   it("builds with auto-submit and updates the production channel", () => {
     const steps = release.releaseSteps("production", "abc123").map(line);
     expect(steps[0]).toBe("eas build --platform all --profile production --non-interactive --auto-submit");
-    expect(steps[2]).toBe("eas update --channel production --message abc123 --skip-bundler --non-interactive");
+    expect(steps.find((step) => step.startsWith("eas update"))).toBe(
+      "eas update --channel production --message abc123 --skip-bundler --non-interactive",
+    );
   });
 
   it("builds without submission and updates the preview channel", () => {
     const steps = release.releaseSteps("preview", "abc123").map(line);
     expect(steps[0]).toBe("eas build --platform all --profile preview --non-interactive");
     expect(steps[0]).not.toContain("--auto-submit");
-    expect(steps[2]).toBe("eas update --channel preview --message abc123 --skip-bundler --non-interactive");
+    expect(steps.find((step) => step.startsWith("eas update"))).toBe(
+      "eas update --channel preview --message abc123 --skip-bundler --non-interactive",
+    );
   });
 
   it("exports the bundle before publishing it with --skip-bundler", () => {
@@ -54,10 +61,47 @@ describe("scripts/release.mjs releaseSteps", () => {
     expect(exportIndex).toBeLessThan(updateIndex);
   });
 
+  it("uploads the sourcemaps and removes them before publishing, then finalizes the release", () => {
+    const steps = release.releaseSteps("production", "abc123").map((step) => `${step.cmd} ${line(step)}`);
+    const position = (needle: string) => steps.findIndex((step) => step.includes(needle));
+    const order = [
+      "expo export",
+      "releases new abc123",
+      "sentry-expo-upload-sourcemaps dist",
+      "--remove-maps",
+      "eas update",
+      "releases finalize abc123",
+    ].map(position);
+    expect(order.every((index) => index > -1)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it("exports the sourcemaps that the upload step reads", () => {
+    const exportStep = release.releaseSteps("preview", "abc123").find((step) => step.args[0] === "expo");
+    expect(exportStep?.args).toContain("--source-maps");
+  });
+
   it("never passes a secret as an argument", () => {
     for (const profile of ["preview", "production"] as const) {
       const args = release.releaseSteps(profile, "abc123").flatMap((step) => step.args);
       expect(args.join(" ")).not.toMatch(/token|EXPO_TOKEN|SENTRY_AUTH_TOKEN|DSN/i);
     }
+  });
+});
+
+describe("scripts/release.mjs removeSourceMaps", () => {
+  it("removes nested .map files and keeps bundles and assets", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "skyline-dist-"));
+    mkdirSync(path.join(dir, "_expo", "js"), { recursive: true });
+    writeFileSync(path.join(dir, "_expo", "js", "entry.hbc"), "bundle");
+    writeFileSync(path.join(dir, "_expo", "js", "entry.hbc.map"), "map");
+    writeFileSync(path.join(dir, "index.js.map"), "map");
+    writeFileSync(path.join(dir, "metadata.json"), "{}");
+    release.removeSourceMaps(dir);
+    expect(existsSync(path.join(dir, "_expo", "js", "entry.hbc.map"))).toBe(false);
+    expect(existsSync(path.join(dir, "index.js.map"))).toBe(false);
+    expect(existsSync(path.join(dir, "_expo", "js", "entry.hbc"))).toBe(true);
+    expect(existsSync(path.join(dir, "metadata.json"))).toBe(true);
+    rmSync(dir, { recursive: true });
   });
 });

@@ -64,3 +64,9 @@ Source : lecture de `node_modules` et exécution de `jest` le 2026-10-13.
 Source : `npx expo install expo-updates` (version du SDK 57) et registre npm le 2026-10-14 ; Context7 n'a pas de branche `sdk-57`.
 - `app.json` : `runtimeVersion: { policy: "appVersion" }`, `updates.url` = `https://u.expo.dev/<projectId>`, `extra.eas.projectId`.
 - `eas.json` : le canal se pose par profil de build (`channel`) ; `eas update --skip-bundler` publie `dist/` produit par `expo export`.
+
+## @sentry/react-native 7.11.0 (Expo : sourcemaps et Metro)
+Source : lecture de `node_modules/@sentry/react-native` et `expo export` le 2026-10-14.
+- Plugin `app.json` : nom `@sentry/react-native/expo` (le script `sentry-expo-upload-sourcemaps` ne reconnaît que celui-là), options `organization` / `project`, jamais `authToken`. `SENTRY_DISABLE_AUTO_UPLOAD=true` coupe l'envoi pendant les builds EAS.
+- Metro : `getSentryExpoConfig(__dirname)` depuis `@sentry/react-native/metro` remplace `getDefaultConfig` (Debug ID dans les bundles).
+- `expo export` n'écrit les `.map` qu'avec `--source-maps` ; sans eux, `sentry-expo-upload-sourcemaps dist` saute chaque bundle sans échouer. Il lit `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` dans l'environnement. `sentry-cli` : `@sentry/cli` 2.58.4, lancé par `npx --package=@sentry/cli@2.58.4 sentry-cli`.

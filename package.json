@@ -55,6 +55,7 @@
   "dependencies": {
     "@expo/log-box": "^57.0.4",
     "@expo/metro-runtime": "~57.0.16",
+    "@sentry/react-native": "~7.11.0",
     "expo": "57.0.28",
     "expo-constants": "~57.0.21",
     "expo-font": "~57.0.4",

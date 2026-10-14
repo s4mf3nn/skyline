@@ -6,12 +6,14 @@
   "build": {
     "preview": {
       "channel": "preview",
+      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" },
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "ios": { "simulator": true }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
     }
   },
   "submit": {

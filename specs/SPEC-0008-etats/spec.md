@@ -85,6 +85,7 @@ Prochains passages (SPEC-0006) lit `stateNotice` et `staleNotice` : à la place 
 - Mode nuit, traduction, textes en anglais.
 - Mentions légales dont l'attribution ODbL (propriétaire).
 - Toute modification du rafraîchissement, de la scène ou de la présence de Ciel (SPEC-0004, SPEC-0005, SPEC-0007).
+- Le maintien de Ciel sur un avion retenu quand les données vieillissent (INV9) : c'est la présence de Ciel, testée par SPEC-0005 ; cette spec ne teste que la ligne de données périmées quand Ciel est présent.
 
 ## Contraintes
 - Aucun calcul dans un `.tsx` (`docs/factory/UI.md`) : choix de la notice, délai et heure viennent de `src/shared/states/index.ts`.

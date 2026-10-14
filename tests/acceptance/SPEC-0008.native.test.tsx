@@ -102,9 +102,9 @@ function setup(options: SetupOptions = {}): Harness {
   if (options.holdFirstResponse) hold();
   const adsb: AdsbSource = {
     async fetchAircraft(query) {
-      const aircraft = await source.fetchAircraft(query);
+      // La réponse est retenue avant de joindre la source : `loading` reste observable même source indisponible.
       if (held !== null) await held;
-      return aircraft;
+      return source.fetchAircraft(query);
     },
   };
   const permission = { current: options.permission ?? ("granted" as LocationPermission) };
@@ -335,6 +335,7 @@ describe.skip("SPEC-0008 États d'interface (rendering)", () => {
     await elapse(harness.clock, SECOND);
     expect(screen.getByTestId("data-stale-notice-passages")).toBeOnTheScreen();
     expect(screen.getByText(staleText())).toBeOnTheScreen();
+    expect(screen.getByText(/^Données de \d{2}:\d{2} : mise à jour impossible$/)).toBeOnTheScreen();
     expect(cardIds()).toContain("passage-card-s1");
     expect(screen.queryByTestId("passages-notice-unavailable")).toBeNull();
   });

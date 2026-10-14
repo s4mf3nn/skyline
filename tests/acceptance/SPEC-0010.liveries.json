@@ -1,0 +1,966 @@
+{
+  "source": "airlines-scraper, package/data/airlines.json (version 2), images.livery, instantané du 2026-10-14",
+  "note": "Livrées d'Inflight Feed copiées telles quelles (octets identiques). Deux paires de compagnies partagent une image identique (TUI : JAF et TOM ; Virgin : VIR et VOZ), décision du propriétaire.",
+  "excluded": [],
+  "liveries": [
+    {
+      "code": "AAL",
+      "name": "American Airlines",
+      "file": "AAL.png",
+      "bytes": 78427,
+      "sha256": "da786009e091239128ede0a483c533d573b212d095e20de880a12c053c733251"
+    },
+    {
+      "code": "AAR",
+      "name": "Asiana Airlines",
+      "file": "AAR.png",
+      "bytes": 58940,
+      "sha256": "5a1d4e6aa80a95d85410b57a6719b449e9901515635212150147eb1c5d9c75a1"
+    },
+    {
+      "code": "AAY",
+      "name": "Allegiant",
+      "file": "AAY.png",
+      "bytes": 71207,
+      "sha256": "3ead837938b4b289fa9fd20c2fc886991b1856db0c82bcc00a08c13b48bea3c7"
+    },
+    {
+      "code": "ABY",
+      "name": "Air Arabia",
+      "file": "ABY.png",
+      "bytes": 54803,
+      "sha256": "89c7deb56a8ac78ab638ea2e79bdc122be9f063aeeb9529eaa5650ab9dc821d3"
+    },
+    {
+      "code": "ACA",
+      "name": "Air Canada",
+      "file": "ACA.png",
+      "bytes": 49440,
+      "sha256": "e9e4f81adcdc2e39f8232198e4a9824c8929924ac14826418a89fbfe1e4ebf22"
+    },
+    {
+      "code": "ACI",
+      "name": "Aircalin",
+      "file": "ACI.png",
+      "bytes": 70335,
+      "sha256": "908b7350c46ac1f0fd7f5e64ed0517fb9cebc0e69cb377dcdffd1cdd80e8163a"
+    },
+    {
+      "code": "AEA",
+      "name": "Air Europa",
+      "file": "AEA.png",
+      "bytes": 56317,
+      "sha256": "6c9fdcc44f0bd53f6344d656389367632781fdefc4a63900e56adbb466aba97c"
+    },
+    {
+      "code": "AEE",
+      "name": "Aegean Airlines",
+      "file": "AEE.png",
+      "bytes": 56999,
+      "sha256": "0d262c32cb18757ea0c778422ce2ad54791bd0ae37ac7a76af6a9e737633ea96"
+    },
+    {
+      "code": "AFL",
+      "name": "Aeroflot",
+      "file": "AFL.png",
+      "bytes": 66895,
+      "sha256": "4e8401c8c52a4eca1e19906f6e33e71205129d6f5cd59d9eb2148915ada2fc35"
+    },
+    {
+      "code": "AFR",
+      "name": "Air France",
+      "file": "AFR.png",
+      "bytes": 57897,
+      "sha256": "ca0a0f0c0fff3c2f6c895ba1aec9b40371cd29a5e934a62faa155a1a8b1801e4"
+    },
+    {
+      "code": "AHY",
+      "name": "Azerbaijan (AZAL) Airlines",
+      "file": "AHY.png",
+      "bytes": 71352,
+      "sha256": "cd681ae11fc6c476f7b05a9cb314d20c2e071a54536ef0f46dcdc143e1b0d7e1"
+    },
+    {
+      "code": "AIC",
+      "name": "Air India",
+      "file": "AIC.png",
+      "bytes": 72629,
+      "sha256": "339b4a55aa5a97f111edab4a25129f1f177f2fe0ba7f4a4abebf7a27736554fe"
+    },
+    {
+      "code": "ALK",
+      "name": "SriLankan Airlines",
+      "file": "ALK.png",
+      "bytes": 52836,
+      "sha256": "1839ec154af2343de118b29696e5593d0a527160ee2e0e05b59f5445b5a005a1"
+    },
+    {
+      "code": "AMX",
+      "name": "Aeromexico",
+      "file": "AMX.png",
+      "bytes": 47002,
+      "sha256": "c0b94a80387ed76ef0efb72f5a9af78c3cd4373a8e72715f1d7204edb635e573"
+    },
+    {
+      "code": "ANA",
+      "name": "ANA",
+      "file": "ANA.png",
+      "bytes": 58037,
+      "sha256": "62b3e36821d45c8d0d881bbd32ded9fdad1dc8472272799b9c680a12cbe636ca"
+    },
+    {
+      "code": "ANZ",
+      "name": "Air New Zealand",
+      "file": "ANZ.png",
+      "bytes": 39619,
+      "sha256": "3f71ce3bf7cb08376e047d8664556b01ef6a3ff453d275d7c50d72239d4d80c3"
+    },
+    {
+      "code": "APJ",
+      "name": "Peach",
+      "file": "APJ.png",
+      "bytes": 65758,
+      "sha256": "440324a29287f715beade3749174ad8545da3489387f8d0a7acf59ba0cea4b05"
+    },
+    {
+      "code": "ARG",
+      "name": "Aerolineas Argentinas",
+      "file": "ARG.png",
+      "bytes": 52922,
+      "sha256": "9b591d068c07ba18d9979370d9d9712bbc55a7495d1ceea0a07f03f33a8b0b4f"
+    },
+    {
+      "code": "ASA",
+      "name": "Alaska Airlines",
+      "file": "ASA.png",
+      "bytes": 64071,
+      "sha256": "94f9d4eb72479c397fb9d00e0be04b589174c29b728b24508bbd8f96ea4efb0b"
+    },
+    {
+      "code": "ASL",
+      "name": "Air Serbia",
+      "file": "ASL.png",
+      "bytes": 58379,
+      "sha256": "fd5566bbcd49d1167f2ec1e48ff2766b39f85bd0ed897fb8aed5be932bb86d79"
+    },
+    {
+      "code": "AUA",
+      "name": "Austrian",
+      "file": "AUA.png",
+      "bytes": 48347,
+      "sha256": "d30224f89d90852834ea73bf842f3e661d43d61a7028f92ca07741cf534aa868"
+    },
+    {
+      "code": "AUI",
+      "name": "Ukraine International Airlines",
+      "file": "AUI.png",
+      "bytes": 64511,
+      "sha256": "2c2e535a2453adc2bb6d79b5b244f53d349a040371850289e8c53eda1929b2b9"
+    },
+    {
+      "code": "AVA",
+      "name": "Avianca",
+      "file": "AVA.png",
+      "bytes": 52310,
+      "sha256": "6806ed336290328436332cd4a318c56e03ac8b7e6ccbe96654f4c8782cde3c35"
+    },
+    {
+      "code": "AXM",
+      "name": "Air Asia",
+      "file": "AXM.png",
+      "bytes": 57098,
+      "sha256": "d864ed5df81fe27b18a9cbafbb208f3cd5a951347f0e9d186f594b34784157ee"
+    },
+    {
+      "code": "AZU",
+      "name": "Azul Airlines",
+      "file": "AZU.png",
+      "bytes": 49748,
+      "sha256": "78d1e9aa7b84125f3630755fb1fed1acb860cc1ea1b66a1eb70dfc915d2461e6"
+    },
+    {
+      "code": "BAW",
+      "name": "British Airways",
+      "file": "BAW.png",
+      "bytes": 52581,
+      "sha256": "8197ad31bf4c58abdc17fe4cdfeaa23ec3cdc29bb7c215f5ff1421afaa5b2647"
+    },
+    {
+      "code": "BEL",
+      "name": "Brussels Airlines",
+      "file": "BEL.png",
+      "bytes": 47630,
+      "sha256": "f3cad93584e2aca7fd4d3364b9a6cb32a87ff896b9ce8aee46822f16022629cb"
+    },
+    {
+      "code": "BKP",
+      "name": "Bangkok Airways",
+      "file": "BKP.png",
+      "bytes": 55426,
+      "sha256": "32511264435e7e87ca642ef2a5bfed5bbe16a2bd1a40b62b2ed3344b222fdd63"
+    },
+    {
+      "code": "BTI",
+      "name": "Air Baltic",
+      "file": "BTI.png",
+      "bytes": 54281,
+      "sha256": "fdbacf25978d8397bacb3faa9da3b191186aef673cfbd3970fce6332fae4c16a"
+    },
+    {
+      "code": "BTK",
+      "name": "Batik Air",
+      "file": "BTK.png",
+      "bytes": 93455,
+      "sha256": "c09f13acecbf21dc28ddd684bc0cc6b08de14a4f3768d8a3b8b8bd5bf12d3313"
+    },
+    {
+      "code": "BWA",
+      "name": "Caribbean Airlines",
+      "file": "BWA.png",
+      "bytes": 60848,
+      "sha256": "609d7c71dba5fe33da8ab1998addd482a807a6ee7937c5aed04b6c8e42b90ee2"
+    },
+    {
+      "code": "CAL",
+      "name": "China Airlines",
+      "file": "CAL.png",
+      "bytes": 87235,
+      "sha256": "d845ebf30974e95283822210ea998a6ca0a5a70cba82815cd0d1d72a8ee68782"
+    },
+    {
+      "code": "CCA",
+      "name": "Air China",
+      "file": "CCA.png",
+      "bytes": 52290,
+      "sha256": "8b872cf3b70b6c2b9f0ba7c195da14af5f1996f4c01403b1daf4eeb6ea4a98b1"
+    },
+    {
+      "code": "CEB",
+      "name": "Cebu Pacific",
+      "file": "CEB.png",
+      "bytes": 52412,
+      "sha256": "4774abac7bf79beef70ff9e6f076ce27a5ee79b3e97b53599da2039a6ab508a8"
+    },
+    {
+      "code": "CES",
+      "name": "China Eastern",
+      "file": "CES.png",
+      "bytes": 46724,
+      "sha256": "bffa663ee48948cba6482af1f3b1ad8e817fb360cff21518ee6820307884398b"
+    },
+    {
+      "code": "CFG",
+      "name": "Condor",
+      "file": "CFG.png",
+      "bytes": 51934,
+      "sha256": "2dd2fba0232e861c9b7d1d2e9034da3f5fe93732861a7f6201ebe311ee278640"
+    },
+    {
+      "code": "CHH",
+      "name": "Hainan Airlines",
+      "file": "CHH.png",
+      "bytes": 61129,
+      "sha256": "5e1bc65503548697992ebd509b9097ad4e0dc055bc80519d39bace3d367027dd"
+    },
+    {
+      "code": "CMP",
+      "name": "Copa Airlines",
+      "file": "CMP.png",
+      "bytes": 61610,
+      "sha256": "2bd73695029cc34751ab9778ca939adbdc1337808215bf5880a648ac0a9f2c1c"
+    },
+    {
+      "code": "CPA",
+      "name": "Cathay Pacific",
+      "file": "CPA.png",
+      "bytes": 58418,
+      "sha256": "69f4ab57cb7e2dff89b5a7feb1bfbc5b887b13d8dfb088453fed6c434e0fde55"
+    },
+    {
+      "code": "CQH",
+      "name": "Spring Airlines",
+      "file": "CQH.png",
+      "bytes": 54332,
+      "sha256": "fa983cb49fa917685ca1a017500c90d2c645683118b859cbadd4f51e37b30662"
+    },
+    {
+      "code": "CSA",
+      "name": "Czech Airlines",
+      "file": "CSA.png",
+      "bytes": 53315,
+      "sha256": "f9542665f58ef39a73d90f15efa9731c1f95946c41eae4e40411a589294fce39"
+    },
+    {
+      "code": "CSN",
+      "name": "China Southern Airlines",
+      "file": "CSN.png",
+      "bytes": 59484,
+      "sha256": "4cb0a5f2168be1e9a4b610a30d4c413e6aeebcd665dfe45c18e39ace33192acf"
+    },
+    {
+      "code": "CSZ",
+      "name": "Shenzhen Airlines",
+      "file": "CSZ.png",
+      "bytes": 56348,
+      "sha256": "5bfb7d4f57fbcb11bd2951bb4c5011f1654dc68e0e30bab9e78b6e939773dc88"
+    },
+    {
+      "code": "CTN",
+      "name": "Croatia Airlines",
+      "file": "CTN.png",
+      "bytes": 47814,
+      "sha256": "8c77eface1daac7778234ad1b3e047f50bb7064ae154b9743646a56cadb5d163"
+    },
+    {
+      "code": "CXA",
+      "name": "Xiamen Airlines",
+      "file": "CXA.png",
+      "bytes": 56769,
+      "sha256": "08bf6bc818a99662f850c9b49778b2e735afe059a0fa58cabdf34ca127e49d66"
+    },
+    {
+      "code": "DAL",
+      "name": "Delta Airlines",
+      "file": "DAL.png",
+      "bytes": 58289,
+      "sha256": "aa26d9864e53c2da55dbf52e431f1be7969e98a2bfee320f2bd33e9a8406400d"
+    },
+    {
+      "code": "DKH",
+      "name": "Juneyao Air",
+      "file": "DKH.webp",
+      "bytes": 40562,
+      "sha256": "bead82b6adb005c7d58b42b0b778c50763123345c8c4e1dc66decea5fdc7307d"
+    },
+    {
+      "code": "DLA",
+      "name": "Air Dolomiti",
+      "file": "DLA.png",
+      "bytes": 65696,
+      "sha256": "aca9ad36535b2920ec57021ac8ad1dd63149af200f912e450092d77b0918f998"
+    },
+    {
+      "code": "DLH",
+      "name": "Lufthansa",
+      "file": "DLH.png",
+      "bytes": 57841,
+      "sha256": "0de415e8197bd5d49049803d4729611fda742fba3954b731728769919956994e"
+    },
+    {
+      "code": "EDW",
+      "name": "Edelweiss Air",
+      "file": "EDW.png",
+      "bytes": 59790,
+      "sha256": "3a1f7860f181258b9e1b9a5e6cee57e5ed0ec81341be92b779fe794cf1fb5ca3"
+    },
+    {
+      "code": "EIN",
+      "name": "Aer Lingus",
+      "file": "EIN.png",
+      "bytes": 54849,
+      "sha256": "157db4987689f2eab10bf565378fbc6ee53c80872ccb81ec216ac2562f2f88d0"
+    },
+    {
+      "code": "ELY",
+      "name": "El Al",
+      "file": "ELY.png",
+      "bytes": 52739,
+      "sha256": "ab7ba17a5947f8b2e36cf00ed5772bda98e4f7a74985baf202bd086aaedf3581"
+    },
+    {
+      "code": "ETD",
+      "name": "Etihad",
+      "file": "ETD.png",
+      "bytes": 65972,
+      "sha256": "d32a1055937ef0a19479019d49e55561779e173295bfe72f2637c82280914aea"
+    },
+    {
+      "code": "ETH",
+      "name": "Ethiopian Airlines",
+      "file": "ETH.png",
+      "bytes": 50281,
+      "sha256": "a45831ad713de1c311ed0db46035f0b902f8d84a022cea7e4f68e18bd71e55a5"
+    },
+    {
+      "code": "EVA",
+      "name": "Eva Air",
+      "file": "EVA.png",
+      "bytes": 67868,
+      "sha256": "46341c30deb0c3e4ca6cd690e68b04a680149fde0a0295f2194e66a85be2d4a2"
+    },
+    {
+      "code": "EWG",
+      "name": "Eurowings",
+      "file": "EWG.png",
+      "bytes": 53399,
+      "sha256": "6e9fd7922be4d005d065a09c683b128b57262b13414bd71a0ee966a31c6e1390"
+    },
+    {
+      "code": "EXS",
+      "name": "Jet2",
+      "file": "EXS.png",
+      "bytes": 57130,
+      "sha256": "6d11c4e6cec90d9629adb00d949523e2a99365e5ae9a98b4669fba1f8eed8710"
+    },
+    {
+      "code": "EZY",
+      "name": "EasyJet",
+      "file": "EZY.png",
+      "bytes": 54969,
+      "sha256": "89c39735320cab8cb3480b242253518d92b99d6828ca4e3992bf1d9604d40dd5"
+    },
+    {
+      "code": "FDB",
+      "name": "Flydubai",
+      "file": "FDB.png",
+      "bytes": 66331,
+      "sha256": "c229cad3e06aa64623831159b5818d1ceb3e8a256d571b2d3fdeda84f68acc1d"
+    },
+    {
+      "code": "FFT",
+      "name": "Frontier Airlines",
+      "file": "FFT.png",
+      "bytes": 165223,
+      "sha256": "d89a597dc0e4c22ad9dabe35364f4c605afa09a59bd09759775080d1f958edb2"
+    },
+    {
+      "code": "FIN",
+      "name": "Finnair",
+      "file": "FIN.png",
+      "bytes": 47258,
+      "sha256": "2dcf2f108a17f60ccba3f890115d56ef979112acb97fd77b5e8fdf568fa32adf"
+    },
+    {
+      "code": "FJI",
+      "name": "Fiji Airways",
+      "file": "FJI.png",
+      "bytes": 63989,
+      "sha256": "a2b8564d5608b64fdbcd7c59d4ff1856d755ac886b449723908bc371cd9de5c9"
+    },
+    {
+      "code": "GFA",
+      "name": "Gulf Air",
+      "file": "GFA.png",
+      "bytes": 71976,
+      "sha256": "918087b96b746f0a265a42324ef380290c4bdbd8a639c73ba6f761f0090387ba"
+    },
+    {
+      "code": "GIA",
+      "name": "Garuda Indonesia",
+      "file": "GIA.png",
+      "bytes": 59087,
+      "sha256": "38f85d8442f6044111e26317d72f5c9e87f8cc9f6a67318203dfef11daa35f7b"
+    },
+    {
+      "code": "GLO",
+      "name": "Gol",
+      "file": "GLO.png",
+      "bytes": 56316,
+      "sha256": "4917827e75f4340e81535b796b4295c34787d9a655f265c8c3b237a8b195884c"
+    },
+    {
+      "code": "HAL",
+      "name": "Hawaiian Airlines",
+      "file": "HAL.png",
+      "bytes": 57063,
+      "sha256": "3cfaab31f1a9375cb0615d7144e67b85e91b85e12cae2eeeddd1a3b35a047393"
+    },
+    {
+      "code": "HVN",
+      "name": "Vietnam Airlines",
+      "file": "HVN.png",
+      "bytes": 59604,
+      "sha256": "f16982228e96a2f407b2fa35ff253a28351f44c71de363a77c62dbcbd4f92d2a"
+    },
+    {
+      "code": "IBE",
+      "name": "Iberia",
+      "file": "IBE.png",
+      "bytes": 49903,
+      "sha256": "ed3d9d296167212dfd24890a48d1b7adad8a51eac98b989b383d34727dd4de42"
+    },
+    {
+      "code": "ICE",
+      "name": "Icelandair",
+      "file": "ICE.png",
+      "bytes": 55371,
+      "sha256": "1e66a12dc8a0d05ef483755dbfbc71c16c38faa525db5619208df90503386ad9"
+    },
+    {
+      "code": "IGO",
+      "name": "Indigo",
+      "file": "IGO.png",
+      "bytes": 55004,
+      "sha256": "2f7843cdc3a060135bd538b66af0155355d2b1c05d08ff34d8999a29992f7ba9"
+    },
+    {
+      "code": "IRA",
+      "name": "Iran Air",
+      "file": "IRA.png",
+      "bytes": 49027,
+      "sha256": "a31aa41084db020177f2166a0a0264c26cfe7bd1c3cb3d14b6343af35ecaffb8"
+    },
+    {
+      "code": "ITY",
+      "name": "ITA Airways",
+      "file": "ITY.png",
+      "bytes": 70466,
+      "sha256": "882e5c7b4488bf3910eb57220b2e0d93449b0e24e76b625fdab33a5a176dc4ed"
+    },
+    {
+      "code": "JAF",
+      "name": "TUI Fly Belgium",
+      "file": "JAF.png",
+      "bytes": 55833,
+      "sha256": "bf9b1eb813eaf96f4fae53de585e3575fe9215c1482737f2106ecb4557fdc7c4"
+    },
+    {
+      "code": "JAL",
+      "name": "Japan Airlines",
+      "file": "JAL.png",
+      "bytes": 50390,
+      "sha256": "042fc47fa7ac3e875105b8a073daa6da7927329dd092b9dc02617565e45cf32f"
+    },
+    {
+      "code": "JBU",
+      "name": "JetBlue",
+      "file": "JBU.png",
+      "bytes": 68700,
+      "sha256": "030c21a83323fb7df97e388a0aef7b55ac7aaccb1e63c28618eb5932a7d43e34"
+    },
+    {
+      "code": "JST",
+      "name": "Jetstar",
+      "file": "JST.png",
+      "bytes": 59317,
+      "sha256": "92c542dfc57346478e2a82e758bba00e118d25b08eb2b592ca3a6e998e7bd89f"
+    },
+    {
+      "code": "JZR",
+      "name": "Jazeera Airways",
+      "file": "JZR.png",
+      "bytes": 58994,
+      "sha256": "020b468838f639ef7b9ea8f652a36908f62683717d0f8060d7bdbc4ed0515dfc"
+    },
+    {
+      "code": "KAC",
+      "name": "Kuwait Airways",
+      "file": "KAC.png",
+      "bytes": 69295,
+      "sha256": "d230b98221b895d1e2db25c8404bae8d32344447e744e6bcb3ebb0e2729e10d3"
+    },
+    {
+      "code": "KAL",
+      "name": "Korean Air",
+      "file": "KAL.png",
+      "bytes": 58929,
+      "sha256": "3e9b10fd6e759b9d557919a583d9971091dd6744ac355e86307398bad04cd010"
+    },
+    {
+      "code": "KLM",
+      "name": "KLM",
+      "file": "KLM.png",
+      "bytes": 48721,
+      "sha256": "bb48abc7bbe3579b8123d7f8466eb07af6b5d39a0d91f4e4642ba8330a1c8475"
+    },
+    {
+      "code": "KQA",
+      "name": "Kenya Airways",
+      "file": "KQA.png",
+      "bytes": 65005,
+      "sha256": "005952970105f5e4d0b32c4df9df4c9168361bb0bb986d466f97d677a60c666a"
+    },
+    {
+      "code": "KZR",
+      "name": "Air Astana",
+      "file": "KZR.png",
+      "bytes": 55266,
+      "sha256": "44e5d951b0164aa9ccad36a4a596d8aea9b3ef352371df01e7ce7b71a2bbea51"
+    },
+    {
+      "code": "LAN",
+      "name": "Latam",
+      "file": "LAN.png",
+      "bytes": 52531,
+      "sha256": "bc9d321b97a3197bdf5823f9afed420729fa5ea7398869d773f1815dd8f537f6"
+    },
+    {
+      "code": "LGL",
+      "name": "Lux Air",
+      "file": "LGL.webp",
+      "bytes": 29338,
+      "sha256": "08298e0fe82b0ebc1e46ae639a6e9943ca114672e11325d69cfa631b8be9af80"
+    },
+    {
+      "code": "LNI",
+      "name": "Lionair",
+      "file": "LNI.png",
+      "bytes": 50591,
+      "sha256": "fa8f6bf65ed3414e3f580fd7ff2af0d2865212482f97606b4d1d2ba2883676db"
+    },
+    {
+      "code": "LOT",
+      "name": "Lot Airlines",
+      "file": "LOT.png",
+      "bytes": 63021,
+      "sha256": "46a3ed33abdff8bc0d8ddcc633d0b57c4d7763c89f66f805cecc26f6cb7f6879"
+    },
+    {
+      "code": "LVL",
+      "name": "Level Airlines",
+      "file": "LVL.png",
+      "bytes": 56786,
+      "sha256": "daa527fe9f1b2e9449a37827cd21f1546b6ff7c0d65a61e80f11c41cf40da6db"
+    },
+    {
+      "code": "MAS",
+      "name": "Malaysia Airlines",
+      "file": "MAS.png",
+      "bytes": 49689,
+      "sha256": "205da2d9af2d6087d239c11b9aaffec7e387d44b33a325e54c53fa9a5944b8f2"
+    },
+    {
+      "code": "MAU",
+      "name": "Air Mauritius",
+      "file": "MAU.png",
+      "bytes": 56221,
+      "sha256": "9266d1faacffd796c0a34a43593bbd90330091623a03a2c7f11f3cd7019006d7"
+    },
+    {
+      "code": "MEA",
+      "name": "Middle East Airlines",
+      "file": "MEA.png",
+      "bytes": 61353,
+      "sha256": "205a9d0144f1e190b0f0747b0d4e038294429365fa77442a5f1fba4c7d9f67db"
+    },
+    {
+      "code": "MSR",
+      "name": "Egypt Air",
+      "file": "MSR.png",
+      "bytes": 62293,
+      "sha256": "200f9b6508c3edcf546b4be22cb09a23d94ad91cb564be6177e56c40510a174b"
+    },
+    {
+      "code": "MXY",
+      "name": "Breeze Airways",
+      "file": "MXY.png",
+      "bytes": 55056,
+      "sha256": "1bc52336f93b311a0d043c1f07e0b9e7068d8d8d3cd7c83e90611ae65491f829"
+    },
+    {
+      "code": "NKS",
+      "name": "Spirit Airlines",
+      "file": "NKS.png",
+      "bytes": 58393,
+      "sha256": "d01afc4f6e57a8d54e52c7b10f5434c46caaae6d21b1cdc3418e66bdb40f9bf8"
+    },
+    {
+      "code": "NOK",
+      "name": "Nok Air",
+      "file": "NOK.png",
+      "bytes": 59927,
+      "sha256": "f9fe85ccd1f254ed14dc34651ec1a2a4c6c694a423613cf2657e0cad5566f423"
+    },
+    {
+      "code": "NOZ",
+      "name": "Norwegian",
+      "file": "NOZ.png",
+      "bytes": 118247,
+      "sha256": "8b91b03128bbcde8b41f6776a8ae0df7d35b063559145d163a6902a985886f34"
+    },
+    {
+      "code": "OMA",
+      "name": "Oman Air",
+      "file": "OMA.png",
+      "bytes": 60758,
+      "sha256": "c3a0e4bce8a3592a3cd4549e1e1af949b3007b9b96071b5366fccdd0bfdc7b89"
+    },
+    {
+      "code": "PAL",
+      "name": "Philippine Airlines",
+      "file": "PAL.png",
+      "bytes": 60631,
+      "sha256": "34b3ba9d6a59c40b39c25226aaef101de6c7eb9a5e0aa2601ded574a77a20ef4"
+    },
+    {
+      "code": "PGT",
+      "name": "Pegasus Airlines",
+      "file": "PGT.png",
+      "bytes": 59827,
+      "sha256": "fbf728bb12e0026a4480df7268da111e45b990ea46eeec056e18cd75e67551c9"
+    },
+    {
+      "code": "PIA",
+      "name": "Pakistan Int. Airlines",
+      "file": "PIA.png",
+      "bytes": 54599,
+      "sha256": "4b29530df0d1a2f49944303c8e1c5d0b766e44265bbed4c0ef4fe9e6079ec2e0"
+    },
+    {
+      "code": "POE",
+      "name": "Porter Airlines",
+      "file": "POE.png",
+      "bytes": 73695,
+      "sha256": "5cb13d52fc64cdf419c109ed8bfca715d57414c9ed0ca94a1561fadaf6acc2be"
+    },
+    {
+      "code": "QFA",
+      "name": "Qantas",
+      "file": "QFA.png",
+      "bytes": 53103,
+      "sha256": "2209793c1f64a4a9481734a7c59c4e1b3c26ea7c0ba856395d790eee889eeaa0"
+    },
+    {
+      "code": "QTR",
+      "name": "Qatar Airways",
+      "file": "QTR.png",
+      "bytes": 59642,
+      "sha256": "4f1432093ec022be207acba814d27c253537f6e4a1479e7ea001553e55517848"
+    },
+    {
+      "code": "RAM",
+      "name": "Royal Air Maroc",
+      "file": "RAM.png",
+      "bytes": 50360,
+      "sha256": "616d903dff6d9459cd85ab4a81c8f1085b48bf4ad90e837ad9828f735d6e51a7"
+    },
+    {
+      "code": "RBA",
+      "name": "Royal Brunei",
+      "file": "RBA.png",
+      "bytes": 56809,
+      "sha256": "ea11db7b69c4bc3bd534ce0a953efeeddcbd847041d1e7ef06a5495e0c1a73a1"
+    },
+    {
+      "code": "RJA",
+      "name": "Royal Jordanian",
+      "file": "RJA.png",
+      "bytes": 66859,
+      "sha256": "d07d75d16f26db09d46173d3ab50df6a8dbcb3f889cae65d8f68b7230cb0d21a"
+    },
+    {
+      "code": "ROT",
+      "name": "Tarom",
+      "file": "ROT.png",
+      "bytes": 52956,
+      "sha256": "7ece70035b932e427356bce70de78d6649f34d51fb8828d0f55a4035def4322f"
+    },
+    {
+      "code": "RXA",
+      "name": "Rex Airlines",
+      "file": "RXA.png",
+      "bytes": 51850,
+      "sha256": "79434e091bb43d013ae9c776c70e0a8db3af2c1489cedee7b3b3f4bad314eba7"
+    },
+    {
+      "code": "RYR",
+      "name": "Ryanair",
+      "file": "RYR.png",
+      "bytes": 58176,
+      "sha256": "ce022c8c8d85315cd011c5c7fd51d325fd2b9e98a736538c82a4d30881ce60bf"
+    },
+    {
+      "code": "SAA",
+      "name": "South African Airways",
+      "file": "SAA.png",
+      "bytes": 59190,
+      "sha256": "d934cbd66411b11938817eb7ec6eea8662b9ebe5ae774d931bd6a1ddc9e85f1a"
+    },
+    {
+      "code": "SAS",
+      "name": "SAS",
+      "file": "SAS.png",
+      "bytes": 53224,
+      "sha256": "53424aa6237bc039c42e6f9beb63ef43619cf19a9855c3f53d5528e2cbd0e7ce"
+    },
+    {
+      "code": "SBI",
+      "name": "S7 Airlines",
+      "file": "SBI.png",
+      "bytes": 53678,
+      "sha256": "294c4e0377b6813e466bbebf6a8b9c28bc4a1c9a23a35d72f944c01e3c9b12d4"
+    },
+    {
+      "code": "SCO",
+      "name": "Scoot",
+      "file": "SCO.png",
+      "bytes": 60500,
+      "sha256": "4e623a0dba3e02abb18b0b6da40ab06729713c32fc5f9f6aa3e6da982b72f043"
+    },
+    {
+      "code": "SCX",
+      "name": "Sun Country Airlines",
+      "file": "SCX.png",
+      "bytes": 69556,
+      "sha256": "c87fce4ae61888fc42a04ed97abb5874bb03a72e16327e4ce323a636bdf7324d"
+    },
+    {
+      "code": "SEJ",
+      "name": "Spicejet",
+      "file": "SEJ.png",
+      "bytes": 60207,
+      "sha256": "7cac5592ef86fac392395d78e76ddeb46efe20cb07d530d95fb73f5af5d3aec8"
+    },
+    {
+      "code": "SIA",
+      "name": "Singapore Airlines",
+      "file": "SIA.png",
+      "bytes": 58861,
+      "sha256": "f517655d00be12dd56f3261b2e755fab821754454c72bd06a2a228a3906a58f6"
+    },
+    {
+      "code": "SVA",
+      "name": "Saudia Airlines",
+      "file": "SVA.png",
+      "bytes": 70548,
+      "sha256": "5f0a6f31213f7dbfb37edd43cab7957d148b6840d68ab8f4c3cf75a7f51daeeb"
+    },
+    {
+      "code": "SWA",
+      "name": "Southwest Airlines",
+      "file": "SWA.png",
+      "bytes": 52414,
+      "sha256": "388ebffd589f3d14eb484a4aceafbc043bf62f9b962179398fa0aa13f995a8df"
+    },
+    {
+      "code": "SWR",
+      "name": "Swiss Airlines",
+      "file": "SWR.png",
+      "bytes": 46323,
+      "sha256": "625211df1983fffe1359058c9a0fc3985fd57cc53b103a9bbfc8ecfa1f37a498"
+    },
+    {
+      "code": "SXS",
+      "name": "Sun Express",
+      "file": "SXS.png",
+      "bytes": 50363,
+      "sha256": "f9a73216d40b753a7899a1c92aeecb9fc5f1d7444e26f9b2f78ca6367557143f"
+    },
+    {
+      "code": "TAP",
+      "name": "Tap Portugal",
+      "file": "TAP.png",
+      "bytes": 61788,
+      "sha256": "f593abc82eda07c91e1d17c7af767e1e1b7404c5458336e326c98715e3137ed6"
+    },
+    {
+      "code": "THA",
+      "name": "Thai Airways",
+      "file": "THA.png",
+      "bytes": 60830,
+      "sha256": "dd48bc7cfbe1d828a78f1cfa12af2d64b48c720a4e1bfa8d85f446102f4a9b87"
+    },
+    {
+      "code": "THT",
+      "name": "Air Tahiti Nui",
+      "file": "THT.png",
+      "bytes": 73282,
+      "sha256": "12a85189275576b7dc3779e6a38d36bd551f54e29bd0ae2f936ba397f504979c"
+    },
+    {
+      "code": "THY",
+      "name": "Turkish Airlines",
+      "file": "THY.png",
+      "bytes": 60755,
+      "sha256": "c4dab20aabf174d43ea92df0b06e6c65f3271290f1be9648c29285332e1c6137"
+    },
+    {
+      "code": "TOM",
+      "name": "TUI Airways",
+      "file": "TOM.png",
+      "bytes": 55833,
+      "sha256": "bf9b1eb813eaf96f4fae53de585e3575fe9215c1482737f2106ecb4557fdc7c4"
+    },
+    {
+      "code": "TRA",
+      "name": "Transavia",
+      "file": "TRA.png",
+      "bytes": 52787,
+      "sha256": "242e57722d8893a0d6b4169293c10ced4db7a4687965ccf63b07a32680f43635"
+    },
+    {
+      "code": "TSC",
+      "name": "Air Transat",
+      "file": "TSC.png",
+      "bytes": 78883,
+      "sha256": "58713190541306166315ae1f3958f7ec4fedab62a66ccbbd666c744dc2d5f428"
+    },
+    {
+      "code": "UAE",
+      "name": "Emirates",
+      "file": "UAE.png",
+      "bytes": 47217,
+      "sha256": "d37fed6f7a03fb3b2d2ce87b7f8293ba0b61e4aeb5d418c8c32368590ff8050d"
+    },
+    {
+      "code": "UAL",
+      "name": "United",
+      "file": "UAL.png",
+      "bytes": 87446,
+      "sha256": "238c482e3f141395d7c1d0728be5beb0cbbe36902fe18364977eba2eb3c8b4d7"
+    },
+    {
+      "code": "UTA",
+      "name": "UTair",
+      "file": "UTA.png",
+      "bytes": 51693,
+      "sha256": "8a50008be75c4aa93c711269b9a50cabcf97eb295013d190b2c657068bc0b22a"
+    },
+    {
+      "code": "UZB",
+      "name": "Uzbekistan Airways",
+      "file": "UZB.png",
+      "bytes": 58486,
+      "sha256": "9f52ea86ff9277a0884ccea7f9c9152c286cd72d5949f1f18ac98acdc262b1ce"
+    },
+    {
+      "code": "VIR",
+      "name": "Virgin Atlantic",
+      "file": "VIR.png",
+      "bytes": 61318,
+      "sha256": "1af80e91848feda5827b4cd8d67655ca76b53430371028cb00ee219397ef963f"
+    },
+    {
+      "code": "VJC",
+      "name": "Vietjetair",
+      "file": "VJC.png",
+      "bytes": 59585,
+      "sha256": "5b8399cf750817217b15a19b5feb78c6e0b037c85dc82df26d67601f74ee9f03"
+    },
+    {
+      "code": "VLG",
+      "name": "Vueling",
+      "file": "VLG.png",
+      "bytes": 61663,
+      "sha256": "2875d241fe22e1233a3060719675fd22e2c83a9e1e4dac706eab2c6681a46d37"
+    },
+    {
+      "code": "VOI",
+      "name": "Volaris Airlines",
+      "file": "VOI.png",
+      "bytes": 49462,
+      "sha256": "2dea09ce092e5225e02ab77477dccb29e9af2353cabcb7be5d204992d5fbfb81"
+    },
+    {
+      "code": "VOZ",
+      "name": "Virgin Australia",
+      "file": "VOZ.png",
+      "bytes": 61318,
+      "sha256": "1af80e91848feda5827b4cd8d67655ca76b53430371028cb00ee219397ef963f"
+    },
+    {
+      "code": "WJA",
+      "name": "Westjet",
+      "file": "WJA.png",
+      "bytes": 52824,
+      "sha256": "53a4344defff8d8c728eb5fcc5ad9f001f3bb4011cab390fd002a5f09e0c7fe0"
+    },
+    {
+      "code": "WZZ",
+      "name": "Wizz Air",
+      "file": "WZZ.png",
+      "bytes": 55990,
+      "sha256": "c418cd7fff7d273898f2700cd0982f77913502a0bf9fc76480ff39ca25141990"
+    }
+  ]
+}

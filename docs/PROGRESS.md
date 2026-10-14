@@ -24,7 +24,7 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | SPEC-0003 | Pager à deux pages | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0006 | Carrousel Prochains passages | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
-| SPEC-0005 | Écran Ciel sur une source ADS-B de démonstration (branchée en dévelop… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | Spec à écrire |
+| SPEC-0005 | Écran Ciel et présence de Ciel dans le pager | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0007 | Données réelles adsb.lol | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0008 | États d'interface | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0009 | Routes de vol et type d'appareil | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
@@ -33,6 +33,7 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Bloquants
 
+- SPEC-0005 : dépend de SPEC-0006, pas encore livrée(s)
 - SPEC-0007 : ligne « Dépend de » illisible : "SPEC-0004, SPEC-0005, SPEC-0006 (SPEC-0004 telle qu'amendée : fournisseur commun de la scène, clause de non-rafraîchissement r…
 - SPEC-0008 : ligne « Dépend de » illisible : "SPEC-0003, SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (le pager et ses indicateurs, la scène, l'écran Ciel, l'écran Prochains…
 - SPEC-0009 : ligne « Dépend de » illisible : "SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (SPEC-0004 telle qu'amendée : `Passage` porte la position de l'avion, voir « Décisi…
@@ -43,5 +44,4 @@ Mis à jour le 2026-10-14 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 ## Prochaines actions
 
 - /plan SPEC-0006 : spec fusionnée, dépendances livrées
-- /new-spec Écran Ciel sur une source ADS-B de démonstration (branchée en développement seulement, jamais dans un build livré) : couleurs de la compagnie survola…
 - workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004

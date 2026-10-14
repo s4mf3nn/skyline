@@ -5,3 +5,5 @@ export interface ErrorReporter {
 }
 
 export { createFakeErrorReporter } from "./fake";
+export type { BuildInfo } from "./scrub";
+export { DEFAULT_BUILD, scrubContext, scrubMessage, toReport } from "./scrub";

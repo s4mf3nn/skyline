@@ -23,6 +23,10 @@ function ScreenB() {
   return <Text>screen b</Text>;
 }
 
+function BrokenScreen(): never {
+  throw new RangeError("render failed");
+}
+
 describe("createApp", () => {
   it("mounts the feature with the smallest order, whatever the list order", async () => {
     const App = createApp({
@@ -41,5 +45,22 @@ describe("createApp", () => {
     const App = createApp({ services: fakeServices() });
     await render(<App />);
     expect(screen.getByText("Skyline")).toBeOnTheScreen();
+  });
+
+  it("replaces a failing screen with the error screen and reports it", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const services = fakeServices();
+    const App = createApp({ services, features: [{ name: "broken", order: 1, screen: BrokenScreen }] });
+    await render(<App />);
+    consoleError.mockRestore();
+    expect(screen.getByText("Une erreur est survenue.")).toBeOnTheScreen();
+    expect(services.monitoring.events).toHaveLength(1);
+  });
+
+  it("reports nothing when the screen renders", async () => {
+    const services = fakeServices();
+    const App = createApp({ services, features: [{ name: "a", order: 1, screen: ScreenA }] });
+    await render(<App />);
+    expect(services.monitoring.events).toEqual([]);
   });
 });

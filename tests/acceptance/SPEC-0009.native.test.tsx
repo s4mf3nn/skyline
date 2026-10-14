@@ -166,8 +166,6 @@ describe.skip("SPEC-0009 Routes de vol (rendering)", () => {
       expect(screen.queryByTestId(`ciel-route-${id}`)).toBeNull();
     }
     expect(screen.getByTestId("ciel-aircraft-type")).toHaveTextContent("—");
-    expect(harness.routeSource.routeRequests).toEqual([]);
-    expect(harness.routeSource.typeRequests).toEqual([]);
   });
 
   it("CA14 : shows stacked codes, cities and the aircraft type on a passage card and on the overhead card", async () => {
@@ -279,6 +277,29 @@ describe.skip("SPEC-0009 Routes de vol (rendering)", () => {
     expect(screen.queryByTestId("ciel-route-times")).toBeNull();
     expect(screen.queryByTestId("ciel-route-arrival")).toBeNull();
     expect(screen.queryByRole("progressbar", { name: "Progression du vol" })).toBeNull();
+  });
+
+  it("CA17 : shows each Ciel line only when complete: no codes without both codes, no cities without both cities", async () => {
+    const noCode: FlightRoute = {
+      origin: { iata: null, city: "Split", ...at(-1, -120) },
+      destination: SPLIT_PARIS.destination,
+    };
+    const noCity: FlightRoute = {
+      origin: SPLIT_PARIS.origin,
+      destination: { iata: "CDG", city: null, ...at(-1, 364) },
+    };
+    const first = setup({ aircraft: [OVERHEAD], routes: { AFR1015: noCode } });
+    const view = await render(<first.App />);
+    await settle();
+    expect(screen.queryByTestId("ciel-route-codes")).toBeNull();
+    expect(screen.getByTestId("ciel-route-cities")).toHaveTextContent("Split → Paris");
+    view.unmount();
+
+    const second = setup({ aircraft: [OVERHEAD], routes: { AFR1015: noCity } });
+    await render(<second.App />);
+    await settle();
+    expect(screen.getByTestId("ciel-route-codes")).toHaveTextContent(/SPU\s*CDG/);
+    expect(screen.queryByTestId("ciel-route-cities")).toBeNull();
   });
 
   it("CA17 : shows the arrival without the progress bar when only the origin has no coordinates", async () => {

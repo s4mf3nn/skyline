@@ -53,7 +53,7 @@ const catalog = (): CatalogEntry[] =>
 // Noms du handoff qui remplacent ceux du catalogue.
 const HANDOFF_NAMES: Record<string, string> = { EZY: "easyJet", TAP: "TAP Air Portugal" };
 
-describe.skip("SPEC-0002 airline theme and table", () => {
+describe("SPEC-0002 airline theme and table", () => {
   it("CA1 : mixes two colors channel by channel and rounds to uppercase #RRGGBB", async () => {
     const { mix } = await airlines();
     expect(mix("#000000", "#FFFFFF", 0.5)).toBe("#808080");

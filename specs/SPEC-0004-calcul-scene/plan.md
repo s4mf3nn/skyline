@@ -147,17 +147,18 @@ Constats partagés :
 - Dépend de : T1, T2, T3
 - Risque : élevé (la position quitte l'appareil dans la requête construite ici : arrondi à 3 décimales, aucun log ni suivi des erreurs, INV7)
 - Critères de la spec couverts : CA12, CA13, CA14, CA15, CA16, CA17, CA18 (et clôture de CA1 à CA18)
-- Définition de fini : `pnpm verify` vert. `controller.test.ts` (Vitest, `vi.useFakeTimers`, faux de `src/shared/`) couvre : `adsbQueryFor` (arrondi, valeurs négatives, rayon 80), refus, refus puis accord (`loading` puis `ready`), erreur de source et de position sans puis avec instantané, réponse en retard ignorée, aucune mise à jour ni requête après `stop()`, tick d'une seconde qui transmet le survol précédent, pas de requête toutes les 10 s, cap ramené dans [0, 360), absence de `lifecycle`. `use-scene.ts` ne contient aucune décision (création du contrôleur, `useState`, nettoyage). Aucun `console.*`, aucun appel à `monitoring` dans le module. **Les `.skip` des `describe` de `tests/acceptance/SPEC-0004.test.ts` (les deux) et de `tests/acceptance/SPEC-0004.native.test.tsx` sont retirés** : c'est la seule modification permise de ces fichiers. Tout le contrat de SPEC-0004 passe ; ceux de SPEC-0000 et SPEC-0003 restent verts. L'interface figée et la règle de couverture ci-dessus s'appliquent.
+- Définition de fini : `pnpm verify` vert. `controller.test.ts` (Vitest, `vi.useFakeTimers`, faux de `src/shared/`) couvre : `adsbQueryFor` (arrondi, valeurs négatives sans `-0`, rayon 80), refus, refus puis accord (`loading` puis `ready`), erreur de source et de position sans puis avec instantané, réponse en retard ignorée, aucune mise à jour ni requête après `stop()`, tick d'une seconde qui transmet le survol précédent, pas de requête toutes les 10 s, cap ramené dans [0, 360), absence de `lifecycle`. `use-scene.ts` ne contient aucune décision (création du contrôleur, `useState`, nettoyage). Aucun `console.*`, aucun appel à `monitoring` dans le module. **Les `.skip` des `describe` de `tests/acceptance/SPEC-0004.test.ts` (les deux) et de `tests/acceptance/SPEC-0004.native.test.tsx` sont retirés** : c'est la seule modification permise de ces fichiers. Tout le contrat de SPEC-0004 passe ; ceux de SPEC-0000 et SPEC-0003 restent verts. L'interface figée et la règle de couverture ci-dessus s'appliquent.
 - Conception :
   ```diff
    src/shared/scene
   ~├── index.ts            # MODIFIÉ : + useScene, SceneState, SceneView
-  +├── controller.ts       # NOUVEAU : createSceneController, adsbQueryFor ; aucune dépendance à React
+  +├── controller.ts       # NOUVEAU : SceneState, SceneView, createSceneController, adsbQueryFor ; aucune dépendance à React
   +├── controller.test.ts
   +└── use-scene.ts        # NOUVEAU : useScene, liaison React du contrôleur
   ```
   ```ts
   type SceneServices = Pick<AppServices, "clock" | "location" | "adsb" | "lifecycle">
+  // SceneState : type de la spec (« Contrat d'interface »), défini ici et non dans model.ts (hors périmètre de T4)
   interface SceneView { state: SceneState; headingDeg: number | null }
   interface SceneController { refresh(): void; stop(): void }
   createSceneController(services: SceneServices, onChange: (view: SceneView) => void): SceneController  // démarre à la création
@@ -184,5 +185,5 @@ Constats partagés :
   4. Retrait des trois `.skip`, `pnpm verify`.
   Scénarios de changement :
   - Rafraîchissement toutes les 10 s et pause en arrière-plan (SPEC-0007) : `controller.ts` (second minuteur sur `REFRESH_INTERVAL_MS`, arrêt et reprise des minuteurs), plus `onBackground` côté `lifecycle/` (voir T2). Un fichier de ce module.
-  - Données périmées (SPEC-0008) : `SceneState` « ready » expose déjà `snapshotAtMs` et `nowMs` ; l'écran calcule l'âge. Aucun fichier de ce module, sauf si l'état devient un statut à part (`model.ts`, `controller.ts`).
+  - Données périmées (SPEC-0008) : `SceneState` « ready » expose déjà `snapshotAtMs` et `nowMs` ; l'écran calcule l'âge. Aucun fichier de ce module, sauf si l'état devient un statut à part (`controller.ts`, qui porte `SceneState`).
   - Avion retenu et présence de Ciel (INV9, SPEC-0005) : fonction pure de la feature Ciel, qui lit `Scene` ; aucun fichier de ce module.

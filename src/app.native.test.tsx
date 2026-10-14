@@ -23,22 +23,28 @@ function ScreenB() {
   return <Text>screen b</Text>;
 }
 
+function ScreenC() {
+  return <Text>screen c</Text>;
+}
+
 function BrokenScreen(): never {
   throw new RangeError("render failed");
 }
 
 describe("createApp", () => {
-  it("mounts the feature with the smallest order, whatever the list order", async () => {
+  it("mounts the two first features in the pager, ordered by order", async () => {
     const App = createApp({
       services: fakeServices(),
       features: [
+        { name: "c", order: 3, screen: ScreenC },
         { name: "b", order: 2, screen: ScreenB },
         { name: "a", order: 1, screen: ScreenA },
       ],
     });
     await render(<App />);
     expect(screen.getByText("screen a")).toBeOnTheScreen();
-    expect(screen.queryByText("screen b")).toBeNull();
+    expect(screen.getByText("screen b")).toBeOnTheScreen();
+    expect(screen.queryByText("screen c")).toBeNull();
   });
 
   it("falls back to the home screen with the default (empty) registry", async () => {

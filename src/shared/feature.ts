@@ -7,12 +7,3 @@ export interface Feature {
   order: number;
   screen: ComponentType;
 }
-
-/** Écran de la feature d'`order` le plus petit, `fallback` si la liste est vide. Ne modifie pas `features`. */
-export function pickScreen(features: readonly Feature[], fallback: ComponentType): ComponentType {
-  let first: Feature | undefined;
-  for (const feature of features) {
-    if (first === undefined || feature.order < first.order) first = feature;
-  }
-  return first === undefined ? fallback : first.screen;
-}

@@ -186,4 +186,4 @@ Les mesures qui limitent la consommation (extrait de tâche, cache Context7, vé
 
 ## Tableau d'avancement
 
-`docs/PROGRESS.md` donne en un coup d'œil, pour chaque spec, où en sont la spec, le plan, l'implémentation, la livraison et la mise en production. Il est généré par `scripts/progress-table.mjs` (`pnpm progress` pour le produire en local) et recommité sur `main` par le workflow `progress` après chaque fusion. Ne jamais l'éditer à la main.
+`docs/PROGRESS.md` donne en un coup d'œil, pour chaque spec, où en sont la spec, le plan, l'implémentation, la livraison et la mise en production. Il est généré par `scripts/progress-table.mjs` (`pnpm progress` pour le produire en local) et recommité sur `main` par le workflow `progress` après chaque fusion (créé par le premier run). Ne jamais l'éditer à la main.

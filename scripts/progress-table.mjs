@@ -3,7 +3,8 @@
 // étape du cycle (spec, plan, implémentation, livraison, production). Même source que `pnpm dashboard`
 // (`computeProgress`), lue sur origin/main avec l'état des PR de GitHub. Régénéré par le workflow `progress`
 // après chaque fusion sur main : le fichier ne s'édite jamais à la main.
-// Usage : node scripts/progress-table.mjs [--out <fichier>] [--local] [--no-github] [--check]
+// Usage : node scripts/progress-table.mjs [--out <fichier>] [--local] [--no-github]
+// Dans le workflow (GITHUB_ACTIONS), un échec de `gh` fait échouer le script : on ne commite jamais un tableau dégradé.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -59,23 +60,24 @@ export function specRow(spec) {
 }
 
 /** Document Markdown complet. `progress` vient de `computeProgress`. */
-export function renderProgress(progress, { source, generatedAt }) {
+export function renderProgress(progress, { source, generatedAt, degraded = false }) {
   const steps = progress.project.steps.map((step) => {
     const mark = step.done ? DONE : step.status === "current" ? PARTIAL : TODO;
-    return `| ${mark} | ${step.label} | ${step.detail || ""} |`;
+    return `| ${mark} | ${step.label} | ${short(step.detail || "", 100).replaceAll("|", "\\|")} |`;
   });
   const header = "| Spec | Titre | Spec | Plan | Implémentation | Livrée | Production | Étape |";
   const rows = progress.specs.map((spec) => `| ${specRow(spec).join(" | ")} |`);
   const blockers = progress.blockers.map((b) => `- ${b.spec ? `${b.spec} : ` : ""}${short(b.message, 160)}`);
-  const next = progress.nextActions.map(
-    (a) => `- ${short(typeof a === "string" ? a : (a.message ?? a.command ?? JSON.stringify(a)), 160)}`,
-  );
+  const next = progress.nextActions.map((a) => `- ${short(`${a.command} : ${a.reason}`, 160)}`);
   return [
     "# Avancement du projet",
     "",
     `<!-- Fichier généré par scripts/progress-table.mjs (workflow \`progress\`). Ne pas éditer à la main. -->`,
     `Mis à jour le ${generatedAt} d'après ${source}. Légende : ${DONE} fait, ${PARTIAL} en cours, ${TODO} à faire.`,
     "",
+    ...(degraded
+      ? ["> Données GitHub indisponibles : les tâches et la production sont déduites des fichiers seuls.", ""]
+      : []),
     "## Étapes du projet",
     "",
     "| | Étape | Détail |",
@@ -99,12 +101,14 @@ export function renderProgress(progress, { source, generatedAt }) {
   ].join("\n");
 }
 
+/** `gh` indisponible : null en local (tableau dégradé), échec en CI pour ne pas commiter un tableau faux. */
 function gh(args) {
   try {
     return JSON.parse(
-      execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 }),
+      execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 }),
     );
-  } catch {
+  } catch (error) {
+    if (process.env.GITHUB_ACTIONS) throw error;
     return null;
   }
 }
@@ -133,7 +137,9 @@ function main() {
   const outIndex = args.indexOf("--out");
   const out = outIndex >= 0 ? args[outIndex + 1] : path.join("docs", "PROGRESS.md");
   const prList = ["pr", "list", "--state", "all", "--limit", "300"];
-  const prs = github ? (gh([...prList, "--json", "number,title,state,mergedAt,headRefName,url,comments"]) ?? []) : [];
+  const fetched = github ? gh([...prList, "--json", "number,title,state,mergedAt,headRefName,url,comments"]) : null;
+  const prs = fetched ?? [];
+  const degraded = fetched === null;
   if (!local) {
     try {
       execFileSync("git", ["fetch", "--quiet", "origin"], { stdio: "ignore" });
@@ -146,11 +152,15 @@ function main() {
     files,
     prs,
     lastRelease: github ? lastRun("release", "--status", "success") : null,
-    gates: github ? (lastRun("gates", "--event", "push")?.conclusion ?? null) : null,
+    // `gates` n'est pas lu : le workflow part au push, avant la fin du run `gates` de cette fusion. /land le contrôle.
     now: new Date().toISOString(),
   });
   const generatedAt = new Date().toISOString().slice(0, 10);
-  const text = renderProgress(progress, { source: local ? "l'arbre de travail" : "origin/main", generatedAt });
+  const text = renderProgress(progress, {
+    source: local ? "l'arbre de travail" : "origin/main",
+    generatedAt,
+    degraded,
+  });
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, text);
   console.log(`Avancement écrit : ${out}`);

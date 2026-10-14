@@ -1,7 +1,7 @@
 # ADR-0002 : Source des routes de vol
 
 Date : 2026-10-13
-Statut : proposée
+Statut : acceptée
 
 ## Contexte
 Le handoff affiche l'origine et la destination de chaque vol (codes « CDG / MAD », villes « Paris → Madrid ») sur Ciel

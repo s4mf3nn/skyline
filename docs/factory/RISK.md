@@ -6,6 +6,7 @@ La source technique est `.github/labeler.yml` (lue par la CI et par `scripts/pre
 |---|---|---|---|---|
 | Sensible | `**/shared/location/` | Position de l'utilisateur : donnée personnelle, permission « pendant l'utilisation » seulement | `full` (Opus) | Revue humaine approfondie, jamais d'auto-merge |
 | Sensible | `**/shared/adsb/` | Seul appel sortant qui porte la position ; réponse externe à valider | `full` (Opus) | Idem |
+| Sensible | `**/shared/routes/` | Réponse externe (adsbdb.com) à valider ; indicatif entrant dans le chemin de l'URL | `full` (Opus) | Idem |
 | Sensible | `**/assets/tails/` | Images de compagnies : aucune sans autorisation consignée | `full` (Opus) | Idem |
 | Sensible | `app.json`, `app.config.*`, `eas.json`, `**/config/` | Permissions de l'appareil, identifiants de l'application, livraison (EAS Build, EAS Update) | `full` (Opus) | Idem |
 | Sensible | `**/features/auth/`, `**/shared/**/auth*`, `**/features/admin/`, `**/migrations/` | Zones par défaut de la factory, sans fichier en v0 : gardées pour le compte et le backend du MVP | `full` (Opus) | Idem |

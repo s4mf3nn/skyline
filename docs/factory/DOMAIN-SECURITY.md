@@ -26,10 +26,12 @@ Chaque règle doit pouvoir être contrôlée sur un diff, et dit ce qui la véri
 | Règle | Vérifiée par |
 |---|---|
 | La position de l'utilisateur ne quitte l'appareil que dans la requête à la source ADS-B (latitude, longitude, rayon) ; elle n'est ni stockée, ni loggée, ni envoyée au suivi des erreurs | Test de contrat sur les faux de la source ADS-B et du suivi des erreurs, relecteur |
+| La position envoyée à adsb.lol est arrondie à 3 décimales (environ 100 m) ; le calcul local garde la position exacte | Test de contrat sur le faux de la source ADS-B |
+| La requête de routes de vol (adsbdb.com) ne porte que l'indicatif de l'avion, jamais la position de l'observateur (INV7) | Test de contrat sur le faux de la source des routes |
 | La permission de localisation demandée est « pendant l'utilisation » seulement ; jamais de localisation en arrière-plan | Relecteur sur `app.json` / `app.config.*`, test sur le faux de localisation |
-| Les appels sortants ne visent que les hôtes déclarés dans l'ADR-0001 (source ADS-B, source des routes), en `https` ; l'adresse n'est jamais construite à partir d'une donnée reçue | Test avec le faux du réseau, relecteur |
+| Les appels sortants ne visent que les hôtes nommés `api.adsb.lol` et `api.adsbdb.com` (ADR-0001, ADR-0002), en `https` ; l'hôte est une constante, jamais une donnée reçue ; un segment de chemin issu d'une donnée reçue (indicatif) est validé par format avant tout appel (`^[A-Z0-9]{2,8}$` après `trim` et majuscules) | Test avec le faux du réseau et un indicatif hostile, relecteur |
 | Aucune image de compagnie (dérive, logo) n'entre dans `assets/tails/` sans autorisation consignée dans la spec qui l'ajoute et notice de crédit dans l'application ; sinon, dérive générique SVG | Relecteur, revue humaine (zone sensible) |
 | Aucun secret sous le préfixe `EXPO_PUBLIC_` ni dans `app.json` / `app.config.*` : tout ce qui s'y trouve est livré dans le bundle | gitleaks, relecteur |
-| Les mentions obligatoires figurent dans l'application : attribution ODbL, licence de la police, non-affiliation aux compagnies, crédits des images | Test de rendu de l'écran qui les porte |
+| Les mentions obligatoires figurent dans l'application : attribution ODbL, licence de la police, non-affiliation aux compagnies, crédits des images | Vérification du propriétaire avant release (voir `docs/PRODUCT.md`, « Hors périmètre ») |
 
 Les zones correspondantes sont classées **risque élevé** : voir `docs/factory/RISK.md`. Résume ces règles en une phrase dans `CLAUDE.md` (section « Sécurité propre au domaine »).

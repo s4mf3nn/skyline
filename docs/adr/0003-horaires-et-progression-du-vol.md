@@ -1,7 +1,7 @@
 # ADR-0003 : Horaires et progression du vol
 
 Date : 2026-10-13
-Statut : proposée
+Statut : acceptée
 
 ## Contexte
 L'écran Ciel du handoff affiche les heures de départ et d'arrivée (« 13:05 → 15:10 ») et une barre de progression du
@@ -30,14 +30,14 @@ Relais possible pour les options 2 à 4 : une fonction serverless minimale (Supa
 Worker) qui garde la clé, met en cache par indicatif et par jour, et ne reçoit jamais la position de l'observateur.
 
 ## Décision
-À décider par le propriétaire avant d'écrire SPEC-0009. Recommandation : **option 1 en v0** (heures et progression
-estimées, libellées comme telles), et **option 3 au MVP** derrière le backend prévu par le brief, qui gardera la clé
-sans créer d'infrastructure dédiée à la v0. Si les horaires réels sont jugés nécessaires dès la v0 pour valider H1,
-retenir l'option 3 avec un relais minimal, ce qui demande une ADR de plus pour le relais (hébergement, secret, coût) et un amendement de `docs/PRODUCT.md`
-(qui exclut tout backend en v0) et de la roadmap avant SPEC-0009.
+Option 1 en v0, retenue par le propriétaire le 2026-10-14 : heures et progression estimées, libellées comme telles.
+Option 3 au MVP, derrière le backend prévu par le brief, qui gardera la clé sans créer d'infrastructure dédiée à la v0.
 
 ## Conséquences
 - Option 1 : SPEC-0009 porte le calcul, pur et testé sous Vitest ; aucun nouvel hôte ni secret.
 - Options 2 à 4 : un nouvel hôte sortant, un secret côté serveur (jamais sous `EXPO_PUBLIC_`), un relais à livrer et à
   surveiller, un coût mensuel, et une zone sensible de plus pour le client.
 - Dans tous les cas, l'écran Ciel garde un repli quand les heures sont inconnues (route inconnue, vol hors base).
+- Réouverture : si les horaires réels deviennent nécessaires dès la v0 pour valider H1, retenir l'option 3 avec un
+  relais minimal demande une ADR de plus (hébergement, secret, coût) et un amendement de `docs/PRODUCT.md` (qui exclut
+  tout backend en v0) et de la roadmap.

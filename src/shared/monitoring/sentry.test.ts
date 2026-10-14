@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/react-native";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { scrubEvent } from "./event";
+import { scrubBreadcrumb, scrubEvent } from "./event";
 import { createSentryErrorReporter } from "./sentry";
 
 vi.mock("@sentry/react-native", () => ({ init: vi.fn(), captureException: vi.fn() }));
@@ -34,6 +34,7 @@ describe("createSentryErrorReporter with DSN", () => {
       environment: "production",
       sendDefaultPii: false,
       beforeSend: scrubEvent,
+      beforeBreadcrumb: scrubBreadcrumb,
     });
   });
 

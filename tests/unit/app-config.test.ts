@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import appConfig, { buildExtra } from "../../app.config";
+import { DEFAULT_BUILD } from "../../src/shared/monitoring/scrub";
 
 describe("buildExtra", () => {
   it("uses the GitHub runner variables first", () => {
@@ -18,7 +19,7 @@ describe("buildExtra", () => {
   });
 
   it("falls back to the development defaults", () => {
-    expect(buildExtra({})).toEqual({ release: "dev", environment: "development" });
+    expect(buildExtra({})).toEqual(DEFAULT_BUILD);
   });
 });
 

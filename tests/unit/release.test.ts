@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -8,6 +10,7 @@ interface Step {
 }
 interface Release {
   readProfile(env: Record<string, string | undefined>): "preview" | "production";
+  removeSourceMaps(dir: string): void;
   releaseSteps(profile: "preview" | "production", sha: string): Step[];
 }
 
@@ -65,7 +68,7 @@ describe("scripts/release.mjs releaseSteps", () => {
       "expo export",
       "releases new abc123",
       "sentry-expo-upload-sourcemaps dist",
-      ".map",
+      "--remove-maps",
       "eas update",
       "releases finalize abc123",
     ].map(position);
@@ -83,5 +86,22 @@ describe("scripts/release.mjs releaseSteps", () => {
       const args = release.releaseSteps(profile, "abc123").flatMap((step) => step.args);
       expect(args.join(" ")).not.toMatch(/token|EXPO_TOKEN|SENTRY_AUTH_TOKEN|DSN/i);
     }
+  });
+});
+
+describe("scripts/release.mjs removeSourceMaps", () => {
+  it("removes nested .map files and keeps bundles and assets", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "skyline-dist-"));
+    mkdirSync(path.join(dir, "_expo", "js"), { recursive: true });
+    writeFileSync(path.join(dir, "_expo", "js", "entry.hbc"), "bundle");
+    writeFileSync(path.join(dir, "_expo", "js", "entry.hbc.map"), "map");
+    writeFileSync(path.join(dir, "index.js.map"), "map");
+    writeFileSync(path.join(dir, "metadata.json"), "{}");
+    release.removeSourceMaps(dir);
+    expect(existsSync(path.join(dir, "_expo", "js", "entry.hbc.map"))).toBe(false);
+    expect(existsSync(path.join(dir, "index.js.map"))).toBe(false);
+    expect(existsSync(path.join(dir, "_expo", "js", "entry.hbc"))).toBe(true);
+    expect(existsSync(path.join(dir, "metadata.json"))).toBe(true);
+    rmSync(dir, { recursive: true });
   });
 });

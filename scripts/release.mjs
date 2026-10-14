@@ -1,13 +1,14 @@
 // Livraison : suite de commandes selon RELEASE_PROFILE, exécutée pas à pas, arrêt au premier échec.
 // Les secrets (EXPO_TOKEN, SENTRY_AUTH_TOKEN) restent dans l'environnement du processus, jamais dans les arguments.
+
 import { spawnSync } from "node:child_process";
+import { readdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PROFILES = ["preview", "production"];
 // Même version que la dépendance de @sentry/react-native ~7.11.0.
 const SENTRY_CLI_VERSION = "2.58.4";
-const REMOVE_MAPS =
-  'for (const f of require("fs").readdirSync("dist", { recursive: true })) if (f.endsWith(".map")) require("fs").rmSync("dist/" + f)';
 
 // Sans RELEASE_PROFILE on prend « preview » : jamais de soumission aux stores par défaut.
 export function readProfile(env) {
@@ -16,6 +17,18 @@ export function readProfile(env) {
     throw new Error(`Unknown RELEASE_PROFILE "${profile}", expected one of: ${PROFILES.join(", ")}`);
   }
   return profile;
+}
+
+// Supprime les sourcemaps d'un dossier (récursif) : `eas update` publie `dist/` tel quel.
+export function removeSourceMaps(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      removeSourceMaps(path);
+    } else if (entry.name.endsWith(".map")) {
+      rmSync(path);
+    }
+  }
 }
 
 export function releaseSteps(profile, sha) {
@@ -30,7 +43,7 @@ export function releaseSteps(profile, sha) {
     { cmd: "npx", args: [`--package=@sentry/cli@${SENTRY_CLI_VERSION}`, "sentry-cli", "releases", "new", sha] },
     { cmd: "npx", args: ["--package=@sentry/react-native", "sentry-expo-upload-sourcemaps", "dist"] },
     // Aucune sourcemap ne doit être servie : `eas update` publie `dist/` tel quel.
-    { cmd: "node", args: ["-e", REMOVE_MAPS] },
+    { cmd: "node", args: ["scripts/release.mjs", "--remove-maps", "dist"] },
     {
       cmd: "npx",
       args: ["eas", "update", "--channel", profile, "--message", sha, "--skip-bundler", "--non-interactive"],
@@ -54,7 +67,11 @@ function run() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    run();
+    if (process.argv[2] === "--remove-maps") {
+      removeSourceMaps(process.argv[3]);
+    } else {
+      run();
+    }
   } catch (error) {
     console.error(error.message);
     process.exit(1);

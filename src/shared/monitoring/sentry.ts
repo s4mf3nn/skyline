@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react-native";
-import { scrubEvent } from "./event";
+import { scrubBreadcrumb, scrubEvent } from "./event";
 import type { ErrorReporter } from "./index";
 import { createNoopErrorReporter } from "./noop";
 import { type BuildInfo, scrubContext } from "./scrub";
@@ -18,6 +18,8 @@ export function createSentryErrorReporter({ dsn, release, environment }: SentryO
     // La collecte automatique reste coupée : la position ne doit jamais partir avec une erreur.
     sendDefaultPii: false,
     beforeSend: scrubEvent,
+    // Les breadcrumbs sont recopiés côté natif (plantages) sans passer par `beforeSend`.
+    beforeBreadcrumb: scrubBreadcrumb,
   });
   return {
     report(error, context = {}) {

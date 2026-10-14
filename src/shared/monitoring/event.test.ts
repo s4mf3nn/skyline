@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scrubEvent } from "./event";
+import { scrubBreadcrumb, scrubEvent } from "./event";
 
 describe("scrubEvent", () => {
   it("removes coordinates from every field that carries text", () => {
@@ -29,5 +29,18 @@ describe("scrubEvent", () => {
 
   it("accepts an event without optional fields", () => {
     expect(scrubEvent({})).toEqual({});
+  });
+
+  it("redacts numeric coordinates but keeps integers and short decimals", () => {
+    const event = scrubEvent({ extra: { latitude: 45.764, count: 3, ratio: 4.5 } });
+    expect(event.extra).toEqual({ latitude: "[redacted]", count: 3, ratio: 4.5 });
+  });
+});
+
+describe("scrubBreadcrumb", () => {
+  it("removes coordinates from a request url", () => {
+    const breadcrumb = scrubBreadcrumb({ category: "fetch", data: { url: "https://x.test/?lat=45.764&lon=4.836" } });
+    expect(JSON.stringify(breadcrumb)).not.toMatch(/\d\.\d{3,}/);
+    expect(breadcrumb.category).toBe("fetch");
   });
 });

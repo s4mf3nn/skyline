@@ -22,9 +22,16 @@ export interface ScrubbableEvent {
 // Valeur inconnue : les chaînes sont filtrées, les objets et tableaux parcourus, le reste est gardé tel quel.
 function scrubValue(value: unknown): unknown {
   if (typeof value === "string") return scrubMessage(value);
+  // Une coordonnée numérique (45.764) se reconnaît à sa forme texte.
+  if (typeof value === "number") return scrubNumber(value);
   if (Array.isArray(value)) return value.map(scrubValue);
   if (typeof value === "object" && value !== null) return scrubRecord(value as Record<string, unknown>);
   return value;
+}
+
+function scrubNumber(value: number): number | string {
+  const text = String(value);
+  return scrubMessage(text) === text ? value : "[redacted]";
 }
 
 function scrubRecord(record: Record<string, unknown>): Record<string, unknown> {
@@ -35,11 +42,12 @@ function scrubRecord(record: Record<string, unknown>): Record<string, unknown> {
   return scrubbed;
 }
 
-function scrubBreadcrumb(breadcrumb: ScrubbableBreadcrumb): ScrubbableBreadcrumb {
-  const scrubbed = { ...breadcrumb };
+/** Aussi branché sur `beforeBreadcrumb` : le SDK recopie les breadcrumbs côté natif, hors de `beforeSend`. */
+export function scrubBreadcrumb<B extends ScrubbableBreadcrumb>(breadcrumb: B): B {
+  const scrubbed: ScrubbableBreadcrumb = { ...breadcrumb };
   if (breadcrumb.message !== undefined) scrubbed.message = scrubMessage(breadcrumb.message);
   if (breadcrumb.data !== undefined) scrubbed.data = scrubRecord(breadcrumb.data);
-  return scrubbed;
+  return scrubbed as B;
 }
 
 /** Renvoie une copie de l'événement dont chaque champ porteur de texte est débarrassé des coordonnées. */

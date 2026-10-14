@@ -1,12 +1,10 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
+import type { BuildInfo } from "./src/shared/monitoring/scrub";
 
-interface BuildExtra {
-  release: string;
-  environment: string;
-}
-
+// Valeurs par défaut recopiées de `DEFAULT_BUILD` : le chargeur de config d'Expo ne résout pas les imports de valeurs
+// locaux ; `tests/unit/app-config.test.ts` vérifie qu'elles restent égales.
 /** Version et environnement livrés : runner GitHub d'abord, chez EAS ensuite, valeurs de développement sinon. */
-export function buildExtra(env: Record<string, string | undefined>): BuildExtra {
+export function buildExtra(env: Record<string, string | undefined>): BuildInfo {
   return {
     release: env.GITHUB_SHA ?? env.EAS_BUILD_GIT_COMMIT_HASH ?? "dev",
     environment: env.RELEASE_PROFILE ?? env.EAS_BUILD_PROFILE ?? "development",

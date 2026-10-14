@@ -274,6 +274,31 @@ describe.skip("SPEC-0005 logique de l'écran Ciel", () => {
     ).toEqual(SKY_ABSENT);
   });
 
+  it("CA5 : a retained aircraft with no scene is removed when the passages are displayed", async () => {
+    const { nextSkyState, SKY_ABSENT } = await ciel();
+    const a = passage("a1", "AFR1506");
+    expect(
+      nextSkyState({
+        previous: { presence: "retenu", passage: a },
+        scene: null,
+        denied: false,
+        displayedPage: "passages",
+      }),
+    ).toEqual(SKY_ABSENT);
+  });
+
+  it("CA18 : shares the flight label and the metric format with the passages", async () => {
+    const format = await load<{
+      flightLabel(callsign: string | null, airline: Airline): string;
+      formatMetric(value: number | null): string;
+    }>("src/shared/format/index.ts");
+    const { resolveAirline } = await airlines();
+    expect(format.formatMetric(7850)).toBe(`7${NBSP}850`);
+    expect(format.formatMetric(null)).toBe("—");
+    expect(format.flightLabel("AFR1506", resolveAirline("AFR1506"))).toBe("AF1506");
+    expect(format.flightLabel(null, resolveAirline(null))).toBe("—");
+  });
+
   it("CA5 : does not modify its inputs", async () => {
     const { nextSkyState } = await ciel();
     const a = passage("a1", "AFR1506");

@@ -1,8 +1,8 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Scénarios cachés de SPEC-0005 (Vitest) : parcours de bout en bout de la règle de présence de Ciel, avec la scène
-// calculée par `computeScene` (SPEC-0004) et d'autres avions que les tests de contrat. Actifs seuls (pas de `.skip`).
+// Scénarios cachés de SPEC-0005 (Vitest) : parcours de bout en bout de la règle de présence de Ciel, avec des scènes
+// écrites à la main (type `Scene` de SPEC-0004) et d'autres avions que les tests de contrat. Actifs seuls (pas de `.skip`).
 
 const load = <T>(file: string): Promise<T> => import(path.resolve(file));
 
@@ -116,6 +116,14 @@ describe("SPEC-0005 scénarios cachés : présence de Ciel", () => {
       displayedPage: "passages",
     });
     expect(back).toEqual({ presence: "survol", passage: a });
+
+    const finished = nextSkyState({
+      previous: back,
+      scene: { overhead: null, upcoming: [] },
+      denied: false,
+      displayedPage: "ciel",
+    });
+    expect(finished).toEqual({ presence: "retenu", passage: a });
   });
 
   it("builds a view for an aircraft with no callsign and no altitude without inventing anything", async () => {

@@ -111,6 +111,7 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     jest.useFakeTimers();
   });
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
@@ -207,8 +208,8 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
       await jest.advanceTimersByTimeAsync(0);
     });
     expect(screen.getByTestId("sky-screen")).toBeOnTheScreen();
-    expect(screen.queryByTestId(/^sky-(arrow|route|progress|codes)/)).toBeNull();
-    expect(within(screen.getByTestId("sky-screen")).queryByText(/^\d{2}:\d{2}$/)).toBeNull();
+    expect(screen.queryByTestId(/^sky-(arrow|route|progress|codes|delay)/)).toBeNull();
+    expect(within(screen.getByTestId("sky-screen")).queryByText(/\d{1,2}:\d{2}/)).toBeNull();
   });
 
   it("CA11 : tints the page indicator with the airline accent while Ciel is displayed", async () => {
@@ -224,12 +225,33 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     expect(trait(1)).toHaveStyle({ backgroundColor: CREAM });
   });
 
+  it("CA11 : changes the accent with the airline when another aircraft becomes the survol", async () => {
+    const harness = setup({ aircraft: [OVERHEAD_NOW, OVERHEAD_LATER] });
+    await render(<harness.App />);
+    await settle();
+    const { resolveAirline, airlineTheme } = airlinesModule();
+    const first = airlineTheme(resolveAirline("AFR1506")).small;
+    const second = airlineTheme(resolveAirline("IBE3457")).small;
+    expect(first).not.toBe(second);
+    await slide("decrement");
+    expect(trait(0)).toHaveStyle({ backgroundColor: first });
+
+    await elapse(harness.clock, 276 * SECOND);
+    expect(trait(0)).toHaveStyle({ backgroundColor: second });
+  });
+
   it("CA12 : retains the aircraft with its last values when the survol ends while Ciel is displayed", async () => {
     const harness = setup({ aircraft: [OVERHEAD_NOW] });
     await render(<harness.App />);
     await settle();
     await slide("decrement");
     const before = ["speed", "altitude", "heading", "airline", "flight", "aircraft"].map((key) => text(value(key)));
+    const idsOf = () =>
+      screen
+        .queryAllByTestId(/^sky-/)
+        .map((element) => String(element.props.testID))
+        .sort();
+    const idsBefore = idsOf();
     const { airlineTheme, resolveAirline } = airlinesModule();
 
     await elapse(harness.clock, 40 * SECOND);
@@ -245,6 +267,7 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     await settle();
     const after = ["speed", "altitude", "heading", "airline", "flight", "aircraft"].map((key) => text(value(key)));
     expect(after).toEqual(before);
+    expect(idsOf()).toEqual(idsBefore);
   });
 
   it("CA13 : removes a retained aircraft at the end of the slide towards the passages", async () => {
@@ -262,6 +285,41 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     expect(screen.getByTestId("passages-list")).toBeOnTheScreen();
   });
 
+  it("CA13 : keeps showing the aircraft during the removal transition", async () => {
+    const harness = setup({ aircraft: [OVERHEAD_NOW] });
+    await render(<harness.App />);
+    await settle();
+    await slide("decrement");
+    await elapse(harness.clock, 40 * SECOND);
+
+    await slide("increment");
+    await elapse(harness.clock, 100);
+    expect(screen.getByTestId("sky-screen")).toBeOnTheScreen();
+    expect(text(value("flight"))).toBe("AF1506");
+    expect(text(value("altitude"))).toBe(`7${NBSP}850`);
+  });
+
+  it("CA13 : cancels the removal when a new survol begins before the end of the transition", async () => {
+    const harness = setup({ aircraft: [OVERHEAD_NOW] });
+    await render(<harness.App />);
+    await settle();
+    await slide("decrement");
+    await elapse(harness.clock, 40 * SECOND);
+
+    await slide("increment");
+    await elapse(harness.clock, 100);
+    const next = plane("n3", "IBE3457", -2.9, 1, 90, { altitudeM: 9100 });
+    await act(async () => {
+      harness.adsb.setAircraft([next]);
+      harness.lifecycle.enterForeground();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    await elapse(harness.clock, SECOND);
+    expect(screen.getByTestId("sky-screen")).toBeOnTheScreen();
+    expect(text(value("flight"))).toBe("IB3457");
+    expect(pagerElement()).toHaveAccessibilityValue({ text: "Page 2 sur 2" });
+  });
+
   it("CA14 : removes Ciel at once when the survol ends while the passages are displayed", async () => {
     const harness = setup({ aircraft: [OVERHEAD_NOW] });
     await render(<harness.App />);
@@ -274,7 +332,29 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     expect(screen.getByTestId("passages-list")).toBeOnTheScreen();
   });
 
-  it("CA15 : the retained aircraft is replaced by the next survol", async () => {
+  it("CA15 : goes back to the passages when the retained aircraft becomes an upcoming passage again", async () => {
+    const harness = setup({ aircraft: [OVERHEAD_NOW] });
+    await render(<harness.App />);
+    await settle();
+    await slide("decrement");
+    await elapse(harness.clock, 40 * SECOND);
+    expect(screen.getByTestId("sky-screen")).toBeOnTheScreen();
+
+    // L'avion a viré : de nouveau loin à l'ouest, cap est, il repasse dans 150 s.
+    const turned = plane("h1", "AFR1506", -30.1, 0.5, 90, { altitudeM: 7850 });
+    await act(async () => {
+      harness.adsb.setAircraft([turned]);
+      harness.lifecycle.enterForeground();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    await elapse(harness.clock, SECOND);
+    await elapse(harness.clock, 500);
+    expect(screen.queryByTestId("sky-screen")).toBeNull();
+    expect(screen.queryByLabelText("Indicateur de page")).toBeNull();
+    expect(screen.getByTestId("passage-card-h1")).toBeOnTheScreen();
+  });
+
+  it("CA4 : the retained aircraft is replaced by the next survol", async () => {
     const harness = setup({ aircraft: [OVERHEAD_NOW, OVERHEAD_LATER] });
     await render(<harness.App />);
     await settle();
@@ -300,10 +380,7 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     await slide("increment");
     await elapse(harness.clock, 2 * SECOND);
     expect(harness.monitoring.events).toEqual([]);
-    for (const spy of spies) {
-      expect(spy).not.toHaveBeenCalled();
-      spy.mockRestore();
-    }
+    for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 
   it("CA17 : two applications created one after the other share no retained aircraft", async () => {

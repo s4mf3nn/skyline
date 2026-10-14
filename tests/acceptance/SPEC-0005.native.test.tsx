@@ -177,6 +177,12 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
 
     await slide("decrement");
     expect(pagerElement()).toHaveAccessibilityValue({ text: "Page 1 sur 2" });
+    // Même avion que la carte « En ce moment » (INV1) : même vol, même compagnie.
+    const card = within(screen.getByTestId("passage-card-h1"));
+    expect(card.getByText("Au-dessus de vous")).toBeOnTheScreen();
+    expect(card.getByText(text(value("flight")))).toBeOnTheScreen();
+    expect(card.getByText(text(value("airline")))).toBeOnTheScreen();
+    expect(text(value("flight"))).toBe("AF1506");
   });
 
   it("CA9 : colours the screen with the airline theme and shows the six rows and the generic tail", async () => {
@@ -416,8 +422,13 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     expect(screen.getAllByTestId("sky-screen")).toHaveLength(1);
     expect(screen.getAllByLabelText("Indicateur de page")).toHaveLength(1);
 
+    // L'avion est retenu dans la première application (Ciel affichée) : la seconde n'en hérite pas.
+    await slide("decrement");
     await elapse(withSurvol.clock, 40 * SECOND);
     await elapse(without.clock, 40 * SECOND);
-    expect(screen.queryAllByTestId("sky-screen")).toHaveLength(0);
+    expect(screen.getAllByTestId("sky-screen")).toHaveLength(1);
+    expect(screen.getAllByTestId("sky-value-flight")).toHaveLength(1);
+    expect(text(value("flight"))).toBe("AF1506");
+    expect(screen.getAllByTestId("passages-list")).toHaveLength(2);
   });
 });

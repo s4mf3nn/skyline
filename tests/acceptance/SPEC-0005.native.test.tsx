@@ -132,6 +132,24 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     expect(screen.getByTestId("passages-list")).toBeOnTheScreen();
   });
 
+  it("CA7 : has a single page while loading", async () => {
+    const harness = setup({ aircraft: [OVERHEAD_NOW] });
+    await render(<harness.App />);
+    expect(screen.queryByLabelText("Indicateur de page")).toBeNull();
+    expect(screen.queryByTestId("sky-screen")).toBeNull();
+    expect(screen.getByTestId("passages-list")).toBeOnTheScreen();
+  });
+
+  it("CA7 : has a single page when the source is unavailable", async () => {
+    const harness = setup({ aircraft: [OVERHEAD_NOW] });
+    harness.adsb.setUnavailable(true);
+    await render(<harness.App />);
+    await settle();
+    await elapse(harness.clock, 5 * SECOND);
+    expect(screen.queryByLabelText("Indicateur de page")).toBeNull();
+    expect(screen.queryByTestId("sky-screen")).toBeNull();
+  });
+
   it("CA7 : has a single page when the location permission is denied", async () => {
     const harness = setup({ aircraft: [OVERHEAD_NOW], permission: "denied" });
     await render(<harness.App />);
@@ -347,7 +365,9 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
       harness.lifecycle.enterForeground();
       await jest.advanceTimersByTimeAsync(0);
     });
-    await elapse(harness.clock, SECOND);
+    await elapse(harness.clock, 100);
+    expect(screen.getByTestId("sky-screen")).toBeOnTheScreen();
+    expect(text(value("flight"))).toBe("AF1506");
     await elapse(harness.clock, 500);
     expect(screen.queryByTestId("sky-screen")).toBeNull();
     expect(screen.queryByLabelText("Indicateur de page")).toBeNull();
@@ -383,19 +403,21 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 
-  it("CA17 : two applications created one after the other share no retained aircraft", async () => {
-    const first = setup({ aircraft: [OVERHEAD_NOW] });
-    const view = await render(<first.App />);
+  it("CA17 : two applications mounted together share no retained aircraft nor presence", async () => {
+    const withSurvol = setup({ aircraft: [OVERHEAD_NOW] });
+    const without = setup({ aircraft: [] });
+    await render(
+      <>
+        <withSurvol.App />
+        <without.App />
+      </>,
+    );
     await settle();
-    await slide("decrement");
-    await elapse(first.clock, 40 * SECOND);
-    expect(screen.getByTestId("sky-screen")).toBeOnTheScreen();
-    view.unmount();
+    expect(screen.getAllByTestId("sky-screen")).toHaveLength(1);
+    expect(screen.getAllByLabelText("Indicateur de page")).toHaveLength(1);
 
-    const second = setup({ aircraft: [] });
-    await render(<second.App />);
-    await settle();
-    expect(screen.queryByTestId("sky-screen")).toBeNull();
-    expect(screen.queryByLabelText("Indicateur de page")).toBeNull();
+    await elapse(withSurvol.clock, 40 * SECOND);
+    await elapse(without.clock, 40 * SECOND);
+    expect(screen.queryAllByTestId("sky-screen")).toHaveLength(0);
   });
 });

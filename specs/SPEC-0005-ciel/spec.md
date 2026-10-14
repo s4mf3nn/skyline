@@ -36,7 +36,7 @@ Logique pure (Vitest, `tests/acceptance/SPEC-0005.test.ts`) :
 - **CA14** : quand le survol se termine pendant que Prochains passages est la page affichée, Ciel est retiré aussitôt, sans changement de la page affichée.
 - **CA15** : quand Ciel est la page affichée et qu'elle est retirée parce que l'avion retenu redevient un passage à venir (virage puis nouvelle prévision, constatés à un rafraîchissement), la bande passe à Prochains passages par la transition du pager. Une permission refusée efface l'avion et retire Ciel (règle 1 de CA3, jouée sous Vitest : le faux de localisation ne permet pas de la retirer en cours d'usage) ; refusée dès le lancement, Ciel est absente et l'app est sur Prochains passages (CA7).
 - **CA16** : (INV7) l'écran et le crochet n'envoient rien au suivi des erreurs (`monitoring.events` reste vide) et n'écrivent rien dans les logs (`console.log`, `info`, `warn`, `error`) pendant un parcours complet (apparition, retenue, retrait).
-- **CA17** : l'état de présence est propre à chaque application (`createApp`) : deux applications créées l'une après l'autre dans un même test ne partagent ni avion retenu ni présence.
+- **CA17** : l'état de présence est propre à chaque application (`createApp`) : deux applications montées en même temps (deux arbres dans un même test, chacune avec sa source) ne partagent ni avion retenu ni présence : seule celle dont la source a un survol montre Ciel.
 - **CA18** : `src/shared/format/index.ts` exporte `flightLabel` et `formatMetric`, au comportement de SPEC-0006 CA5 et CA6 ; `src/features/passages/service.ts` les ré-exporte (le contrat de SPEC-0006 ne change pas) et Ciel les importe de `src/shared/format/index.ts`.
 
 ## Cas limites

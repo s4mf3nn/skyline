@@ -297,6 +297,9 @@ describe.skip("SPEC-0005 logique de l'écran Ciel", () => {
     expect(format.formatMetric(null)).toBe("—");
     expect(format.flightLabel("AFR1506", resolveAirline("AFR1506"))).toBe("AF1506");
     expect(format.flightLabel(null, resolveAirline(null))).toBe("—");
+    const reexported = await load<typeof format>("src/features/passages/service.ts");
+    expect(reexported.flightLabel).toBe(format.flightLabel);
+    expect(reexported.formatMetric).toBe(format.formatMetric);
   });
 
   it("CA5 : does not modify its inputs", async () => {

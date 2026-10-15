@@ -85,7 +85,7 @@ function expectNear(actual: number | null, expected: number, tolerance: number) 
   expect(Math.abs((actual as number) - expected)).toBeLessThanOrEqual(tolerance);
 }
 
-describe.skip("SPEC-0007 adsb.lol client", () => {
+describe("SPEC-0007 adsb.lol client", () => {
   it("CA1 : builds the request URL with a fixed host, 3-decimal coordinates and a radius in nautical miles", async () => {
     const { buildAdsbLolUrl } = await adsbLol();
     expect(buildAdsbLolUrl({ latitude: 45.7644, longitude: 4.8357, radiusKm: 80 })).toBe(

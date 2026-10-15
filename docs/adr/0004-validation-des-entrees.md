@@ -1,7 +1,7 @@
 # ADR-0004 : Validation des entrées
 
 Date : 2026-10-13
-Statut : proposée
+Statut : acceptée
 
 ## Contexte
 L'ADR-0001 laisse `à décider` la façon de valider les entrées à la frontière : réponses d'adsb.lol et d'adsbdb.com
@@ -17,11 +17,12 @@ Options :
    formats de réponse riches en champs facultatifs.
 
 ## Décision
-À trancher par SPEC-0007, première spec qui valide une réponse externe. Recommandation : **option 1, Zod 4**, pour la
-lisibilité des schémas et le typage déduit ; version et compatibilité Hermes à vérifier dans la documentation au moment
-de la spec.
+**Option 1, Zod 4**, épinglé en `4.6.5` exact (SPEC-0007) : schémas lisibles, types déduits, repli par champ avec
+`.catch(null)`. Hermes n'autorise pas `new Function`, que Zod utilise pour sa compilation rapide : chaque module qui
+valide appelle `z.config({ jitless: true })` en tête, ce qui désactive cette compilation. Les tests unitaires
+vérifient le comportement sous Vitest ; la compatibilité Hermes reste à confirmer sur appareil (SPEC-0007, T3).
 
 ## Conséquences
 - Les schémas vivent avec le client de chaque source (`src/shared/adsb/`, `src/shared/routes/`), jamais dans un écran.
 - La dépendance est justifiée par cette ADR dans le résumé de PR de SPEC-0007.
-- Une fois tranchée, la ligne « Validation des entrées » de l'ADR-0001 renvoie ici.
+- La ligne « Validation des entrées » de l'ADR-0001 renvoie ici.

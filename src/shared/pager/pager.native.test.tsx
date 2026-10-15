@@ -78,6 +78,21 @@ describe("Pager page presence", () => {
     expect(screen.queryByRole("adjustable", { name: "Indicateur de page" })).toBeNull();
   });
 
+  it("ignores the swipe gesture when a single page is present", async () => {
+    skyPresent = false;
+    await render(<Pager pages={[presentFeature(), others()]} />);
+    const pan = getByGestureTestId("pager-pan");
+    await act(async () => {
+      fireGestureHandler(pan, [{ state: 2 }, { translationX: 40 }]);
+    });
+    seen.length = 0;
+    await act(async () => {
+      fireGestureHandler(pan, [{ translationX: 100, state: 5 }]);
+    });
+    // Un changement de page, même transitoire, ferait appeler `presence` avec "ciel".
+    expect(seen).not.toContain("ciel");
+  });
+
   it("keeps the displayed page when the absent page appears", async () => {
     skyPresent = false;
     const view = await render(<Pager pages={[presentFeature(), others()]} />);
@@ -129,9 +144,15 @@ describe("Pager page presence", () => {
     skyPresent = false;
     await view.rerender(<Pager pages={[presentFeature(), others()]} />);
     await act(async () => {
+      fireGestureHandler(pan, [{ translationX: 80 }]);
+    });
+    seen.length = 0;
+    await act(async () => {
       fireGestureHandler(pan, [{ translationX: 80, state: 5 }]);
     });
     await pass(500);
+    // Le relâchement ne change pas de page, même transitoirement.
+    expect(seen).not.toContain("ciel");
     expect(screen.getByText("passages screen")).toBeOnTheScreen();
     expect(screen.queryByText("sky screen")).toBeNull();
   });

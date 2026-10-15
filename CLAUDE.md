@@ -17,7 +17,7 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 
 ## Règles de la factory (non négociables)
 
-1. **On ne code jamais sans spec.** Toute tâche référence une spec `specs/SPEC-XXXX-*/spec.md` et une tâche de son `plan.md`. Si on te demande de coder sans spec, propose d'abord `/new-spec`. Un correctif de bug (`/fix`) référence la spec existante et une issue `bug`, sans tâche de plan : il rétablit ce que la spec dit déjà et apporte le test qui reproduit le bug ; si c'est la spec qui est fausse ou muette, on l'amende d'abord (`/new-spec`). Autre exception : une amélioration du boilerplate ou de l'outillage (`scripts/`, `.claude/`, `.github/`, `docs/factory/`, config) n'a pas de spec ; `/ship` la traite en mode hors spec (scope `factory`, voir `docs/factory/WORKFLOW.md`). Les autres règles (vérification, revue locale, pas de contournement) restent applicables.
+1. **On ne code jamais sans spec.** Toute tâche référence une spec `specs/SPEC-XXXX-*/spec.md` et une tâche de son `plan.md`. Sans spec, propose `/new-spec`. Un correctif de bug (`/fix`) référence la spec existante et une issue `bug`, sans tâche de plan, avec le test qui reproduit le bug ; si la spec est fausse ou muette, on l'amende d'abord. Exception : outillage du boilerplate (`scripts/`, `.claude/`, `.github/`, `docs/factory/`, config), traité par `/ship` en mode hors spec (scope `factory`, voir `docs/factory/WORKFLOW.md`) ; les autres règles restent applicables.
 2. **Périmètre déclaré.** Chaque tâche liste les chemins qu'elle a le droit de modifier. Si tu dois toucher un fichier hors périmètre, tu t'arrêtes et tu le signales au lieu de le faire.
 3. **Bail.** Au démarrage d'une tâche, pose un bail sur ton périmètre avec `node scripts/lease.mjs acquire <TASK_ID> <chemins...>`. Si l'acquisition échoue, un autre agent travaille sur ces fichiers : tu t'arrêtes et tu le signales.
 4. **Tests de contrat immuables.** Les fichiers `tests/acceptance/*.test.ts` sont écrits et validés par l'humain dans la PR de spec. Tu as seulement le droit de retirer `.skip` sur le `describe` de ta spec. Toute autre modification est bloquée par la CI (`scripts/check-contract.mjs`). Les scénarios cachés (`tests/holdout/`) sont retirés de ton workspace par `/implement` : tu ne les lis pas, tu ne les modifies pas et tu ne cherches pas à les obtenir autrement.
@@ -28,18 +28,14 @@ Le type d'application (API, web, mobile, CLI…), la stack et leurs raisons sont
 
 ## Conventions de code
 
-<!-- À ajuster après l'ADR-0001 : garder ce qui s'applique à la stack retenue. -->
-- TypeScript strict, pas de `any`, pas de `// @ts-ignore` ni de `// @ts-expect-error`, pas de désactivation de règle Biome (`scripts/pre-review.mjs check` les refuse dans `src/`).
-- Organisation **par feature** : `src/features/<feature>/` avec son point d'entrée `index.ts` et les tests à côté (`*.test.ts`, `*.test.tsx`). Le découpage interne d'une feature dépend du type d'application et est fixé par l'ADR-0001 (ex. API : `{routes,service,repo,schema}.ts` ; web ou mobile : `{screens,components,hooks,service}` ; CLI : `{command,service}.ts`).
-- **Frontières entre features** : une feature n'importe que ses propres fichiers, `src/shared/` et le point d'entrée public (`index.ts`) d'une autre feature, jamais l'un de ses fichiers internes. `scripts/pre-review.mjs check` le contrôle ; ce qui doit être partagé monte dans `src/shared/` ou dans l'`index.ts` de la feature qui le possède.
-- **Aucun registre central édité à la main.** Chaque feature exporte `feature` depuis son `index.ts` ; `src/features.gen.ts` est généré par `pnpm gen`. C'est ce qui évite les conflits entre agents.
-- Validation des entrées à la frontière (requête HTTP, formulaire, deep link, argument de CLI, message), jamais plus loin.
-- Ce que les tests ne peuvent pas appeler pour de vrai (service tiers, API du navigateur ou de l'appareil, horloge, réseau) passe par une interface avec un faux, injecté par les tests (voir le guide, « Services tiers, horloge et faux »).
-- Erreurs métier typées (`src/shared/errors.ts`), jamais de `throw new Error("...")` brut dans une feature, ni d'horloge directe (`Date.now()`, `new Date()`) : `pre-review.mjs check` aussi.
-- Si le projet a une persistance : migrations préfixées par timestamp, une migration par tâche au maximum.
-- **Langues** : commentaires en français ; messages d'erreur, codes d'erreur (`NOT_FOUND`), identifiants (variables, fonctions, types), noms de tests (`describe` / `it`) et messages de log en anglais. Commits et titre de PR : type et scope Conventional Commits inchangés, description en français. Sorties CLI des scripts : en français. Ces règles valent pour le code nouveau ou modifié ; le code existant n'est pas réécrit pour elles.
-- **Lisibilité humaine d'abord** : fonctions courtes qui font une seule chose, noms explicites, abstractions simples. Pas d'astuce, pas de code « malin » (chaînes d'opérateurs denses, métaprogrammation, génériques complexes, one-liners obscurs), pas d'abstraction anticipée : on factorise à partir de la troisième répétition. Les commentaires expliquent le *pourquoi*, pas le *comment*. En cas de doute entre court et clair, choisis clair.
-- Commits et titre de PR en Conventional Commits avec la spec en scope : `feat(spec-0001): <description>` (`fix(spec-0001): <description>` pour un correctif de bug).
+Détail et exemples : `docs/factory/CONVENTIONS.md` (à lire avant d'écrire du code dans `src/`). Les points que les contrôles par script refusent :
+
+- TypeScript strict : pas de `any`, de `@ts-ignore`, de `@ts-expect-error` ni de désactivation de règle Biome dans `src/`.
+- Organisation par feature (`src/features/<feature>/`, entrée `index.ts`, tests à côté) ; une feature n'importe que ses fichiers, `src/shared/` et l'`index.ts` d'une autre feature.
+- Aucun registre central édité à la main : `src/features.gen.ts` vient de `pnpm gen`.
+- Erreurs métier typées (`src/shared/errors.ts`), jamais de `throw new Error` brut, jamais d'horloge directe (`Date.now()`, `new Date()`) ; services tiers et API d'appareil derrière une interface avec un faux.
+- Langues : commentaires en français ; identifiants, erreurs, noms de tests et logs en anglais ; commits et titre de PR en Conventional Commits avec la spec en scope (`feat(spec-0001): <description en français>`).
+- Lisibilité d'abord : fonctions courtes, pas de code « malin », pas d'abstraction avant la troisième répétition.
 
 ## Sécurité propre au domaine
 
@@ -60,11 +56,14 @@ Avant d'écrire ou de relire du code qui utilise une API de bibliothèque, appli
 
 ## Sobriété en tokens
 
-Règles courtes ; détail et raisons dans `docs/factory/TOKENS.md`.
+Règles courtes ; détail et raisons dans `docs/factory/TOKENS.md`. Le coût vient du nombre de tours et du contexte relu à chaque tour.
 
-- Pour une tâche, lis `node scripts/split-plan.mjs task <SPEC-XXXX> <T#>` et pas `plan.md` ni `spec.md` en entier.
+- Pour une tâche, lis `node scripts/split-plan.mjs task <SPEC-XXXX> <T#>` et pas `plan.md` ni `spec.md` en entier. Pas de `cat` de `docs/DOMAIN.md`, `docs/PRODUCT.md`, `docs/adr/*` ni d'un fichier de plus de 150 lignes : `grep -n` puis `Read` avec `offset`/`limit`.
+- Une commande par appel Bash : pas de chaîne `cmd && cat X && cat Y`, pas de `ls`/`cat` de rattrapage après un script. Lis ce dont tu as besoin, pas ce qui est à côté.
+- `git diff --stat` d'abord, puis le diff des seuls fichiers utiles.
 - Pendant la boucle de développement, lance les tests et le typage ciblés ; `pnpm verify:quiet` seulement avant de commiter.
-- Fais les lectures et commandes indépendantes en parallèle, et ne relis pas un fichier que tu viens d'éditer.
+- Fais les lectures et commandes indépendantes en parallèle (et les `Edit` indépendants dans un même tour) ; ne relis pas un fichier que tu viens d'éditer.
+- Garde-fou : au-delà d'environ 25 tours sur une commande sans progrès, ou si le contexte dépasse ~120 k, arrête-toi et propose un redécoupage (règle 6). Entre deux commandes de la factory (`/implement` puis `/ship`, `/fix` puis `/ship`), `/clear` est recommandé : l'état utile est dans `.pr-summary.md` et `.context/`.
 
 ## Règles apprises
 

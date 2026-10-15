@@ -29,6 +29,12 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 | 16b | **Opus réservé à quatre cas** : cadrage (`/roadmap`), rédaction de spec (`/new-spec`) et découpage (`planner`), parce qu'une erreur s'y propage à toute la suite ; relecteur au niveau `full` (`review:full`). Tout le reste tourne sur Sonnet ou Haiku | `.claude/commands/{roadmap,new-spec}.md`, `.claude/agents/planner.md`, `/review` |
 | 17 | Plans de 3 à 5 tâches, préambule court, titres exacts pour le script | `planner.md`, `/plan` |
 | 18 | Mesure : `pnpm tokens`, colonnes dans `METRICS.md`, étape dans `/retro` | `scripts/token-report.mjs`, `METRICS.md`, `retro.md` |
+| 19 | Brief de revue réduit au diff depuis le commit relu aux passages 2 et 3 | `scripts/pre-review.mjs brief`, `reviewer.md` |
+| 20 | Une commande par appel Bash, pas de `cat` de fichiers entiers (domaine, produit, ADR, specs), `git diff --stat` d'abord, plafond de ~25 tours et ~120 k de contexte, `/clear` entre commandes | `CLAUDE.md` (section « Sobriété en tokens ») |
+| 21 | Détail des conventions de code hors de `CLAUDE.md`, lu à la demande | `CLAUDE.md`, `docs/factory/CONVENTIONS.md` |
+| 22 | Plafonds de taille : spec ~8 000 caractères, plan ~10 000 ; lecture du brief et des docs de cadrage par sections ; cache de bibliothèques interrogé par `grep` ; requêtes `query-docs` ciblées sur un symbole | `new-spec.md`, `planner.md`, `roadmap.md`, `CONTEXT7.md` |
+| 23 | `reviewer.md` allégé : points d'une PR de plan dans `REVIEW-PLAN.md` (lu seulement pour ces PR) ; sortie des relecteurs limitée à ~40 lignes | `reviewer.md`, `spec-reviewer.md`, `docs/factory/REVIEW-PLAN.md` |
+| 24 | Traces de décision déplacées dans `docs/factory/archive/` (ne se lisent pas par défaut) | `BATTLETEST.md`, `SPEC-CONTRAINTES-TECHNO.md` |
 
 ## À vérifier sur chaque poste
 
@@ -43,5 +49,6 @@ Mesures qui limitent la consommation de la factory. Le choix d'un modèle moins 
 - 1 et 2 vivent dans `split-plan.mjs` ; `CLAUDE.md`, `/implement` et `reviewer.md` l'appellent.
 - 7 : `/implement`, `/fix`, `/ship`, `/resolve` et `conflict-resolver` appellent `verify:quiet`.
 - 9 à 11 : `/review` et `reviewer.md` appellent `pre-review.mjs` ; si tu retires un contrôle de la mesure 9, rends-le à `reviewer.md` (qui ne le refait plus).
-- 4 et 15 : `CLAUDE.md` pointe vers `CONTEXT7.md` et `DOMAIN-SECURITY.md`.
+- 4, 15 et 21 : `CLAUDE.md` pointe vers `CONTEXT7.md`, `DOMAIN-SECURITY.md` et `CONVENTIONS.md`.
+- 19 : `reviewer.md` suppose que `brief` lit `.context/review.json` (écrit par `review-gate.mjs`).
 - Les tests des scripts sont `tests/unit/{split-plan,verify-quiet,pre-review,lint-edit,ask-questions,token-report}.test.ts`.

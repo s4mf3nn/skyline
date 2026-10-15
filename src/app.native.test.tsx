@@ -48,7 +48,7 @@ describe("createApp", () => {
   });
 
   it("falls back to the home screen with the default (empty) registry", async () => {
-    const App = createApp({ services: fakeServices() });
+    const App = createApp({ services: fakeServices(), features: [] });
     await render(<App />);
     expect(screen.getByText("Skyline")).toBeOnTheScreen();
   });

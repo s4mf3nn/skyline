@@ -118,13 +118,13 @@ function card(hex: string) {
 
 /** Angle de la transformation `rotate` d'un élément, en degrés (`"170deg"` ou `"170"`), `null` sans rotation. */
 function rotation(testID: string): number | null {
-  const style = StyleSheet.flatten(screen.getByTestId(testID).props.style);
+  const style = StyleSheet.flatten(screen.getByTestId(testID, { includeHiddenElements: true }).props.style);
   const transforms: Array<Record<string, unknown>> = Array.isArray(style?.transform) ? style.transform : [];
   const entry = transforms.find((transform) => "rotate" in transform);
   return entry === undefined ? null : Number.parseFloat(String(entry.rotate));
 }
 
-describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
+describe("SPEC-0006 Prochains passages (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -296,7 +296,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     const harness = setup({ aircraft: [plane("a1", "AFR1506", -40.1, 0, 90)] });
     await render(<harness.App />);
     await settle();
-    expect(screen.queryByTestId("passage-arrow-a1")).toBeNull();
+    expect(screen.queryByTestId("passage-arrow-a1", { includeHiddenElements: true })).toBeNull();
     expect(card("a1").getByText("O")).toBeOnTheScreen();
 
     // Gisement d'arrivée 270° (l'avion arrive de l'ouest) moins le cap du téléphone.
@@ -305,7 +305,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     });
     expect(rotation("passage-arrow-a1")).toBeCloseTo(240, 0);
     // Décorative : sans nom propre et masquée aux lecteurs d'écran, le point cardinal porte l'information.
-    const arrow = screen.getByTestId("passage-arrow-a1");
+    const arrow = screen.getByTestId("passage-arrow-a1", { includeHiddenElements: true });
     expect(arrow.props.accessibilityLabel).toBeUndefined();
     expect(arrow.props.accessibilityElementsHidden).toBe(true);
     expect(arrow.props.importantForAccessibility).toBe("no-hide-descendants");
@@ -320,7 +320,7 @@ describe.skip("SPEC-0006 Prochains passages (rendering)", () => {
     const harness = setup({ aircraft: [plane("h1", "AFR1506", -2.9, 1, 90)] });
     await render(<harness.App />);
     await settle();
-    expect(screen.queryByTestId("passage-arrow-h1")).toBeNull();
+    expect(screen.queryByTestId("passage-arrow-h1", { includeHiddenElements: true })).toBeNull();
     await act(async () => {
       harness.location.setHeading(100);
     });

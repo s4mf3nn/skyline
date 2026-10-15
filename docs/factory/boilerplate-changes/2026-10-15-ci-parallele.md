@@ -12,7 +12,7 @@
 | `.github/workflows/ci.yml` | Étape « Scénarios cachés » sortie de `gates` vers un job `holdout`. Étape « Mutation testing » sortie vers un job `mutation` (`if: github.event_name == 'pull_request'`). Chaque nouveau job refait checkout, pnpm, node, install, `ci-data.sh setup <suffixe>`, `gen`, `db:migrate`, puis `ci-data.sh archive` en `if: always()`. `gates` appelle `ci-data.sh setup gates`. Commentaire du bloc `services: postgres` : à dupliquer dans `holdout` et `mutation` si activé |
 | `.claude/commands/land.md` | Étape 3 : checks verts attendus = `gates`, `holdout`, `security`, trace de revue ; l'échec des scénarios cachés se lit sur le job `holdout` |
 | `docs/factory/WORKFLOW.md` | Section « Exécution » des scénarios cachés : job `holdout` au lieu de l'étape du job `gates` |
-| `docs/factory/BOILERPLATE.md` | Liste des checks requis de `main` : `holdout` ajouté |
+| `docs/factory/BOILERPLATE.md` | Liste des checks requis de `main` : `holdout` ajouté ; ligne « Ressource de données par workspace » : jobs `gates`, `holdout`, `mutation` et `e2e` appellent `ci-data.sh` |
 
 ## Procédure de report
 

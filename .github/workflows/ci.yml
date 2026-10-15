@@ -29,8 +29,8 @@ jobs:
   gates:
     runs-on: ubuntu-latest
     # Base de données : décommenter si le projet utilise Postgres (voir docs/factory/BOILERPLATE.md, « Options »).
-    # À décommenter aussi dans les jobs parallèles `holdout` et `mutation` pour éviter les défaillances si la ressource
-    # est créée par `ci-data.sh setup` et requiert une base locale.
+    # Si activé, copier le bloc `services` et `env` dans les jobs parallèles `holdout` et `mutation` : ils ne
+    # partagent pas les services de `gates`.
     # services:
     #   postgres:
     #     image: postgres:17

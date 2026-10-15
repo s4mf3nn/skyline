@@ -4,9 +4,14 @@ import {
   draggedOffset,
   dragPosition,
   indicatorTraits,
+  initialPage,
+  initialPresence,
+  keepsMounted,
   lockAxis,
   PAGER_LAYOUT,
   PAGER_METRICS,
+  pageAfterPresence,
+  pageName,
   pagerRoot,
   pageValueText,
   restOffset,
@@ -14,6 +19,7 @@ import {
   settlePage,
   stepPage,
   stripWidth,
+  swipeAllowed,
   traitRadius,
 } from "./index";
 
@@ -164,5 +170,45 @@ describe("stripWidth", () => {
 describe("traitRadius", () => {
   it("is half the trait height", () => {
     expect(traitRadius({ width: 18, height: 4, opacity: 1 })).toBe(2);
+  });
+});
+
+describe("page presence", () => {
+  const withPresence = (name: string, order: number): Feature => ({ ...feature(name, order), presence: () => true });
+
+  it("names pages by index", () => {
+    expect(pageName(0)).toBe("ciel");
+    expect(pageName(1)).toBe("passages");
+  });
+
+  it("starts present only for pages without presence", () => {
+    expect(initialPresence([withPresence("a", 0), feature("b", 1)])).toEqual([false, true]);
+    expect(initialPresence([feature("a", 0), feature("b", 1)])).toEqual([true, true]);
+  });
+
+  it("opens on the first present page", () => {
+    expect(initialPage([true, true])).toBe(0);
+    expect(initialPage([false, true])).toBe(1);
+    expect(initialPage([true, false])).toBe(0);
+  });
+
+  it("moves to the other page when the displayed page disappears", () => {
+    expect(pageAfterPresence(0, [true, true])).toBe(0);
+    expect(pageAfterPresence(0, [false, true])).toBe(1);
+    expect(pageAfterPresence(1, [true, false])).toBe(0);
+    expect(pageAfterPresence(1, [false, true])).toBe(1);
+  });
+
+  it("keeps an absent page mounted only during its transition", () => {
+    expect(keepsMounted(true, false, false)).toBe(true);
+    expect(keepsMounted(false, true, true)).toBe(true);
+    expect(keepsMounted(false, true, false)).toBe(false);
+    expect(keepsMounted(false, false, true)).toBe(false);
+  });
+
+  it("allows swiping only with both pages present", () => {
+    expect(swipeAllowed([true, true])).toBe(true);
+    expect(swipeAllowed([true, false])).toBe(false);
+    expect(swipeAllowed([false, true])).toBe(false);
   });
 });

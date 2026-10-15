@@ -34,6 +34,137 @@ function indicator() {
   return screen.getByRole("adjustable", { name: "Indicateur de page" });
 }
 
+describe("Pager page presence", () => {
+  let skyPresent = true;
+  const seen: string[] = [];
+
+  function presentFeature(): Feature {
+    return {
+      name: "sky",
+      order: 0,
+      screen: () => <Text>sky screen</Text>,
+      presence: (displayed) => {
+        seen.push(displayed);
+        return skyPresent;
+      },
+    };
+  }
+
+  function others(): Feature {
+    return feature("b", 1, () => <Text>passages screen</Text>);
+  }
+
+  async function pass(ms: number) {
+    await act(async () => {
+      jest.advanceTimersByTime(ms);
+    });
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    skyPresent = true;
+    seen.length = 0;
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("shows a single page without indicator or gesture when the other is absent", async () => {
+    skyPresent = false;
+    await render(<Pager pages={[presentFeature(), others()]} />);
+    expect(screen.getByText("passages screen")).toBeOnTheScreen();
+    expect(screen.queryByText("sky screen")).toBeNull();
+    expect(screen.queryByRole("adjustable", { name: "Indicateur de page" })).toBeNull();
+  });
+
+  it("ignores the swipe gesture when a single page is present", async () => {
+    skyPresent = false;
+    await render(<Pager pages={[presentFeature(), others()]} />);
+    const pan = getByGestureTestId("pager-pan");
+    await act(async () => {
+      fireGestureHandler(pan, [{ state: 2 }, { translationX: 40 }]);
+    });
+    seen.length = 0;
+    await act(async () => {
+      fireGestureHandler(pan, [{ translationX: 100, state: 5 }]);
+    });
+    // Un changement de page, même transitoire, ferait appeler `presence` avec "ciel".
+    expect(seen).not.toContain("ciel");
+  });
+
+  it("keeps the displayed page when the absent page appears", async () => {
+    skyPresent = false;
+    const view = await render(<Pager pages={[presentFeature(), others()]} />);
+    skyPresent = true;
+    await view.rerender(<Pager pages={[presentFeature(), others()]} />);
+    expect(screen.getByText("sky screen")).toBeOnTheScreen();
+    expect(indicator()).toHaveAccessibilityValue({ text: "Page 2 sur 2" });
+  });
+
+  it("removes a page that is not displayed immediately", async () => {
+    const view = await render(<Pager pages={[presentFeature(), others()]} />);
+    await fireEvent(indicator(), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
+    skyPresent = false;
+    await view.rerender(<Pager pages={[presentFeature(), others()]} />);
+    expect(screen.queryByText("sky screen")).toBeNull();
+    expect(screen.queryByRole("adjustable", { name: "Indicateur de page" })).toBeNull();
+  });
+
+  it("removes the displayed page at the end of the transition", async () => {
+    const view = await render(<Pager pages={[presentFeature(), others()]} />);
+    skyPresent = false;
+    await view.rerender(<Pager pages={[presentFeature(), others()]} />);
+    await pass(100);
+    expect(screen.getByText("sky screen")).toBeOnTheScreen();
+    await pass(300);
+    expect(screen.queryByText("sky screen")).toBeNull();
+    expect(screen.getByText("passages screen")).toBeOnTheScreen();
+  });
+
+  it("cancels the removal when the page reappears before the end", async () => {
+    const view = await render(<Pager pages={[presentFeature(), others()]} />);
+    skyPresent = false;
+    await view.rerender(<Pager pages={[presentFeature(), others()]} />);
+    await pass(100);
+    skyPresent = true;
+    await view.rerender(<Pager pages={[presentFeature(), others()]} />);
+    await pass(500);
+    expect(screen.getByText("sky screen")).toBeOnTheScreen();
+    expect(indicator()).toHaveAccessibilityValue({ text: "Page 2 sur 2" });
+  });
+
+  it("does not change page on release when a page disappears during a drag", async () => {
+    const view = await render(<Pager pages={[presentFeature(), others()]} />);
+    await fireEvent(indicator(), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
+    const pan = getByGestureTestId("pager-pan");
+    await act(async () => {
+      fireGestureHandler(pan, [{ state: 2 }, { translationX: 30 }]);
+    });
+    skyPresent = false;
+    await view.rerender(<Pager pages={[presentFeature(), others()]} />);
+    await act(async () => {
+      fireGestureHandler(pan, [{ translationX: 80 }]);
+    });
+    seen.length = 0;
+    await act(async () => {
+      fireGestureHandler(pan, [{ translationX: 80, state: 5 }]);
+    });
+    await pass(500);
+    // Le relâchement ne change pas de page, même transitoirement.
+    expect(seen).not.toContain("ciel");
+    expect(screen.getByText("passages screen")).toBeOnTheScreen();
+    expect(screen.queryByText("sky screen")).toBeNull();
+  });
+
+  it("passes the displayed page name to presence", async () => {
+    await render(<Pager pages={[presentFeature(), others()]} />);
+    expect(seen.at(-1)).toBe("ciel");
+    await fireEvent(indicator(), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
+    expect(seen.at(-1)).toBe("passages");
+  });
+});
+
 describe("Pager", () => {
   it("mounts both screens side by side", async () => {
     await renderPager();

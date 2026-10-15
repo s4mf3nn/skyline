@@ -81,13 +81,15 @@ describe("parseAdsbLolBody", () => {
 
   it("treats a missing or negative seen_pos as 0", () => {
     const { seen_pos: _omit, ...withoutSeenPos } = full;
-    expect(one(withoutSeenPos)[0]?.latitude).toBe(48.5);
+    const [aircraft] = one({ ...withoutSeenPos, track: 0 });
+    expect(aircraft).toMatchObject({ latitude: 48.5, longitude: 2.5 });
     expect(one({ ...full, seen_pos: -5, track: 0 })[0]?.latitude).toBe(48.5);
   });
 
   it("advances the position by seen_pos", () => {
+    // 194,4384 nœuds = 360 km/h ; 10 s = 1 km vers le nord.
     const [aircraft] = one({ ...full, track: 0, gs: 194.4384, seen_pos: 10 });
-    expect(aircraft?.latitude).toBeGreaterThan(48.5);
+    expect(aircraft?.latitude).toBeCloseTo(48.5 + 1 / 111.195, 5);
   });
 
   it("discards an aircraft at a pole once its position is advanced", () => {

@@ -76,7 +76,7 @@ Pas de maquette dédiée (décision du propriétaire du 2026-10-13) : le handoff
 - Sur simulateur iPhone, le glissement à la main change de page avec la transition du handoff, résiste au bord et laisse le défilement vertical de la page à la page ; l'indicateur est à `top` 50, ses traits espacés de 5 ; un retour au premier plan garde la page affichée. Vérifié à la main dans la PR de la dernière tâche (capture jointe) : le geste lui-même (Gesture Handler) n'est pas joué sous Jest, pas de test automatisé sur simulateur en v0.
 
 ## Amendement (SPEC-0005)
-- Une page peut être absente : `Feature.presence?: (displayedPage: "ciel" | "passages") => boolean`, appelé par le pager avec la page affichée ; une page sans `presence` est toujours présente. Page absente : son emplacement reste une vue vide de même largeur, le glissement vers elle est neutralisé, et son retrait attend la fin de la transition de 380 ms. Les contrats de cette spec sont inchangés.
+- Une page peut être absente : `Feature.presence?: (displayedPage: "ciel" | "passages") => boolean`, appelé par le pager avec la page affichée ; une page sans `presence` est toujours présente. Page absente : son emplacement reste une vue vide de même largeur, le glissement vers elle est neutralisé, le retrait d'une page non affichée est immédiat ; celui de la page affichée attend la fin de la transition de 380 ms, et la bande rejoint la page restante. Les contrats de cette spec sont inchangés.
 
 ## Hors périmètre
 - Contenu des pages : écrans Ciel (SPEC-0005) et Prochains passages (SPEC-0006) ; une page de test suffit ici.

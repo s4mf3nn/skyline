@@ -38,9 +38,24 @@ describe("scrubEvent", () => {
 });
 
 describe("scrubBreadcrumb", () => {
-  it("removes coordinates from a request url", () => {
-    const breadcrumb = scrubBreadcrumb({ category: "fetch", data: { url: "https://x.test/?lat=45.764&lon=4.836" } });
+  const URL = "https://api.adsb.lol/v2/point/45.5/0/44";
+
+  it.each(["xhr", "fetch", "http"])("drops a %s breadcrumb whatever its url", (category) => {
+    expect(scrubBreadcrumb({ category, data: { url: URL } })).toBeNull();
+  });
+
+  it("keeps a breadcrumb of another category", () => {
+    const breadcrumb = { category: "ui.click", message: "tap" };
+    expect(scrubBreadcrumb(breadcrumb)).toEqual(breadcrumb);
+  });
+
+  it("still removes coordinates from a kept breadcrumb", () => {
+    const breadcrumb = scrubBreadcrumb({ category: "navigation", data: { to: "/sky?lat=45.764" } });
     expect(JSON.stringify(breadcrumb)).not.toMatch(/\d\.\d{3,}/);
-    expect(breadcrumb.category).toBe("fetch");
+  });
+
+  it("drops network breadcrumbs from an event", () => {
+    const event = scrubEvent({ breadcrumbs: [{ category: "xhr", data: { url: URL } }, { category: "ui.click" }] });
+    expect(event.breadcrumbs).toEqual([{ category: "ui.click" }]);
   });
 });

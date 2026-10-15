@@ -11,7 +11,8 @@ interface SentryOptions extends BuildInfo {
 /** Suivi des erreurs Sentry ; sans DSN (développement, tests), rien n'est initialisé ni transmis. */
 export function createSentryErrorReporter({ dsn, release, environment }: SentryOptions): ErrorReporter {
   if (dsn === undefined || dsn === "") return createNoopErrorReporter();
-  Sentry.init({
+  // `enableNetworkBreadcrumbs` (iOS natif) est documenté mais absent des types du SDK : variable, donc sans contrôle des propriétés en trop.
+  const options = {
     dsn,
     release,
     environment,
@@ -20,7 +21,10 @@ export function createSentryErrorReporter({ dsn, release, environment }: SentryO
     beforeSend: scrubEvent,
     // Les breadcrumbs sont recopiés côté natif (plantages) sans passer par `beforeSend`.
     beforeBreadcrumb: scrubBreadcrumb,
-  });
+    // Le SDK natif iOS enregistre ses propres breadcrumbs réseau, hors de `beforeBreadcrumb`.
+    enableNetworkBreadcrumbs: false,
+  };
+  Sentry.init(options);
   return {
     report(error, context = {}) {
       Sentry.captureException(error, { tags: scrubContext(context) });

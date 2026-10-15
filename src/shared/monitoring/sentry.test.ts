@@ -26,7 +26,7 @@ describe("createSentryErrorReporter without DSN", () => {
 });
 
 describe("createSentryErrorReporter with DSN", () => {
-  it("initialises Sentry without default PII, with release, environment and the filter", () => {
+  it("initialises Sentry without default PII, with release, environment, the filter and no native network breadcrumbs", () => {
     createSentryErrorReporter({ dsn: "https://public@example.invalid/0", ...BUILD });
     expect(Sentry.init).toHaveBeenCalledWith({
       dsn: "https://public@example.invalid/0",
@@ -35,6 +35,7 @@ describe("createSentryErrorReporter with DSN", () => {
       sendDefaultPii: false,
       beforeSend: scrubEvent,
       beforeBreadcrumb: scrubBreadcrumb,
+      enableNetworkBreadcrumbs: false,
     });
   });
 

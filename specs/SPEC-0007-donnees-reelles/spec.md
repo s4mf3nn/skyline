@@ -1,8 +1,8 @@
 # SPEC-0007 : Données réelles adsb.lol
 
-Statut : BROUILLON
+Statut : VALIDÉE
 Risque estimé : élevé (touche `src/shared/adsb/`, zone sensible : la position de l'observateur sort de l'appareil dans la requête ; ajoute une dépendance, Zod ; le minuteur de rafraîchissement vit dans le crochet de scène)
-Dépend de : SPEC-0004, SPEC-0005, SPEC-0006 (SPEC-0004 telle qu'amendée : fournisseur commun de la scène, clause de non-rafraîchissement retirée, `onBackground`, voir « Décisions » ; la PR d'amendement est fusionnée avant `/plan SPEC-0007`, et cette spec reste `BROUILLON` tant qu'elle ne l'est pas)
+Dépend de : SPEC-0004, SPEC-0005, SPEC-0006
 Tests de contrat : `tests/acceptance/SPEC-0007.test.ts` (Vitest), `tests/acceptance/SPEC-0007.native.test.tsx` (Jest)
 Scénarios cachés : `tests/holdout/SPEC-0007.test.ts` et `tests/holdout/SPEC-0007.native.test.tsx` (ne pas les décrire ici)
 

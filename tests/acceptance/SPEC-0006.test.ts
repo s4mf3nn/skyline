@@ -121,7 +121,7 @@ function passage(hex: string, callsign: string | null, overrides: Partial<Passag
   };
 }
 
-describe.skip("SPEC-0006 logique du carrousel Prochains passages", () => {
+describe("SPEC-0006 logique du carrousel Prochains passages", () => {
   it("CA1 : exposes the handoff measures", async () => {
     const { PASSAGES_METRICS } = await passages();
     expect(PASSAGES_METRICS).toEqual({
@@ -344,7 +344,7 @@ describe.skip("SPEC-0006 logique du carrousel Prochains passages", () => {
   });
 });
 
-describe.skip("SPEC-0006 source de démonstration", () => {
+describe("SPEC-0006 source de démonstration", () => {
   const POSITION: Position = { latitude: 45.764, longitude: 4.836 };
   const QUERY = { ...POSITION, radiusKm: 80 };
 

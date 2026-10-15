@@ -20,7 +20,14 @@ const otherRunners = Object.keys(pkg.factory?.contractRunners ?? {}).map(
 
 export default defineConfig({
   // Même alias que tsconfig.json et jest.config.cjs.
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Le vrai `react-native` est en Flow : Vitest en charge un faux, le rendu est joué par Jest.
+      "react-native-svg": fileURLToPath(new URL("./tests/support/react-native-svg-stub.ts", import.meta.url)),
+      "react-native": fileURLToPath(new URL("./tests/support/react-native-stub.ts", import.meta.url)),
+    },
+  },
   test: {
     include: holdout ? ["tests/holdout/**/*.test.{ts,tsx}"] : ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
     // tests/e2e : tests sur cible réelle, joués par leur propre lanceur (`pnpm test:e2e`), en CI seulement.

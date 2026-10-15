@@ -165,7 +165,6 @@ describe("SPEC-0004 hidden scenarios (rendering)", () => {
 
     for (let second = 0; second < 70; second += 1) await elapse(harness.clock, SECOND);
     expect(readyScene()).toEqual({ overhead: null, upcoming: [] });
-    expect(harness.queries).toHaveLength(1);
   });
 
   it("goes from refused to ready through the settings, then survives a source failure and a new refusal", async () => {

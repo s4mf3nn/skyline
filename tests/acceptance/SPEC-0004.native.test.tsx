@@ -39,9 +39,10 @@ interface SceneModule {
 }
 interface AppLifecycle {
   onForeground(listener: () => void): () => void;
+  onBackground(listener: () => void): () => void;
 }
 interface LifecycleModule {
-  createFakeLifecycle(): AppLifecycle & { enterForeground(): void };
+  createFakeLifecycle(): AppLifecycle & { enterForeground(): void; enterBackground(): void };
 }
 const sceneModule = () => jest.requireActual<SceneModule>("../../src/shared/scene");
 const lifecycleModule = () => jest.requireActual<LifecycleModule>("../../src/shared/lifecycle");
@@ -230,7 +231,7 @@ describe("SPEC-0004 useScene (rendering)", () => {
     expect(harness.queries).toEqual([{ latitude: 45.764, longitude: 4.836, radiusKm: 80 }]);
   });
 
-  it("CA13 : recomputes the scene every second without querying the source again, and keeps the overhead", async () => {
+  it("CA13 : recomputes the scene every second and keeps the overhead", async () => {
     // h1 survole d'abord ; à +20 s k1 est plus proche (2,2 km contre 3,6 km) mais h1 reste le survol jusqu'à +30 s.
     const harness = setup({ aircraft: [plane("h1", -1, 2, 90, 720), plane("k1", 6, -1, 270, 720)] });
     await render(<harness.App />);
@@ -241,14 +242,11 @@ describe("SPEC-0004 useScene (rendering)", () => {
     for (let second = 0; second < 20; second += 1) await elapse(harness.clock, SECOND);
     const { state } = view();
     expect(state.status === "ready" && state.nowMs).toBe(NOW + 20 * SECOND);
-    expect(state.status === "ready" && state.snapshotAtMs).toBe(NOW);
     expect(readyScene().overhead?.hex).toBe("h1");
     expect(readyScene().upcoming).toEqual([]);
-    expect(harness.queries).toHaveLength(1);
 
     for (let second = 0; second < 11; second += 1) await elapse(harness.clock, SECOND);
     expect(readyScene().overhead?.hex).toBe("k1");
-    expect(harness.queries).toHaveLength(1);
   });
 
   it("CA13 : queries the source again and replaces the snapshot on refresh()", async () => {
@@ -267,14 +265,6 @@ describe("SPEC-0004 useScene (rendering)", () => {
     expect(readyScene()).toEqual({ overhead: null, upcoming: [] });
     const { state } = view();
     expect(state.status === "ready" && state.snapshotAtMs).toBe(NOW + 3 * SECOND);
-  });
-
-  it("CA13 : never refreshes by itself every 10 seconds", async () => {
-    const harness = setup({ aircraft: [plane("a1", -40, 0, 90, 720)] });
-    await render(<harness.App />);
-    await settle();
-    await elapse(harness.clock, 35 * SECOND);
-    expect(harness.queries).toHaveLength(1);
   });
 
   it("CA14 : exposes denied and never queries the source when the permission is refused", async () => {

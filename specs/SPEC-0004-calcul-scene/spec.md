@@ -30,12 +30,12 @@ Calcul pur (Vitest, `tests/acceptance/SPEC-0004.test.ts`) :
 Acquisition de la position, du cap et du premier plan (Vitest) :
 
 - **CA10** : `acquireObserver(location)` (`src/shared/location/`) demande la permission puis lit la position : rend `{ status: "granted", position }` si la permission est accordée, `{ status: "denied" }` si elle est refusée, et aussi si la lecture de la position rejette avec `LOCATION_DENIED` (permission retirée entre les deux). Toute autre erreur est propagée telle quelle. Elle n'appelle jamais `getPosition` quand la permission est refusée.
-- **CA11** : `AppLifecycle` (`src/shared/lifecycle/`) expose `onForeground(listener): () => void` : le listener est appelé à chaque retour de l'app au premier plan, plus jamais après la fonction de désabonnement renvoyée. `createFakeLifecycle()` rend un `AppLifecycle` avec `enterForeground()` pour simuler ce retour. `AppServices` gagne un champ **facultatif** `lifecycle` : une application ou un test qui ne le fournit pas continue de fonctionner.
+- **CA11** : `AppLifecycle` (`src/shared/lifecycle/`) expose `onForeground(listener): () => void` : le listener est appelé à chaque retour de l'app au premier plan, plus jamais après la fonction de désabonnement renvoyée ; `onBackground(listener): () => void` fait de même à chaque entrée en arrière-plan. `createFakeLifecycle()` rend un `AppLifecycle` avec `enterForeground()` et `enterBackground()` pour simuler ces passages. `AppServices` gagne un champ **facultatif** `lifecycle` : une application ou un test qui ne le fournit pas continue de fonctionner.
 
 Crochet `useScene` (Jest, `tests/acceptance/SPEC-0004.native.test.tsx`, joué sous `createApp` avec les faux de `src/shared/`) :
 
 - **CA12** : au montage, le crochet demande la permission, lit la position, interroge la source ADS-B une seule fois avec `{ latitude, longitude, radiusKm: 80 }` où latitude et longitude sont la position **arrondie à 3 décimales** (INV7), puis rend `state.status === "ready"` avec la scène calculée à `clock.now()` et `snapshotAtMs` égal à l'heure de la réponse. Avant la réponse : `status === "loading"`.
-- **CA13** : une fois prêt, le crochet recalcule la scène à chaque seconde avec `clock.now()` (même instantané, sans nouvelle requête) et lui passe le survol précédent (INV1) : un survol en cours le reste d'un tick à l'autre selon CA8. `refresh()` interroge de nouveau la source et remplace l'instantané. Le crochet ne rafraîchit pas de lui-même toutes les 10 s : ce minuteur et la pause en arrière-plan sont à SPEC-0007.
+- **CA13** : une fois prêt, le crochet recalcule la scène à chaque seconde avec `clock.now()` (même instantané, sans nouvelle requête) et lui passe le survol précédent (INV1) : un survol en cours le reste d'un tick à l'autre selon CA8. `refresh()` interroge de nouveau la source et remplace l'instantané. Le minuteur de 10 s et la pause en arrière-plan sont à SPEC-0007 : les tests de ce contrat ne supposent ni leur présence ni leur absence.
 - **CA14** : permission refusée : `status === "denied"`, la source ADS-B n'est jamais interrogée, aucune scène n'est exposée.
 - **CA15** : à chaque retour au premier plan (`lifecycle.enterForeground()`), le crochet relit la permission et la position, puis interroge la source avec la nouvelle position. Permission devenue refusée : `status === "denied"` et les données sont effacées (aucune scène exposée) ; de nouveau accordée au retour suivant : `loading` puis `ready`.
 - **CA16** : `headingDeg` vaut `null` tant que le téléphone n'a envoyé aucun cap, puis la dernière valeur reçue ramenée dans [0, 360) ; le crochet s'abonne au cap au montage et se désabonne au démontage (plus aucune valeur reçue ensuite).
@@ -111,7 +111,7 @@ type ObserverFix = { status: "granted"; position: Position } | { status: "denied
 acquireObserver(location: LocationService): Promise<ObserverFix>
 ```
 
-`src/shared/lifecycle/index.ts` (nouveau) : `interface AppLifecycle { onForeground(listener: () => void): () => void }`, `createFakeLifecycle(): AppLifecycle & { enterForeground(): void }`. L'implémentation réelle (`AppState` de React Native) vit dans un fichier à part importé par `src/main.tsx` seulement, comme `expo.ts` pour la localisation : elle appelle les listeners à chaque passage de l'état de l'app à `active` depuis `inactive` ou `background` (module natif, hors contrat, vérifié sur simulateur). `src/shared/services/index.tsx` : `AppServices.lifecycle?: AppLifecycle`.
+`src/shared/lifecycle/index.ts` (nouveau) : `interface AppLifecycle { onForeground(listener: () => void): () => void; onBackground(listener: () => void): () => void }`, `createFakeLifecycle(): AppLifecycle & { enterForeground(): void; enterBackground(): void }`. L'implémentation réelle (`AppState` de React Native) vit dans un fichier à part importé par `src/main.tsx` seulement, comme `expo.ts` pour la localisation : elle appelle les listeners de premier plan à chaque passage de l'état de l'app à `active` depuis `inactive` ou `background`, et ceux d'arrière-plan à chaque passage à `inactive` ou `background` depuis `active` (module natif, hors contrat, vérifié sur simulateur). `src/shared/services/index.tsx` : `AppServices.lifecycle?: AppLifecycle`.
 
 Ce que lit chaque écran : l'avion « Regardez » de Ciel et de la carte « En ce moment » vise `arrowAngleDeg(overhead.trackDeg, headingDeg)` ; une carte de passage vise `arrowAngleDeg(passage.arrivalBearingDeg, headingDeg)` (`docs/DOMAIN.md`, « Angle de la flèche »). Le délai affiché par Ciel quand rien ne survole est `upcoming[0].passageTimeMs − nowMs`.
 
@@ -134,6 +134,9 @@ Ce que lit chaque écran : l'avion « Regardez » de Ciel et de la carte « En c
 
 ## Amendement (SPEC-0005)
 - Une seule scène par application : `useScene` lit un magasin partagé fourni par `createApp`, démarré au premier abonné et arrêté au dernier. La permission et la source ne sont demandées qu'une fois ; la signature de `useScene` et les contrats sont inchangés.
+
+## Amendement (SPEC-0007)
+- CA13 : la clause « ne rafraîchit pas de lui-même » et son test sont retirés ; les tests ne supposent plus qu'aucune requête ne part au-delà de 10 s (assertions de nombre de requêtes et d'`snapshotAtMs` après plus de 10 s retirées). `AppLifecycle` gagne `onBackground` (CA11).
 
 ## Décisions prises à la rédaction
 Choix non dictés par le brief ni par le cadrage, à confirmer à la relecture :

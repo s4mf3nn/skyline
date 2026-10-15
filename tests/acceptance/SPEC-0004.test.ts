@@ -54,9 +54,10 @@ interface LocationModule {
 }
 interface AppLifecycle {
   onForeground(listener: () => void): () => void;
+  onBackground(listener: () => void): () => void;
 }
 interface LifecycleModule {
-  createFakeLifecycle(): AppLifecycle & { enterForeground(): void };
+  createFakeLifecycle(): AppLifecycle & { enterForeground(): void; enterBackground(): void };
 }
 const scene = () => load<SceneModule>("src/shared/scene/index.ts");
 const locationModule = () => load<LocationModule>("src/shared/location/index.ts");
@@ -504,6 +505,35 @@ describe("SPEC-0004 observer acquisition and foreground", () => {
     lifecycle.enterForeground();
     expect(first).toEqual(["first", "first"]);
     expect(second).toEqual(["second", "second", "second"]);
+  });
+
+  // Amendement SPEC-0007 : `.skip` retiré par la tâche qui ajoute `onBackground` (SPEC-0007 plan).
+  it.skip("CA11 : calls every background listener at each entry into the background, until it unsubscribes", async () => {
+    const { createFakeLifecycle } = await lifecycleModule();
+    const lifecycle = createFakeLifecycle();
+    const first: string[] = [];
+    const second: string[] = [];
+    const stopFirst = lifecycle.onBackground(() => first.push("first"));
+    lifecycle.onBackground(() => second.push("second"));
+    lifecycle.enterBackground();
+    lifecycle.enterBackground();
+    expect(first).toEqual(["first", "first"]);
+    stopFirst();
+    lifecycle.enterBackground();
+    expect(first).toEqual(["first", "first"]);
+    expect(second).toEqual(["second", "second", "second"]);
+  });
+
+  // Amendement SPEC-0007 : `.skip` retiré par la tâche qui ajoute `onBackground` (SPEC-0007 plan).
+  it.skip("CA11 : keeps foreground and background listeners apart", async () => {
+    const { createFakeLifecycle } = await lifecycleModule();
+    const lifecycle = createFakeLifecycle();
+    const calls: string[] = [];
+    lifecycle.onForeground(() => calls.push("foreground"));
+    lifecycle.onBackground(() => calls.push("background"));
+    lifecycle.enterBackground();
+    lifecycle.enterForeground();
+    expect(calls).toEqual(["background", "foreground"]);
   });
 
   it("CA11 : does nothing before any return to the foreground", async () => {

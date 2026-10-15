@@ -253,7 +253,7 @@ describe("createSceneController", () => {
       expect(adsb.queries).toHaveLength(3);
     });
 
-    it("CA11: ignores an answer arriving during the pause and an older one after the return", async () => {
+    it("CA11: ignores an answer arriving during the pause", async () => {
       const { adsb, clock, lifecycle, last } = setup({ withLifecycle: true });
       await vi.advanceTimersByTimeAsync(0);
       const answers: Array<(aircraft: unknown[]) => void> = [];
@@ -265,6 +265,26 @@ describe("createSceneController", () => {
       answers[0]?.([]);
       await vi.advanceTimersByTimeAsync(0);
       expect(last()?.state).toMatchObject({ snapshotAtMs: NOW });
+    });
+
+    it("CA11: sends the return request with one in flight and ignores the older answer", async () => {
+      const { adsb, clock, lifecycle, last } = setup({ withLifecycle: true });
+      await vi.advanceTimersByTimeAsync(0);
+      const answers: Array<() => void> = [];
+      const fetchAircraft = vi.spyOn(adsb, "fetchAircraft");
+      // Requête de l'échéance, encore en vol quand l'application part en arrière-plan puis revient.
+      fetchAircraft.mockImplementationOnce(() => new Promise((resolve) => answers.push(() => resolve([]))));
+      await elapse(clock, 10);
+      lifecycle?.enterBackground();
+      await elapse(clock, 5);
+      adsb.setAircraft([PLANE]);
+      lifecycle?.enterForeground();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fetchAircraft).toHaveBeenCalledTimes(2);
+      expect(last()?.state).toMatchObject({ status: "ready", snapshotAtMs: NOW + 15_000 });
+      answers[0]?.();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(last()?.state).toMatchObject({ snapshotAtMs: NOW + 15_000, scene: { upcoming: [{ hex: "a1" }] } });
     });
 
     it("CA11: never stops refreshing without a lifecycle service", async () => {

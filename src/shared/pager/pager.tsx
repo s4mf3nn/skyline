@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWindowDimensions, View } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -44,6 +44,7 @@ export function Pager({ pages }: PagerProps) {
   // Faux jusqu'au premier rapport des sondes : la page d'ouverture n'est connue qu'à ce moment.
   const [reported, setReported] = useState<PagePresence>(() => initialPresence(pages));
   const [opened, setOpened] = useState(false);
+  const previousPresent = useRef<PagePresence>(present);
   const [accents, setAccents] = useState<PageAccents>([null, null]);
 
   const offset = useSharedValue(restOffset(page, width));
@@ -77,11 +78,19 @@ export function Pager({ pages }: PagerProps) {
   // Quand la page affichée disparaît, la bande rejoint l'autre page et l'écran retiré reste monté le temps de la transition.
   useEffect(() => {
     const next = pageAfterPresence(page, present);
-    const gone = next !== page ? page : leaving;
+    const other: PageIndex = page === 0 ? 1 : 0;
+    // Page non affichée dont la présence vient de tomber (glissement déjà fait) : même transition de retrait.
+    const droppedAside = next === page && previousPresent.current[other] && !present[other];
+    let gone = leaving;
     if (next !== page) {
+      gone = page;
       setPage(next);
       setLeaving(page);
+    } else if (droppedAside) {
+      gone = other;
+      setLeaving(other);
     }
+    previousPresent.current = present;
     setMounted((current) => [
       keepsMounted(present[0], current[0], gone === 0),
       keepsMounted(present[1], current[1], gone === 1),

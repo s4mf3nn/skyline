@@ -106,7 +106,7 @@ const trait = (index: 0 | 1) => screen.getByTestId(`pager-indicator-trait-${inde
 const value = (key: string) => screen.getByTestId(`sky-value-${key}`);
 const text = (element: { props: { children?: unknown } }) => String(element.props.children);
 
-describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
+describe("SPEC-0005 écran Ciel et présence (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -134,10 +134,24 @@ describe.skip("SPEC-0005 écran Ciel et présence (rendering)", () => {
 
   it("CA7 : has a single page while loading", async () => {
     const harness = setup({ aircraft: [OVERHEAD_NOW] });
+    // La source ne répond pas encore : les faux se résolvent en microtâches, `render` les viderait sinon.
+    const answer = harness.adsb.fetchAircraft.bind(harness.adsb);
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    harness.adsb.fetchAircraft = async (query) => {
+      await gate;
+      return answer(query);
+    };
     await render(<harness.App />);
     expect(screen.queryByLabelText("Indicateur de page")).toBeNull();
     expect(screen.queryByTestId("sky-screen")).toBeNull();
     expect(screen.getByTestId("passages-list")).toBeOnTheScreen();
+
+    release();
+    await settle();
+    expect(screen.getByLabelText("Indicateur de page")).toBeOnTheScreen();
   });
 
   it("CA7 : has a single page when the source is unavailable", async () => {

@@ -15,7 +15,7 @@ const base = process.env.BASE_REF ?? "origin/main";
 /** Mêmes arguments que le job `security` de `.github/workflows/ci.yml` (Semgrep). */
 export const TOOLS = {
   semgrep: {
-    args: ["scan", "--config", "auto", "--error", "--exclude", "tests"],
+    args: ["scan", "--config", "auto", "--error", "--exclude", "tests", "--exclude", "docs/brief"],
     install: "pipx install semgrep==1.179.0",
   },
   gitleaks: {

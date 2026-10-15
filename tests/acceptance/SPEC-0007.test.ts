@@ -198,10 +198,11 @@ describe.skip("SPEC-0007 adsb.lol client", () => {
     const aircraft = await fetchWith({
       ac: [
         raw({ hex: "c00001", flight: 1506, alt_baro: "high", gs: -3, track: 400 }),
-        raw({ hex: "c00002", alt_baro: Number.NaN, gs: "fast", track: -1 }),
+        raw({ hex: "c00002", flight: undefined, alt_baro: Number.NaN, gs: "fast", track: -1 }),
         raw({ hex: "c00003", alt_baro: undefined, gs: undefined, track: undefined, flight: undefined }),
         raw({
           hex: "c00004",
+          flight: undefined,
           alt_baro: Number.POSITIVE_INFINITY,
           gs: Number.POSITIVE_INFINITY,
           track: Number.POSITIVE_INFINITY,

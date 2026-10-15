@@ -508,7 +508,7 @@ describe("SPEC-0004 observer acquisition and foreground", () => {
   });
 
   // Amendement SPEC-0007 : `.skip` retiré par la tâche qui ajoute `onBackground` (SPEC-0007 plan).
-  it.skip("CA11 : calls every background listener at each entry into the background, until it unsubscribes", async () => {
+  it("CA11 : calls every background listener at each entry into the background, until it unsubscribes", async () => {
     const { createFakeLifecycle } = await lifecycleModule();
     const lifecycle = createFakeLifecycle();
     const first: string[] = [];
@@ -525,7 +525,7 @@ describe("SPEC-0004 observer acquisition and foreground", () => {
   });
 
   // Amendement SPEC-0007 : `.skip` retiré par la tâche qui ajoute `onBackground` (SPEC-0007 plan).
-  it.skip("CA11 : keeps foreground and background listeners apart", async () => {
+  it("CA11 : keeps foreground and background listeners apart", async () => {
     const { createFakeLifecycle } = await lifecycleModule();
     const lifecycle = createFakeLifecycle();
     const calls: string[] = [];

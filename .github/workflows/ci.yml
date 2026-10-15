@@ -29,6 +29,8 @@ jobs:
   gates:
     runs-on: ubuntu-latest
     # Base de données : décommenter si le projet utilise Postgres (voir docs/factory/BOILERPLATE.md, « Options »).
+    # À décommenter aussi dans les jobs parallèles `holdout` et `mutation` pour éviter les défaillances si la ressource
+    # est créée par `ci-data.sh setup` et requiert une base locale.
     # services:
     #   postgres:
     #     image: postgres:17
@@ -58,7 +60,7 @@ jobs:
         # la production. Ses variables (.env.local) passent aux étapes suivantes, masquées dans les logs.
         env:
           WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
-        run: ./scripts/ci-data.sh setup
+        run: ./scripts/ci-data.sh setup gates
       - run: pnpm run --if-present gen
       - run: pnpm run --if-present db:migrate
       - name: Typage
@@ -81,11 +83,66 @@ jobs:
           BASE_REF: origin/${{ github.base_ref }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: node scripts/check-contract.mjs
+      - name: Suppression de la ressource de données du run
+        if: always()
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh archive
+
+  # Jobs parallèles à `gates` : le temps de la CI est celui du plus long, pas la somme des étapes.
+  # `holdout` doit rester un check requis sur main pour bloquer la fusion si un scénario caché échoue.
+  holdout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Ressource de données du run
+        # Sans effet tant que le projet n'a pas de scripts/workspace-data.sh (ex. branche d'une base hébergée, voir
+        # docs/adr/0001-stack.md). Même script que le setup Conductor : la CI teste avec le fournisseur et le pilote de
+        # la production. Ses variables (.env.local) passent aux étapes suivantes, masquées dans les logs.
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh setup holdout
+      - run: pnpm run --if-present gen
+      - run: pnpm run --if-present db:migrate
       - name: Scénarios cachés
         # Décompte seul dans les logs : le détail d'un échec est réservé à l'humain (voir docs/factory/WORKFLOW.md).
         run: node scripts/holdout.mjs run
+      - name: Suppression de la ressource de données du run
+        if: always()
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh archive
+
+  mutation:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Ressource de données du run
+        # Sans effet tant que le projet n'a pas de scripts/workspace-data.sh. Stryker rejouant les tests,
+        # la ressource doit être disponible. Voir le job `gates` pour les détails.
+        env:
+          WORKSPACE_DATA_TOKEN: ${{ secrets.WORKSPACE_DATA_TOKEN }}
+        run: ./scripts/ci-data.sh setup mutation
+      - run: pnpm run --if-present gen
+      - run: pnpm run --if-present db:migrate
       - name: Mutation testing sur les fichiers modifiés
-        if: github.event_name == 'pull_request'
         env:
           BASE_REF: origin/${{ github.base_ref }}
         run: |

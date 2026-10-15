@@ -147,7 +147,7 @@ gh label create "contract-change" --color b60205 --description "Modification d'u
 ```
 
 - Fusion : n'autoriser que le squash-merge, avec suppression automatique des branches.
-- Si le plan GitHub le permet : protection de `main` avec les checks `gates`, `security`, `pr-title`, `review-trace` requis et « Require review from Code Owners ». Sur le plan Free d'un dépôt privé, ces règles n'existent pas : `/land` et le hook `pre-push` tiennent lieu de barrières.
+- Si le plan GitHub le permet : protection de `main` avec les checks `gates`, `holdout`, `security`, `pr-title`, `review-trace` requis et « Require review from Code Owners ». Sur le plan Free d'un dépôt privé, ces règles n'existent pas : `/land` et le hook `pre-push` tiennent lieu de barrières.
 - `contract-change` et `node scripts/review-gate.mjs waive` sont réservés à l'humain.
 - Livraison (si l'ADR-0001 en prévoit une) : crée l'environnement `production` (Settings → Environments) avec toi en relecteur obligatoire et `main` comme seule branche de déploiement, et range-y les secrets de livraison, dont le DSN Sentry de chaque application et `SENTRY_AUTH_TOKEN` (envoi des sourcemaps). Le workflow `release` (lancé à la main : Actions → release → Run workflow) refuse un commit de `main` dont `gates` n'est pas vert, puis lance `pnpm release`. Variable facultative : `RELEASE_RUNNER` (défaut `ubuntu-latest` ; une application iOS demande macOS).
 - Tests sur cible réelle (si le projet a un script `test:e2e`) : ajoute les checks `e2e` aux checks requis.

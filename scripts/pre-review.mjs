@@ -429,14 +429,31 @@ function brief() {
   return out.join("\n");
 }
 
-/** Commit relu au passage précédent s'il est un ancêtre de HEAD et que le verdict demandait des corrections. */
+/** Retourne le commit relu à réutiliser comme base du diff, ou null : verdict `CHANGEMENTS` et commit de cette branche. */
+export function usableReviewedHead(review, { onBranch, ancestorOfHead }) {
+  if (review?.verdict !== "CHANGEMENTS" || typeof review.head !== "string") return null;
+  return onBranch && ancestorOfHead ? review.head : null;
+}
+
+function isAncestor(ancestor, descendant) {
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Commit relu au passage précédent : `.context/review.json` d'une autre PR ne doit pas tronquer le diff. */
 function previousReviewedHead() {
   if (!fs.existsSync(".context/review.json")) return null;
   try {
     const review = JSON.parse(fs.readFileSync(".context/review.json", "utf8"));
-    if (review.verdict !== "CHANGEMENTS" || typeof review.head !== "string") return null;
-    execFileSync("git", ["merge-base", "--is-ancestor", review.head, "HEAD"], { stdio: "ignore" });
-    return review.head;
+    if (typeof review.head !== "string") return null;
+    return usableReviewedHead(review, {
+      onBranch: isAncestor(git("merge-base", base, "HEAD").trim(), review.head),
+      ancestorOfHead: isAncestor(review.head, "HEAD"),
+    });
   } catch {
     return null;
   }

@@ -9,6 +9,10 @@ interface RouteConfig {
 }
 
 interface PreReview {
+  usableReviewedHead(
+    review: { verdict: string; head: string },
+    checks: { onBranch: boolean; ancestorOfHead: boolean },
+  ): string | null;
   globMatch(glob: string, file: string): boolean;
   workMode(hasLease: boolean, branch: string): string;
   isFixBranch(branch: string): boolean;
@@ -363,6 +367,28 @@ describe("scripts/pre-review.mjs", () => {
       "@/features/links/repo",
     ]);
     expect(mod.boundaryViolations(file, 'import { x } from "@/shared/clock";', ["index"])).toEqual([]);
+  });
+
+  describe("usableReviewedHead", () => {
+    const ok = { onBranch: true, ancestorOfHead: true };
+
+    it("reuses the reviewed commit after a CHANGEMENTS verdict", () => {
+      expect(mod.usableReviewedHead({ verdict: "CHANGEMENTS", head: "abc" }, ok)).toBe("abc");
+    });
+
+    it("ignores the reviewed commit after another verdict", () => {
+      expect(mod.usableReviewedHead({ verdict: "BLOQUANT", head: "abc" }, ok)).toBeNull();
+    });
+
+    it("ignores a commit that is not on this branch", () => {
+      expect(mod.usableReviewedHead({ verdict: "CHANGEMENTS", head: "abc" }, { ...ok, onBranch: false })).toBeNull();
+    });
+
+    it("ignores a commit that is no longer an ancestor of HEAD", () => {
+      expect(
+        mod.usableReviewedHead({ verdict: "CHANGEMENTS", head: "abc" }, { ...ok, ancestorOfHead: false }),
+      ).toBeNull();
+    });
   });
 
   describe("conventionViolations", () => {

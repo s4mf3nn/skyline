@@ -8,7 +8,7 @@ Avant d'écrire ou de relire du code qui utilise une API de bibliothèque (frame
 2. **Code existant** : si l'API est déjà utilisée à l'identique dans le dépôt, copie ce motif, sans Context7.
 3. **Context7 seulement pour ce qui est nouveau** : une API absente du cache et du code, ou une configuration (`tsconfig`, `biome.json`, `vitest.config.ts`, etc.) ou migration de version.
    - Lis la version épinglée dans `package.json` / `pnpm-lock.yaml` (avant l'installation, la dernière version stable).
-   - `resolve-library-id`, puis `query-docs` avec l'identifiant versionné (`/org/projet/version`) quand il existe. Une seule requête ciblée par question (nomme le symbole ou l'option exacts, pas de requête générique), et limite la réponse avec le paramètre `tokens` de `query-docs` (2000 suffit en général).
+   - `resolve-library-id`, puis `query-docs` avec l'identifiant versionné (`/org/projet/version`) quand il existe. Une seule requête ciblée par question (nomme le symbole ou l'option exacts, pas de requête générique).
 4. **Alimente le cache** : après une consultation, ajoute à `docs/factory/libs-cache.md` une entrée courte (API, forme correcte, piège) sous la bibliothèque et sa version. Une entrée = 1 à 3 lignes. Pas de copie de documentation.
 5. Pas de Context7 pour la logique métier, les algorithmes ou le code du dépôt.
 6. Liste dans le résumé de PR les bibliothèques consultées (Context7 ou cache). Si Context7 est indisponible, dis-le dans le résumé : la PR part en incertitude à relire.

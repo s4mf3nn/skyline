@@ -91,7 +91,7 @@ function passage(hex: string, callsign: string | null, overrides: Partial<Passag
 
 const sceneOf = (overhead: Passage | null, upcoming: Passage[] = []): Scene => ({ overhead, upcoming });
 
-describe.skip("SPEC-0005 logique de l'écran Ciel", () => {
+describe("SPEC-0005 logique de l'écran Ciel", () => {
   it("CA1 : exposes the handoff measures", async () => {
     const { CIEL_METRICS } = await ciel();
     expect(CIEL_METRICS).toEqual({

@@ -102,11 +102,14 @@ describe("Pager page presence", () => {
     expect(indicator()).toHaveAccessibilityValue({ text: "Page 2 sur 2" });
   });
 
-  it("removes a page that is not displayed immediately", async () => {
+  it("keeps a page just left during the transition, then removes it", async () => {
     const view = await render(<Pager pages={[presentFeature(), others()]} />);
     await fireEvent(indicator(), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
     skyPresent = false;
     await view.rerender(<Pager pages={[presentFeature(), others()]} />);
+    await pass(100);
+    expect(screen.getByText("sky screen")).toBeOnTheScreen();
+    await pass(300);
     expect(screen.queryByText("sky screen")).toBeNull();
     expect(screen.queryByRole("adjustable", { name: "Indicateur de page" })).toBeNull();
   });

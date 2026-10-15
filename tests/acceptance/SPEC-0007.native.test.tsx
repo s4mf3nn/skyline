@@ -358,7 +358,7 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     await settle();
     expect(harness.queries).toHaveLength(1);
 
-    view.unmount();
+    await view.unmount();
     await elapse(harness.clock, 40);
     expect(harness.queries).toHaveLength(1);
     for (const spy of logs) expect(spy).not.toHaveBeenCalled();
@@ -482,7 +482,7 @@ describe.skip("SPEC-0007 refresh (rendering)", () => {
     await settle();
     expect(harness.queries).toHaveLength(1);
 
-    view.unmount();
+    await view.unmount();
     harness.release();
     await elapse(harness.clock, 30);
     expect(harness.queries).toHaveLength(1);

@@ -16,7 +16,7 @@ const sh = (c) => execSync(c, { encoding: "utf8" });
 const changed = sh(`git diff --no-renames --name-only --diff-filter=M ${base}...HEAD -- tests/acceptance`)
   .split("\n")
   .filter(Boolean);
-const normalize = (s) => s.replace(/describe\.skip\(/g, "describe(");
+const normalize = (s) => s.replace(/\b(describe|it)\.skip\(/g, "$1(");
 
 let failed = false;
 for (const f of changed) {

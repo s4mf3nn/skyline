@@ -29,7 +29,7 @@ Procédure :
 
 Contraintes de lisibilité : `/implement` ne lit que l'extrait d'une tâche (`node scripts/split-plan.mjs task`). Garde les titres `### T# : <titre>` et la ligne « Critères de la spec couverts » exacts (avec des identifiants `CA#` / `CU#`). Mets dans le préambule (avant `## Groupe 1`) seulement les constats et interfaces partagés par plusieurs tâches, en quelques lignes ; une information propre à une tâche va dans cette tâche. Quand une tâche s'appuie sur le préambule, écris « ci-dessus » ou « figée » dans son texte : le script l'inclut alors automatiquement. Pour Context7, applique `docs/factory/CONTEXT7.md` (cache d'abord).
 
-Sortie : écris `specs/SPEC-XXXX-*/plan.md` au format suivant, puis résume en 5 lignes.
+Sortie : écris `specs/SPEC-XXXX-*/plan.md` au format suivant, puis résume en 5 lignes. Taille : `plan.md` reste sous ~10 000 caractères (préambule court, une conception par tâche à risque seulement) ; au-delà, redécoupe la spec plutôt que d'allonger.
 
 ````
 # Plan SPEC-XXXX

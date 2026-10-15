@@ -2,6 +2,7 @@
 
 | Semaine | Tâches livrées | Taux de reprise | Défauts échappés | Erreurs de production | Conflits | Part auto-merge | Délai spec vers prod (médiane) | Tours | Contexte moyen par tour | Tokens pondérés par tâche |
 |---|---|---|---|---|---|---|---|---|---|---|
+| Référence (avant mesures 19 à 24, 2026-10-15) | n/d | n/d | n/d | n/d | n/d | n/d | n/d | 2 238 | 72 068 | n/d |
 
 Définitions :
 - **Taux de reprise** : PR ayant nécessité au moins un nouveau passage agent après la CI ou la revue, divisé par les PR ouvertes.

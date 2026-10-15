@@ -30,7 +30,7 @@ Procédure :
 
 Verdict : `BLOQUANT` s'il y a au moins un point dans `Bloquants` ; sinon `CHANGEMENTS` s'il y a au moins un point dans `À corriger` ; sinon `OK`. Des `Points d'incertitude` seuls donnent `OK`.
 
-Sortie, et rien d'autre. La première ligne est lue par un script : respecte-la à la lettre. Ne cite jamais le contenu d'un scénario caché : désigne-le par son titre.
+Sortie, et rien d'autre, **au plus ~40 lignes** (un point = une ligne, sans reformuler la spec). La première ligne est lue par un script : respecte-la à la lettre. Ne cite jamais le contenu d'un scénario caché : désigne-le par son titre.
 
 ```
 VERDICT : OK | CHANGEMENTS | BLOQUANT

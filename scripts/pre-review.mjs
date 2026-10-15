@@ -424,10 +424,33 @@ function brief() {
     ...notes.map((n) => `  - note : ${n}`),
     `FICHIERS MODIFIÉS (${files.length}) :`,
     ...files.map((f) => `  ${f}`),
-    `DIFF (sans ${DIFF_EXCLUDES.join(", ")}) :`,
-    git("diff", "-U3", `${base}...HEAD`, "--", ".", ...excluded),
+    ...diffSection(excluded),
   ];
   return out.join("\n");
+}
+
+/** Commit relu au passage précédent s'il est un ancêtre de HEAD et que le verdict demandait des corrections. */
+function previousReviewedHead() {
+  if (!fs.existsSync(".context/review.json")) return null;
+  try {
+    const review = JSON.parse(fs.readFileSync(".context/review.json", "utf8"));
+    if (review.verdict !== "CHANGEMENTS" || typeof review.head !== "string") return null;
+    execFileSync("git", ["merge-base", "--is-ancestor", review.head, "HEAD"], { stdio: "ignore" });
+    return review.head;
+  } catch {
+    return null;
+  }
+}
+
+/** Passage 2 ou 3 : seul le diff depuis le commit relu est utile, le reste a déjà été relu. */
+function diffSection(excluded) {
+  const head = previousReviewedHead();
+  if (head === null)
+    return [`DIFF (sans ${DIFF_EXCLUDES.join(", ")}) :`, git("diff", "-U3", `${base}...HEAD`, "--", ".", ...excluded)];
+  return [
+    `DIFF DEPUIS LE COMMIT RELU ${head} (passage de relecture ; le reste a déjà été relu, ensemble de la PR : \`git diff ${base}...HEAD --stat\`) :`,
+    git("diff", "-U3", `${head}..HEAD`, "--", ".", ...excluded),
+  ];
 }
 
 /** Avertit des zones mortes, sans échouer : avant SPEC-0000, la plupart des zones applicatives le sont. */

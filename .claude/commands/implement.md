@@ -8,7 +8,7 @@ effort: medium
 Tâche : $ARGUMENTS
 
 0. Contrôle que le plan est fusionné : `node scripts/plan-gate.mjs check <SPEC-XXXX> <T#>`. En cas d'échec, arrête-toi et recopie son message : le plan doit être sur `origin/main` (PR de plan fusionnée) avant tout bail. Retire ensuite les scénarios cachés de ce workspace : `node scripts/holdout.mjs hide`. Tu ne lis jamais `tests/holdout/`, ni dans un autre dossier ni par git.
-1. Lis `CLAUDE.md` et les règles actives de `docs/factory/LEARNINGS.md`. Pour la spec et la tâche, lance `node scripts/split-plan.mjs task <SPEC-XXXX> <T#>` : il donne la tâche, les critères de la spec qu'elle couvre et, si la tâche y renvoie, le préambule du plan (`--with-preamble` pour le forcer). Ne lis `plan.md` et `spec.md` en entier que si cette sortie est insuffisante, et dis pourquoi dans le résumé de PR.
+1. `CLAUDE.md` est déjà chargé : ne le relis pas. Lis seulement la section « Règles actives » de `docs/factory/LEARNINGS.md` (`grep -A12 'Règles actives'`). Pour la spec et la tâche, lance `node scripts/split-plan.mjs task <SPEC-XXXX> <T#>` : il donne la tâche, les critères de la spec qu'elle couvre et, si la tâche y renvoie, le préambule du plan (`--with-preamble` pour le forcer). Ne lis `plan.md` et `spec.md` en entier que si cette sortie est insuffisante, et dis pourquoi dans le résumé de PR.
 2. Pose le bail : `node scripts/lease.mjs acquire <SPEC-XXXX-T#> <chemins du périmètre>`. En cas d'échec, arrête-toi et dis-moi quel bail bloque.
    Une fois le bail posé, signale la tâche en cours sur le tableau : `node scripts/board.mjs start <SPEC-XXXX> <T#>` (informatif : s'il échoue, continue).
 3. Renomme la branche : `git branch -m spec-xxxx-t#-<slug>`.

@@ -39,6 +39,49 @@ describe("createFakeLifecycle", () => {
     expect(removed).not.toHaveBeenCalled();
     expect(kept).toHaveBeenCalledTimes(1);
   });
+
+  it("calls nothing before enterBackground", () => {
+    const lifecycle = createFakeLifecycle();
+    const listener = vi.fn();
+    lifecycle.onBackground(listener);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("calls every background listener on enterBackground", () => {
+    const lifecycle = createFakeLifecycle();
+    const first = vi.fn();
+    const second = vi.fn();
+    lifecycle.onBackground(first);
+    lifecycle.onBackground(second);
+    lifecycle.enterBackground();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops calling a background listener after unsubscribe", () => {
+    const lifecycle = createFakeLifecycle();
+    const kept = vi.fn();
+    const removed = vi.fn();
+    lifecycle.onBackground(kept);
+    const unsubscribe = lifecycle.onBackground(removed);
+    unsubscribe();
+    lifecycle.enterBackground();
+    expect(removed).not.toHaveBeenCalled();
+    expect(kept).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps foreground and background listeners apart", () => {
+    const lifecycle = createFakeLifecycle();
+    const foreground = vi.fn();
+    const background = vi.fn();
+    lifecycle.onForeground(foreground);
+    lifecycle.onBackground(background);
+    lifecycle.enterForeground();
+    expect(background).not.toHaveBeenCalled();
+    lifecycle.enterBackground();
+    expect(foreground).toHaveBeenCalledTimes(1);
+    expect(background).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("createAppStateLifecycle", () => {
@@ -85,6 +128,40 @@ describe("createAppStateLifecycle", () => {
 
   it("removes the AppState subscription on unsubscribe", () => {
     const { unsubscribe } = subscribe();
+    unsubscribe();
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  function subscribeBackground() {
+    const listener = vi.fn();
+    const unsubscribe = createAppStateLifecycle().onBackground(listener);
+    return { listener, unsubscribe };
+  }
+
+  it("calls the background listener on active to background", () => {
+    const { listener } = subscribeBackground();
+    emit("background");
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls the background listener on active to inactive", () => {
+    const { listener } = subscribeBackground();
+    emit("inactive");
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores background to background, inactive to background and background to active", () => {
+    const { listener } = subscribeBackground();
+    emit("inactive");
+    listener.mockClear();
+    emit("background");
+    emit("background");
+    emit("active");
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("removes the AppState subscription on background unsubscribe", () => {
+    const { unsubscribe } = subscribeBackground();
     unsubscribe();
     expect(remove).toHaveBeenCalledTimes(1);
   });

@@ -100,3 +100,8 @@ Source : Context7 `/react/react-native-website` (doc 0.87, la plus proche de 0.8
 ## Hermes (moteur de react-native 0.86.3)
 Source : Context7 `/discord/hermes` (`doc/IntlAPIs.md`) le 2026-10-14.
 - `Intl.DateTimeFormat` : prend `timeZone` et `hourCycle: "h23"` sur iOS et Android, mais le motif iOS est localisé : assembler `HH:MM` depuis `formatToParts`, jamais depuis `format()` ni `toLocaleString`.
+
+## zod 4.6.5
+Source : Context7 `/colinhacks/zod/v4.6.5` le 2026-10-15.
+- `z.config({ jitless: true })` : désactive la compilation rapide (`new Function`), nécessaire sous Hermes ; à appeler en tête de module.
+- Repli par champ : `schema.nullable().catch(null)` ; `.catch` couvre aussi l'absence. `safeParse` rend `{ success, data | error }`, sans lever.

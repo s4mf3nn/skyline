@@ -40,7 +40,7 @@ Les versions des modules natifs sont celles que le SDK Expo 57 embarque (`bundle
 | Source des routes de vol (origine, destination, horaires, progression) | Données affichées sur Ciel et sur les cartes | choisie | Le handoff les affiche, adsb.lol ne fournit que les positions, et le cahier des charges repousse adsbdb au MVP | ADR-0002 (adsbdb.com) pour l'origine et la destination, ADR-0003 (estimation locale) pour les horaires et la progression |
 | Sentry (`@sentry/react-native` `~7.11.0`) | Suivi des erreurs | imposée | Exigence de la factory, observabilité | Context7 `/websites/sentry_io_platforms_react-native` |
 | Jest via `jest-expo` `~57.0.6`, `@testing-library/react-native` 14.1.0 | Tests de rendu des écrans | choisie | Le rendu React Native ne tourne pas sous Vitest ; le cahier des charges demande Jest et RNTL | Context7 `/expo/expo` |
-| Validation des entrées (réponse ADS-B, deep links) | Validation à la frontière | à décider | Bibliothèque de schémas ou garde de type écrite à la main : à trancher par la spec qui branche les vraies données | introuvable |
+| Validation des entrées (réponse ADS-B, deep links) : Zod `4.6.5` | Validation à la frontière | choisie | Schémas déclaratifs et types déduits ; `jitless` pour Hermes | ADR-0004, Context7 `/colinhacks/zod/v4.6.5` |
 | EAS Build, EAS Update | Livraison | imposée | Cahier des charges, section 13 | Context7 `/expo/expo` |
 
 Type d'application : application mobile (iOS et Android).

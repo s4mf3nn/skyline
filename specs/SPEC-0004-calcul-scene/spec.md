@@ -132,6 +132,9 @@ Ce que lit chaque écran : l'avion « Regardez » de Ciel et de la carte « En c
 - Une seule fonction de calcul de la scène, lue par les deux écrans (INV1) : aucun écran ne recalcule un survol ou un passage.
 - Conséquence acceptée (propriétaire, `docs/DOMAIN.md`) : un avion sans cap ou sans vitesse n'est jamais le survol en cours, et la distance actuelle d'un survol maintenu peut atteindre environ 6,4 km.
 
+## Amendement (SPEC-0005)
+- Une seule scène par application : `useScene` lit un magasin partagé fourni par `createApp`, démarré au premier abonné et arrêté au dernier. La permission et la source ne sont demandées qu'une fois ; la signature de `useScene` et les contrats sont inchangés.
+
 ## Décisions prises à la rédaction
 Choix non dictés par le brief ni par le cadrage, à confirmer à la relecture :
 - Cible du compte à rebours : l'entrée dans la fenêtre (réponse du propriétaire à la question de cadrage) ; le tri de INV3 suit cette heure.

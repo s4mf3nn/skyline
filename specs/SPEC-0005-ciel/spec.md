@@ -1,6 +1,6 @@
 # SPEC-0005 : Écran Ciel et présence de Ciel dans le pager
 
-Statut : BROUILLON
+Statut : VALIDÉE
 Risque estimé : moyen (nouvelle feature `src/features/ciel/`, aucune zone sensible ; l'écran lit la position uniquement par `useScene` de SPEC-0004 et n'envoie rien)
 Dépend de : SPEC-0002, SPEC-0003, SPEC-0004, SPEC-0006
 Tests de contrat : `tests/acceptance/SPEC-0005.test.ts` (Vitest), `tests/acceptance/SPEC-0005.native.test.tsx` (Jest)
@@ -102,7 +102,7 @@ nextSkyState(input: {
 - États de chargement, localisation refusée, hors ligne, données périmées et leurs textes (SPEC-0008).
 - Source ADS-B réelle et minuteur de 10 s (SPEC-0007) ; la source de démonstration est celle de SPEC-0006.
 - Tap, partage, mode nuit, transition de couleur d'une compagnie à l'autre.
-- Le geste, les 380 ms et le retrait d'une page par le pager : SPEC-0003 (amendement attendu, voir « Décisions »).
+- Le geste, les 380 ms et le retrait d'une page par le pager : SPEC-0003, amendé avec le plan de cette spec (page absente, `feature.presence`).
 
 ## Contraintes
 - Aucun calcul dans un `.tsx` (`docs/factory/UI.md`) : formats, vue et présence viennent de `service.ts`. L'écran ne recalcule aucun survol (INV1) : il lit `useScene`, comme Passages.
@@ -112,7 +112,7 @@ nextSkyState(input: {
 
 ## Décisions prises à la rédaction
 À confirmer à la relecture :
-- **Prérequis non fusionnés** : les amendements de SPEC-0003 (page absente, crochet de présence appelé par le pager avec la page affichée) et de SPEC-0004 (une seule scène partagée, INV1) exigés par la roadmap avant `/new-spec SPEC-0005` ne sont pas dans les specs sur main. Cette spec suppose leurs contrats (`feature.presence`, `useScene` partagé) tels que décrits dans la roadmap ; ils doivent être fusionnés, et cette spec relue contre eux, avant `/plan SPEC-0005`.
+- **Prérequis non fusionnés** : les amendements de SPEC-0003 (page absente, crochet de présence appelé par le pager avec la page affichée) et de SPEC-0004 (une seule scène partagée, INV1) exigés par la roadmap avant `/new-spec SPEC-0005` n'étaient pas dans les specs sur main. Décision du propriétaire (2026-10-15) : ils sont absorbés par le plan de cette spec (T1 et T2) et leurs textes amendés dans la même PR.
 - Nom et signature du crochet : `presence(displayedPage: "ciel" | "passages") => boolean`, convention de la roadmap et du test de SPEC-0006 (`feature.presence` absent pour Passages).
 - État de présence : `nextSkyState` est la « fonction pure de présence » d'INV9 ; elle reçoit `denied` et `scene` (données périmées comptant comme à jour) plutôt que l'état des données brut.
 - Position de la colonne d'infos : celle du handoff (`top` 448), sans remontée avant SPEC-0009 (réponse du propriétaire).
@@ -121,4 +121,4 @@ nextSkyState(input: {
 - Archivo : cette spec ne charge aucune police. Le chargement des instances statiques (`expo-font`) est un prérequis porté par un amendement de SPEC-0002, à fusionner avant `/plan SPEC-0005` ; sans lui, Ciel rend en police système, sans effet sur les critères.
 
 ## Questions ouvertes
-Aucune. Prérequis à fusionner avant `/plan SPEC-0005` (décisions du 2026-10-14) : amendement de SPEC-0003 (page absente, `feature.presence`), amendement de SPEC-0004 (scène partagée), amendement de SPEC-0002 (chargement d'Archivo), amendement textuel de SPEC-0006 (CA18).
+Aucune. Amendements de SPEC-0003 (page absente, `feature.presence`) et de SPEC-0004 (scène partagée) fusionnés avec le plan (2026-10-15) ; le chargement d'Archivo (SPEC-0002) reste sans effet sur les critères.

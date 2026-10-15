@@ -1,4 +1,4 @@
-import type { Feature } from "../feature";
+import type { Feature, PageName } from "../feature";
 
 export type { PageAccentSlot, PageAccents } from "./accent";
 export { activeAccent, PageAccentContext, usePagerAccent, withAccent } from "./accent";
@@ -79,6 +79,40 @@ export function dragPosition(page: PageIndex, width: number, dx: number): number
 /** Largeur de la bande : une largeur d'écran par page. */
 export function stripWidth(width: number): number {
   return width * 2;
+}
+
+/** Présence de chaque page, dans l'ordre des pages. */
+export type PagePresence = readonly [boolean, boolean];
+
+export function pageName(page: PageIndex): PageName {
+  return page === 0 ? "ciel" : "passages";
+}
+
+/** Une page sans `presence` est présente d'emblée ; les autres attendent le premier rapport de leur sonde. */
+export function initialPresence(pages: readonly [Feature, Feature]): PagePresence {
+  return [pages[0].presence === undefined, pages[1].presence === undefined];
+}
+
+/** Première page présente ; la page 0 si aucune ne l'est. */
+export function initialPage(present: PagePresence): PageIndex {
+  return present[0] || !present[1] ? 0 : 1;
+}
+
+/** Page à afficher quand `present` change : l'autre page si `page` disparaît et que l'autre existe. */
+export function pageAfterPresence(page: PageIndex, present: PagePresence): PageIndex {
+  const other: PageIndex = page === 0 ? 1 : 0;
+  if (!present[page] && present[other]) return other;
+  return page;
+}
+
+/** Une page absente reste montée tant que la transition qui l'écarte de l'écran n'est pas finie. */
+export function keepsMounted(present: boolean, mounted: boolean, transitioning: boolean): boolean {
+  return present || (mounted && transitioning);
+}
+
+/** Le glissement n'a de sens que si les deux pages sont présentes. */
+export function swipeAllowed(present: PagePresence): boolean {
+  return present[0] && present[1];
 }
 
 /** Rayon d'un trait : moitié de sa hauteur, pour des bouts arrondis. */

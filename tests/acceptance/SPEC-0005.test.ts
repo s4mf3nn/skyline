@@ -68,7 +68,7 @@ const airlines = () => load<AirlinesModule>("src/shared/airlines/index.ts");
 
 const NOW = 1_800_000_000_000;
 const SECOND = 1000;
-const NBSP = " ";
+const NBSP = "\u00a0";
 
 function passage(hex: string, callsign: string | null, overrides: Partial<Passage> = {}): Passage {
   return {

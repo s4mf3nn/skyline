@@ -45,7 +45,7 @@ const KM_PER_DEGREE = (6371 * Math.PI) / 180;
 const OBSERVER: Position = { latitude: 45.76449, longitude: 4.83571 };
 const NOW = 1_800_000_000_000;
 const SECOND = 1000;
-const NBSP = " ";
+const NBSP = "\u00a0";
 const CREAM = "#F4F1EA";
 
 function at(eastKm: number, northKm: number): Position {

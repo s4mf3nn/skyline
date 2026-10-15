@@ -157,18 +157,20 @@ describe("createSceneController", () => {
     expect(adsb.queries).toHaveLength(1);
   });
 
-  it("recomputes every second without querying again, and never refreshes by itself every 10 s", async () => {
+  it("recomputes every second without querying before the 10 s deadline", async () => {
     const { adsb, clock, last } = setup();
     await vi.advanceTimersByTimeAsync(0);
-    clock.advance(30_000);
-    await vi.advanceTimersByTimeAsync(30_000);
-    expect(last()?.state).toMatchObject({ status: "ready", nowMs: NOW + 30_000, snapshotAtMs: NOW });
+    clock.advance(9000);
+    await vi.advanceTimersByTimeAsync(9000);
+    expect(last()?.state).toMatchObject({ status: "ready", nowMs: NOW + 9000, snapshotAtMs: NOW });
     expect(adsb.queries).toHaveLength(1);
   });
 
   it("passes the previous overhead to the next tick", async () => {
-    const { clock, last } = setup();
+    const { adsb, clock, last } = setup();
     await vi.advanceTimersByTimeAsync(0);
+    // La source est coupée pour que l'instantané d'origine reste celui du calcul.
+    adsb.setUnavailable(true);
     clock.advance(190_000);
     await vi.advanceTimersByTimeAsync(1000);
     const state = last()?.state;
@@ -189,5 +191,157 @@ describe("createSceneController", () => {
     const { last } = setup({ withLifecycle: false });
     await vi.advanceTimersByTimeAsync(0);
     expect(last()?.state.status).toBe("ready");
+  });
+
+  describe("refresh cadence", () => {
+    // Avance l'horloge factice et les minuteurs par pas d'une seconde.
+    async function elapse(clock: { advance(ms: number): void }, seconds: number): Promise<void> {
+      for (let i = 0; i < seconds; i += 1) {
+        clock.advance(1000);
+        await vi.advanceTimersByTimeAsync(1000);
+      }
+    }
+
+    it("CA9: queries again every 10 s with the last position and replaces the snapshot", async () => {
+      const { adsb, clock, location, last } = setup();
+      await vi.advanceTimersByTimeAsync(0);
+      const getPosition = vi.spyOn(location, "getPosition");
+      await elapse(clock, 10);
+      expect(adsb.queries).toHaveLength(2);
+      expect(adsb.queries[1]).toEqual({ latitude: 45.764, longitude: 4.836, radiusKm: 80 });
+      expect(last()?.state).toMatchObject({ status: "ready", snapshotAtMs: NOW + 10_000 });
+      await elapse(clock, 10);
+      expect(adsb.queries).toHaveLength(3);
+      expect(getPosition).not.toHaveBeenCalled();
+    });
+
+    it("CA10: skips a deadline while the previous request is pending, without catching up", async () => {
+      const { adsb, clock } = setup();
+      await vi.advanceTimersByTimeAsync(0);
+      const answers: Array<() => void> = [];
+      const fetchAircraft = vi.spyOn(adsb, "fetchAircraft");
+      fetchAircraft.mockImplementationOnce(() => new Promise((resolve) => answers.push(() => resolve([PLANE]))));
+      await elapse(clock, 10);
+      expect(answers).toHaveLength(1);
+      await elapse(clock, 10);
+      expect(answers).toHaveLength(1);
+      answers[0]?.();
+      await vi.advanceTimersByTimeAsync(0);
+      fetchAircraft.mockClear();
+      await elapse(clock, 5);
+      expect(fetchAircraft).not.toHaveBeenCalled();
+      await elapse(clock, 5);
+      expect(fetchAircraft).toHaveBeenCalledTimes(1);
+    });
+
+    it("CA11: stops everything in background and issues one request on return", async () => {
+      const { adsb, clock, lifecycle, last, views } = setup({ withLifecycle: true });
+      await vi.advanceTimersByTimeAsync(0);
+      lifecycle?.enterBackground();
+      const count = views.length;
+      await elapse(clock, 30);
+      expect(views).toHaveLength(count);
+      expect(adsb.queries).toHaveLength(1);
+
+      lifecycle?.enterForeground();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(adsb.queries).toHaveLength(2);
+      expect(last()?.state).toMatchObject({ status: "ready", snapshotAtMs: NOW + 30_000 });
+      await elapse(clock, 9);
+      expect(adsb.queries).toHaveLength(2);
+      await elapse(clock, 1);
+      expect(adsb.queries).toHaveLength(3);
+    });
+
+    it("CA11: ignores an answer arriving during the pause and an older one after the return", async () => {
+      const { adsb, clock, lifecycle, last } = setup({ withLifecycle: true });
+      await vi.advanceTimersByTimeAsync(0);
+      const answers: Array<(aircraft: unknown[]) => void> = [];
+      vi.spyOn(adsb, "fetchAircraft").mockImplementationOnce(
+        () => new Promise((resolve) => answers.push(resolve as (aircraft: unknown[]) => void)),
+      );
+      await elapse(clock, 10);
+      lifecycle?.enterBackground();
+      answers[0]?.([]);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(last()?.state).toMatchObject({ snapshotAtMs: NOW });
+    });
+
+    it("CA11: never stops refreshing without a lifecycle service", async () => {
+      const { adsb, clock } = setup({ withLifecycle: false });
+      await vi.advanceTimersByTimeAsync(0);
+      await elapse(clock, 20);
+      expect(adsb.queries).toHaveLength(3);
+    });
+
+    it("CA12: keeps the cadence and the last scene after a failure, then recovers", async () => {
+      const { adsb, clock, last } = setup();
+      await vi.advanceTimersByTimeAsync(0);
+      adsb.setUnavailable(true);
+      await elapse(clock, 10);
+      expect(adsb.queries).toHaveLength(2);
+      expect(last()?.state).toMatchObject({ status: "ready", snapshotAtMs: NOW });
+      adsb.setUnavailable(false);
+      await elapse(clock, 10);
+      expect(adsb.queries).toHaveLength(3);
+      expect(last()?.state).toMatchObject({ status: "ready", snapshotAtMs: NOW + 20_000 });
+    });
+
+    it("CA12: without snapshot stays unavailable then becomes ready, rereading the position each time", async () => {
+      const { location, adsb, clock, last } = setup();
+      const getPosition = vi.spyOn(location, "getPosition");
+      getPosition.mockRejectedValueOnce(new RangeError("position unavailable"));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(last()?.state).toEqual({ status: "unavailable" });
+      await elapse(clock, 10);
+      expect(getPosition).toHaveBeenCalledTimes(2);
+      expect(last()?.state.status).toBe("ready");
+      expect(adsb.queries).toHaveLength(1);
+    });
+
+    it("CA13: no deadline queries the source while denied, and the cadence resumes when granted", async () => {
+      const { location, adsb, clock, lifecycle, last } = setup({ permission: "denied", withLifecycle: true });
+      await vi.advanceTimersByTimeAsync(0);
+      await elapse(clock, 30);
+      expect(adsb.queries).toEqual([]);
+      expect(last()?.state).toEqual({ status: "denied" });
+
+      vi.spyOn(location, "requestPermission").mockResolvedValueOnce("granted");
+      vi.spyOn(location, "getPosition").mockResolvedValueOnce(POSITION);
+      lifecycle?.enterForeground();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(adsb.queries).toHaveLength(1);
+      await elapse(clock, 10);
+      expect(adsb.queries).toHaveLength(2);
+    });
+
+    it("CA14: cancels the deadline on stop and ignores an in-flight answer", async () => {
+      const { adsb, clock, controller, views } = setup();
+      await vi.advanceTimersByTimeAsync(0);
+      const answers: Array<() => void> = [];
+      vi.spyOn(adsb, "fetchAircraft").mockImplementationOnce(
+        () => new Promise((resolve) => answers.push(() => resolve([PLANE]))),
+      );
+      await elapse(clock, 10);
+      controller.stop();
+      const count = views.length;
+      answers[0]?.();
+      await elapse(clock, 20);
+      expect(views).toHaveLength(count);
+      expect(adsb.queries).toHaveLength(1);
+    });
+
+    it("CA15: refresh() queries now without moving the 10 s deadline, even with a request in flight", async () => {
+      const { adsb, clock, controller } = setup();
+      await vi.advanceTimersByTimeAsync(0);
+      await elapse(clock, 4);
+      controller.refresh();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(adsb.queries).toHaveLength(2);
+      await elapse(clock, 5);
+      expect(adsb.queries).toHaveLength(2);
+      await elapse(clock, 1);
+      expect(adsb.queries).toHaveLength(3);
+    });
   });
 });

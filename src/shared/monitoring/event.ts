@@ -6,6 +6,7 @@ interface ScrubbableException {
 }
 
 interface ScrubbableBreadcrumb {
+  category?: string;
   message?: string;
   data?: Record<string, unknown>;
 }
@@ -42,8 +43,13 @@ function scrubRecord(record: Record<string, unknown>): Record<string, unknown> {
   return scrubbed;
 }
 
+// Catégories des requêtes réseau : leur URL porte la position (INV7), les zéros de fin échappent au filtre.
+const NETWORK_CATEGORIES = ["xhr", "fetch", "http"];
+
 /** Aussi branché sur `beforeBreadcrumb` : le SDK recopie les breadcrumbs côté natif, hors de `beforeSend`. */
-export function scrubBreadcrumb<B extends ScrubbableBreadcrumb>(breadcrumb: B): B {
+export function scrubBreadcrumb<B extends ScrubbableBreadcrumb>(breadcrumb: B): B | null {
+  // Les requêtes réseau sont écartées quelle que soit l'URL, pas seulement masquées.
+  if (breadcrumb.category !== undefined && NETWORK_CATEGORIES.includes(breadcrumb.category)) return null;
   const scrubbed: ScrubbableBreadcrumb = { ...breadcrumb };
   if (breadcrumb.message !== undefined) scrubbed.message = scrubMessage(breadcrumb.message);
   if (breadcrumb.data !== undefined) scrubbed.data = scrubRecord(breadcrumb.data);
@@ -65,6 +71,7 @@ export function scrubEvent<E extends ScrubbableEvent>(event: E): E {
   if (event.tags !== undefined) scrubbed.tags = scrubRecord(event.tags);
   if (event.extra !== undefined) scrubbed.extra = scrubRecord(event.extra);
   if (event.user !== undefined) scrubbed.user = scrubRecord(event.user);
-  if (event.breadcrumbs !== undefined) scrubbed.breadcrumbs = event.breadcrumbs.map(scrubBreadcrumb);
+  if (event.breadcrumbs !== undefined)
+    scrubbed.breadcrumbs = event.breadcrumbs.flatMap((entry) => scrubBreadcrumb(entry) ?? []);
   return scrubbed as E;
 }

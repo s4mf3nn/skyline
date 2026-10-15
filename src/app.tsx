@@ -6,6 +6,7 @@ import type { Feature } from "./shared/feature";
 import { type BuildInfo, DEFAULT_BUILD } from "./shared/monitoring";
 import { type PagerRoot, pagerRoot } from "./shared/pager";
 import { Pager } from "./shared/pager/pager";
+import { SceneProvider } from "./shared/scene";
 import { type AppServices, ServicesProvider } from "./shared/services";
 
 export type { Feature } from "./shared/feature";
@@ -28,7 +29,9 @@ export function createApp({ services, features, build }: AppOptions): ComponentT
   return function App() {
     return (
       <ServicesProvider services={services}>
-        <Screen />
+        <SceneProvider>
+          <Screen />
+        </SceneProvider>
       </ServicesProvider>
     );
   };

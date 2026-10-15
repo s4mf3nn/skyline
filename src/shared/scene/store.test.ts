@@ -77,4 +77,18 @@ describe("createSceneStore", () => {
     expect(b.store.getView().state.status).toBe("loading");
     unsubscribeA();
   });
+
+  it("restarts from loading when a subscriber arrives after the last one left", async () => {
+    const { store, fetchAircraft } = setup();
+    const first = store.subscribe(() => {});
+    await flush();
+    expect(store.getView().state.status).toBe("ready");
+    first();
+    expect(store.getView().state.status).toBe("loading");
+    const second = store.subscribe(() => {});
+    await flush();
+    expect(fetchAircraft).toHaveBeenCalledTimes(2);
+    expect(store.getView().state.status).toBe("ready");
+    second();
+  });
 });

@@ -11,7 +11,7 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | ✅ | Cadrage |  |
 | ✅ | Socle | SPEC-0000 |
 | ✅ | Livraison prête | SPEC-0001 |
-| 🟡 | Specs métier | 5 / 10 |
+| 🟡 | Specs métier | 6 / 10 |
 | ⬜ | En production | aucune livraison |
 
 ## Specs
@@ -25,7 +25,7 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ✅ | ✅ 1/1 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0006 | Carrousel Prochains passages | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0005 | Écran Ciel et présence de Ciel dans le pager | ✅ | ✅ | ✅ 5/5 | ✅ | ⬜ | Livrée, à mettre en production |
-| SPEC-0007 | Données réelles adsb.lol | ✅ | ✅ | 🟡 2/3 | ⬜ | ⬜ | En cours |
+| SPEC-0007 | Données réelles adsb.lol | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0008 | États d'interface | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0009 | Routes de vol et type d'appareil | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0010 | Dérives réelles (livrées des compagnies) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
@@ -41,5 +41,4 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Prochaines actions
 
-- /implement SPEC-0007 T3 : Groupe 2 (après fusion du groupe 1) débloqué
-- workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004, SPEC-0006, SPEC-0005
+- workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004, SPEC-0006, SPEC-0005, SPEC-0007

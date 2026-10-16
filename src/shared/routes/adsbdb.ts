@@ -1,0 +1,65 @@
+import type { FetchLike } from "../adsb/adsblol";
+import { parseAircraftBody, parseRouteBody, routeUnavailable } from "./adsbdb-response";
+import { normalizeCallsign, normalizeHex, ROUTE_REQUEST_TIMEOUT_MS, type RouteSource } from "./index";
+
+const BASE_URL = "https://api.adsbdb.com/v0";
+const STATUS_NOT_FOUND = 404;
+
+/** URL de l'indicatif : hôte et chemin fixes, indicatif normalisé ; `null` si l'indicatif est refusé. */
+export function buildCallsignUrl(callsign: string): string | null {
+  const normalized = normalizeCallsign(callsign);
+  return normalized === null ? null : `${BASE_URL}/callsign/${normalized}`;
+}
+
+/** URL de l'appareil : hôte et chemin fixes, `hex` en minuscules ; `null` si l'adresse est refusée. */
+export function buildAircraftUrl(hex: string): string | null {
+  const normalized = normalizeHex(hex);
+  return normalized === null ? null : `${BASE_URL}/aircraft/${normalized}`;
+}
+
+/** Source réelle des routes (adsbdb.com) ; `fetch` est injecté pour les tests. */
+export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSource {
+  // Rend le corps JSON et si le statut est 404 : seul le corps dit « inconnu » (CA5).
+  async function request(url: string): Promise<{ body: unknown; notFound: boolean }> {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      // La course garantit le rejet même si `fetch` ignore le signal.
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(routeUnavailable());
+        }, ROUTE_REQUEST_TIMEOUT_MS);
+      });
+      const read = async () => {
+        const response = await options.fetch(url, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+        if (!response.ok && response.status !== STATUS_NOT_FOUND) throw routeUnavailable();
+        return { body: await response.json(), notFound: response.status === STATUS_NOT_FOUND };
+      };
+      return await Promise.race([read(), timeout]);
+    } catch {
+      throw routeUnavailable();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return {
+    async fetchRoute(callsign) {
+      const url = buildCallsignUrl(callsign);
+      if (url === null) return null;
+      const { body, notFound } = await request(url);
+      return parseRouteBody(body, notFound);
+    },
+    async fetchAircraftType(hex) {
+      const url = buildAircraftUrl(hex);
+      if (url === null) return null;
+      const { body, notFound } = await request(url);
+      return parseAircraftBody(body, notFound);
+    },
+  };
+}

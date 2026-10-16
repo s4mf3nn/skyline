@@ -8,6 +8,8 @@ import { createAppStateLifecycle } from "./shared/lifecycle/app-state";
 import { createExpoLocation } from "./shared/location/expo";
 import { readBuildInfo } from "./shared/monitoring/build";
 import { createSentryErrorReporter } from "./shared/monitoring/sentry";
+import { createFlightLookup } from "./shared/routes";
+import { createAdsbdbRouteSource } from "./shared/routes/adsbdb";
 import { createLinkingSystemSettings } from "./shared/system-settings/native";
 
 const build = readBuildInfo(Constants.expoConfig?.extra);
@@ -28,6 +30,7 @@ export default createApp({
     monitoring: createSentryErrorReporter({ dsn: process.env.EXPO_PUBLIC_SENTRY_DSN, ...build }),
     lifecycle: createAppStateLifecycle(),
     systemSettings: createLinkingSystemSettings(),
+    routes: createFlightLookup({ source: createAdsbdbRouteSource({ fetch }), clock }),
   },
   build,
 });

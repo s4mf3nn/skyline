@@ -9,6 +9,7 @@ Consignes que les agents doivent appliquer, uniquement quand aucune forme plus d
 | Date | Incident ou remarque | Forme retenue | Fichier modifié |
 |---|---|---|---|
 | 2026-10-16 | La ligne « Dépend de » de SPEC-0010 et SPEC-0011 portait un commentaire : `parseDependencies` la refusait et le tableau d'avancement restait bloqué ; le gabarit montrait le même motif | Test de non-régression sur toutes les specs (ligne présente, lisible, dépendances existantes) ; commentaires déplacés sur une ligne « Note sur les dépendances » ; gabarit corrigé | `tests/unit/spec-dependencies.test.ts`, `specs/SPEC-0010-derives-reelles/spec.md`, `specs/SPEC-0011-parcours-critique/spec.md`, `specs/_template/spec.md` |
+| 2026-10-16 | Rejet au premier passage à 49 % (seuil 40 %), surtout en niveau light : l'implémenteur lance /review sans avoir relu son diff contre les critères de la tâche (#109, #111, #115, #122) | Contrôle par script : la pré-revue exige, dans `.pr-summary.md`, une ligne par critère de la tâche citant un fichier de test existant | `scripts/pre-review.mjs`, `tests/unit/pre-review.test.ts`, `.github/pull_request_template.md`, `.claude/commands/implement.md` |
 
 ## Acquis hérités du boilerplate
 Incidents du projet d'origine, déjà traités par l'outillage livré. À connaître avant de retirer l'un de ces mécanismes.

@@ -1,4 +1,6 @@
 import { Text, View } from "react-native";
+import { RouteBlock } from "../../../shared/routes/block";
+import { useFlightInfo } from "../../../shared/routes/hooks";
 import type { PassageCard } from "../service";
 import { AirlineColumn } from "./airline-column";
 import { DirectionArrow } from "./direction-arrow";
@@ -34,6 +36,7 @@ function Value({ label, value, card }: ValueProps) {
 /** Contenu de la carte « En ce moment » : jauge de visibilité et valeurs de l'avion au-dessus. */
 export function OverheadCard({ card }: OverheadCardProps) {
   const { theme, visibility } = card;
+  const { aircraftType } = useFlightInfo(card.hex, card.callsign);
   return (
     <>
       <View style={{ position: "absolute", left: 18, right: 22, top: 22, gap: 10 }}>
@@ -81,11 +84,12 @@ export function OverheadCard({ card }: OverheadCardProps) {
           </View>
         </View>
       </View>
+      <RouteBlock hex={card.hex} callsign={card.callsign} theme={theme} />
       <AirlineColumn
         hex={card.hex}
         airlineName={card.airlineName}
         flightLabel={card.flightLabel}
-        aircraftType={card.aircraftType}
+        aircraftType={aircraftType ?? card.aircraftType}
         tail={card.airline.tail}
         labelColor={theme.small}
       />

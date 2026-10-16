@@ -1,6 +1,13 @@
-import { render, screen, within } from "@testing-library/react-native";
+import { act, render, screen, within } from "@testing-library/react-native";
+import type { ReactElement } from "react";
 import { StyleSheet } from "react-native";
-import type { Passage, Scene } from "../../../shared/scene";
+import { createFakeAdsbSource } from "../../../shared/adsb";
+import { createFakeClock } from "../../../shared/clock";
+import { createFakeLocation } from "../../../shared/location";
+import { createFakeErrorReporter } from "../../../shared/monitoring";
+import { createFakeRouteSource, createFlightLookup, type FlightRoute } from "../../../shared/routes";
+import { type Passage, type Scene, SceneProvider } from "../../../shared/scene";
+import { type AppServices, ServicesProvider } from "../../../shared/services";
 import { buildCards, gaugePercent, type PassageCard } from "../service";
 import { PassageCardView } from "./passage-card";
 
@@ -27,10 +34,54 @@ function cardsOf(scene: Partial<Scene>, headingDeg: number | null): PassageCard[
   return buildCards({ scene: full, nowMs: NOW, headingDeg, timeZone: "UTC" });
 }
 
-async function renderCard(card: PassageCard) {
-  await render(<PassageCardView card={card} />);
-  return within(screen.getByTestId(`passage-card-${card.hex}`));
+const OBSERVER = { latitude: 45.76449, longitude: 4.83571 };
+
+const PARIS_DUSSELDORF: FlightRoute = {
+  origin: { iata: "CDG", city: "Paris", latitude: 49.0128, longitude: 2.55 },
+  destination: { iata: "DUS", city: "Düsseldorf", latitude: 51.2895, longitude: 6.7668 },
+};
+
+// Une scène prête (un avion lointain) pour que `useFlightInfo` ait un instantané ; les cartes testées sont passées en direct.
+function harness(routes?: ReturnType<typeof createFakeRouteSource>) {
+  const clock = createFakeClock(NOW);
+  const services: AppServices = {
+    clock,
+    location: createFakeLocation({ permission: "granted", position: OBSERVER }),
+    adsb: createFakeAdsbSource([]),
+    monitoring: createFakeErrorReporter(),
+    ...(routes === undefined ? {} : { routes: createFlightLookup({ source: routes, clock }) }),
+  };
+  const Wrapper = ({ children }: { children: ReactElement }) => (
+    <ServicesProvider services={services}>
+      <SceneProvider>{children}</SceneProvider>
+    </ServicesProvider>
+  );
+  return { clock, Wrapper };
 }
+
+const settle = () =>
+  act(async () => {
+    await jest.advanceTimersByTimeAsync(0);
+  });
+
+async function renderCard(card: PassageCard, routes?: ReturnType<typeof createFakeRouteSource>) {
+  const { Wrapper, clock } = harness(routes);
+  await render(
+    <Wrapper>
+      <PassageCardView card={card} />
+    </Wrapper>,
+  );
+  await settle();
+  return { view: within(screen.getByTestId(`passage-card-${card.hex}`)), clock };
+}
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
 
 function styleOf(testID: string) {
   return StyleSheet.flatten(screen.getByTestId(testID).props.style);
@@ -48,7 +99,7 @@ describe("PassageCardView upcoming", () => {
   it("shows the countdown, labels and airline column with theme colours", async () => {
     const [card] = cardsOf({ upcoming: [passage("a1")] }, null);
     if (!card) throw new Error("missing card");
-    const view = await renderCard(card);
+    const { view } = await renderCard(card);
     expect(StyleSheet.flatten(view.getByText("02:56").props.style).color).toBe(card.theme.big);
     expect(StyleSheet.flatten(view.getByText("Passe à").props.style).color).toBe(card.theme.small);
     expect(view.getByText("Regardez")).toBeOnTheScreen();
@@ -93,7 +144,7 @@ describe("PassageCardView overhead", () => {
       null,
     );
     if (!card?.visibility) throw new Error("missing overhead card");
-    const view = await renderCard(card);
+    const { view } = await renderCard(card);
     expect(view.getByText("Au-dessus de vous")).toBeOnTheScreen();
     expect(view.getByText("EN CE")).toBeOnTheScreen();
     expect(view.getByText("MOMENT")).toBeOnTheScreen();
@@ -129,5 +180,99 @@ describe("PassageCardView overhead", () => {
     await renderCard(card);
     const arrow = screen.getByTestId("passage-arrow-h1", { includeHiddenElements: true });
     expect(StyleSheet.flatten(arrow.props.style).transform).toEqual([{ rotate: `${card.arrowAngleDeg}deg` }]);
+  });
+});
+
+describe("PassageCardView route block", () => {
+  it("shows stacked codes, cities and the aircraft type for a known route", async () => {
+    const routes = createFakeRouteSource({ routes: { AFR1506: PARIS_DUSSELDORF }, aircraftTypes: { a1b2c3: "B738" } });
+    const [card] = cardsOf({ upcoming: [passage("a1b2c3")] }, null);
+    if (!card) throw new Error("missing card");
+    const { view } = await renderCard(card, routes);
+    expect(screen.getByTestId("passage-route-a1b2c3")).toHaveTextContent(/CDG\s*DUS\s*Paris → Düsseldorf/);
+    expect(view.getByText("B738")).toBeOnTheScreen();
+    expect(view.queryByText("—")).toBeNull();
+  });
+
+  it("shows the same block and type on the overhead card", async () => {
+    const routes = createFakeRouteSource({ routes: { AFR1506: PARIS_DUSSELDORF }, aircraftTypes: { c0ffee: "A319" } });
+    const [card] = cardsOf({ overhead: passage("c0ffee") }, null);
+    if (!card) throw new Error("missing card");
+    const { view } = await renderCard(card, routes);
+    expect(screen.getByTestId("passage-route-c0ffee")).toHaveTextContent(/CDG\s*DUS\s*Paris → Düsseldorf/);
+    expect(view.getByText("A319")).toBeOnTheScreen();
+  });
+
+  it("falls back to the plain card for an unknown route and an unknown type", async () => {
+    const routes = createFakeRouteSource({ routes: { AFR1506: null }, aircraftTypes: { a1b2c3: null } });
+    const [card] = cardsOf({ upcoming: [passage("a1b2c3")] }, null);
+    if (!card) throw new Error("missing card");
+    const { view } = await renderCard(card, routes);
+    expect(screen.queryByTestId("passage-route-a1b2c3")).toBeNull();
+    expect(view.getByText("—")).toBeOnTheScreen();
+  });
+
+  it("asks nothing for a missing callsign and shows only the type", async () => {
+    const routes = createFakeRouteSource({ aircraftTypes: { a1b2c3: "PA28" } });
+    const [card] = cardsOf({ upcoming: [passage("a1b2c3", { callsign: null })] }, null);
+    if (!card) throw new Error("missing card");
+    const { view } = await renderCard(card, routes);
+    expect(routes.routeRequests).toEqual([]);
+    expect(screen.queryByTestId("passage-route-a1b2c3")).toBeNull();
+    expect(view.getByText("PA28")).toBeOnTheScreen();
+  });
+
+  it("shows each line only when complete", async () => {
+    const noCode: FlightRoute = {
+      origin: { ...PARIS_DUSSELDORF.origin, iata: null },
+      destination: PARIS_DUSSELDORF.destination,
+    };
+    const routes = createFakeRouteSource({ routes: { AFR1506: noCode } });
+    const [card] = cardsOf({ upcoming: [passage("a1b2c3")] }, null);
+    if (!card) throw new Error("missing card");
+    await renderCard(card, routes);
+    const block = screen.getByTestId("passage-route-a1b2c3");
+    expect(block).toHaveTextContent("Paris → Düsseldorf");
+    expect(within(block).queryByText("DUS")).toBeNull();
+  });
+
+  it("renders at once while the source is silent, then shows the route on the answer", async () => {
+    const routes = createFakeRouteSource({ routes: { AFR1506: PARIS_DUSSELDORF }, aircraftTypes: { a1b2c3: "B738" } });
+    routes.holdResponses();
+    const [card] = cardsOf({ upcoming: [passage("a1b2c3")] }, null);
+    if (!card) throw new Error("missing card");
+    const { view } = await renderCard(card, routes);
+    expect(screen.queryByTestId("passage-route-a1b2c3")).toBeNull();
+    expect(view.getByText("—")).toBeOnTheScreen();
+    await act(async () => {
+      routes.releaseResponses();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByTestId("passage-route-a1b2c3")).toBeOnTheScreen();
+    expect(view.getByText("B738")).toBeOnTheScreen();
+  });
+
+  it("asks again after the retry delay once the source is back, and never asks a definitive answer twice", async () => {
+    const routes = createFakeRouteSource({ routes: { AFR1506: PARIS_DUSSELDORF }, aircraftTypes: { a1b2c3: "B738" } });
+    routes.setUnavailable(true);
+    const [card] = cardsOf({ upcoming: [passage("a1b2c3")] }, null);
+    if (!card) throw new Error("missing card");
+    const { clock } = await renderCard(card, routes);
+    expect(screen.queryByTestId("passage-route-a1b2c3")).toBeNull();
+    expect(routes.routeRequests).toEqual(["AFR1506"]);
+
+    routes.setUnavailable(false);
+    await act(async () => {
+      clock.advance(10_000);
+      await jest.advanceTimersByTimeAsync(10_000);
+    });
+    expect(screen.getByTestId("passage-route-a1b2c3")).toBeOnTheScreen();
+    expect(routes.routeRequests).toEqual(["AFR1506", "AFR1506"]);
+
+    await act(async () => {
+      clock.advance(40_000);
+      await jest.advanceTimersByTimeAsync(40_000);
+    });
+    expect(routes.routeRequests).toEqual(["AFR1506", "AFR1506"]);
   });
 });

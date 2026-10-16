@@ -1,4 +1,4 @@
-// Point d'entrée : types, constantes, normalisation, faux et cache de session. Le client réseau vit dans `adsbdb.ts`.
+// Point d'entrée : types, constantes, normalisation, faux, cache de session et estimations. Le client réseau vit dans `adsbdb.ts`.
 export interface Airport {
   iata: string | null;
   city: string | null;
@@ -43,5 +43,14 @@ export function normalizeHex(hex: string): string | null {
   return HEX_FORMAT.test(normalized) ? normalized : null;
 }
 
+export {
+  type EstimateInput,
+  estimateFlight,
+  formatEstimatedArrival,
+  formatRouteCities,
+  formatRouteCodes,
+  type SkyRouteView,
+  skyRouteView,
+} from "./estimate";
 export { createFakeRouteSource } from "./fake";
 export { createFlightLookup } from "./lookup";

@@ -1,4 +1,6 @@
 import { Text, View } from "react-native";
+import { RouteBlock } from "../../../shared/routes/block";
+import { useFlightInfo } from "../../../shared/routes/hooks";
 import type { PassageCard } from "../service";
 import { AirlineColumn } from "./airline-column";
 import { DirectionArrow } from "./direction-arrow";
@@ -10,6 +12,7 @@ interface UpcomingCardProps {
 /** Contenu d'une carte « prochain passage » : compte à rebours, heure de passage, direction. */
 export function UpcomingCard({ card }: UpcomingCardProps) {
   const { theme } = card;
+  const { aircraftType } = useFlightInfo(card.hex, card.callsign);
   return (
     <>
       <View style={{ position: "absolute", left: 18, right: 22, top: 22, gap: 10 }}>
@@ -49,11 +52,12 @@ export function UpcomingCard({ card }: UpcomingCardProps) {
           </View>
         </View>
       </View>
+      <RouteBlock hex={card.hex} callsign={card.callsign} theme={theme} />
       <AirlineColumn
         hex={card.hex}
         airlineName={card.airlineName}
         flightLabel={card.flightLabel}
-        aircraftType={card.aircraftType}
+        aircraftType={aircraftType ?? card.aircraftType}
         tail={card.airline.tail}
         labelColor={theme.small}
       />

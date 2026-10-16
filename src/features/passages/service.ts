@@ -24,6 +24,7 @@ export const STALE_NOTICE_TOP_PT = 56;
 export interface PassageCard {
   kind: "overhead" | "upcoming";
   hex: string;
+  callsign: string | null;
   airline: Airline;
   theme: AirlineTheme;
   airlineName: string;
@@ -89,18 +90,19 @@ export function gaugePercent(progress: number): number {
 
 type CommonFields = Pick<
   PassageCard,
-  "hex" | "airline" | "theme" | "airlineName" | "flightLabel" | "aircraftType" | "altitude" | "speed"
+  "hex" | "callsign" | "airline" | "theme" | "airlineName" | "flightLabel" | "aircraftType" | "altitude" | "speed"
 >;
 
 function commonFields(passage: Passage): CommonFields {
   const airline = resolveAirline(passage.callsign);
   return {
     hex: passage.hex,
+    callsign: passage.callsign,
     airline,
     theme: airlineTheme(airline),
     airlineName: airline.name,
     flightLabel: flightLabel(passage.callsign, airline),
-    // Le type d'appareil n'est pas fourni avant SPEC-0009.
+    // Repli : le vrai type arrive de `useFlightInfo` (SPEC-0009), hors du cycle de la scène.
     aircraftType: NO_VALUE,
     altitude: formatMetric(passage.altitudeM),
     speed: formatMetric(passage.groundSpeedKmh),

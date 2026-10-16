@@ -47,8 +47,17 @@ describe("PassagesScreen", () => {
   it("renders no card and does not crash without location permission", async () => {
     const App = setup("denied");
     await render(<App />);
-    expect(screen.getByTestId("passages-list")).toBeOnTheScreen();
+    expect(screen.getByTestId("passages-notice-denied")).toBeOnTheScreen();
     expect(screen.queryAllByTestId(/^passage-card-/)).toHaveLength(0);
+  });
+
+  it("shows the empty notice when the scene is empty", async () => {
+    const App = setup("granted");
+    await render(<App />);
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByTestId("passages-notice-empty")).toBeOnTheScreen();
   });
 
   it("does not crash when the device time zone changes", async () => {

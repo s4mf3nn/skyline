@@ -38,6 +38,9 @@ export const CIEL_METRICS = {
   tailLeftPt: -60,
 } as const;
 
+/** Position de la ligne de données périmées, sous la barre d'état (hors `CIEL_METRICS` : ses valeurs sont figées par contrat). */
+export const STALE_NOTICE_TOP_PT = 56;
+
 export const SKY_ABSENT: SkyState = { presence: "absent", passage: null };
 
 // Type d'appareil non fourni avant SPEC-0009.

@@ -1,6 +1,7 @@
 import { type Airline, type AirlineTheme, airlineTheme, resolveAirline } from "../../shared/airlines";
 import { flightLabel, formatMetric } from "../../shared/format";
 import { arrowAngleDeg, type CardinalPoint, type Passage, type Scene, type SceneView } from "../../shared/scene";
+import { type StaleNotice, type StateNotice, staleNotice, stateNotice } from "../../shared/states";
 
 // Les formats vivent dans `shared/format` (Ciel les partage) ; ce module les ré-exporte.
 export { flightLabel, formatMetric };
@@ -15,6 +16,9 @@ export const PASSAGES_METRICS = {
   paddingTopPt: 100,
   paddingBottomPt: 200,
 } as const;
+
+/** Position de la ligne de données périmées, sous la barre d'état (hors `PASSAGES_METRICS` : ses valeurs sont figées par contrat). */
+export const STALE_NOTICE_TOP_PT = 56;
 
 export interface PassageCard {
   kind: "overhead" | "upcoming";
@@ -157,4 +161,19 @@ export function cardsOf(view: SceneView, timeZone: string): PassageCard[] {
     return [];
   }
   return buildCards({ scene: state.scene, nowMs: state.nowMs, headingDeg, timeZone });
+}
+
+export interface PassagesScreenModel {
+  cards: PassageCard[];
+  notice: StateNotice | null;
+  stale: StaleNotice | null;
+}
+
+/** Ce que montre Prochains passages : les cartes, la notice d'attente éventuelle et la ligne périmée. */
+export function passagesScreenOf(view: SceneView, timeZone: string): PassagesScreenModel {
+  return {
+    cards: cardsOf(view, timeZone),
+    notice: stateNotice(view.state),
+    stale: staleNotice(view.state, timeZone),
+  };
 }

@@ -51,6 +51,11 @@ describe("SkyScreen", () => {
     expect(screen.queryByTestId("sky-screen")).toBeNull();
   });
 
+  it("shows no stale line while the data is fresh", async () => {
+    await mount([OVERHEAD]);
+    expect(screen.queryByTestId("data-stale-notice-ciel")).toBeNull();
+  });
+
   it("shows values without unit text", async () => {
     await mount([OVERHEAD]);
     for (const key of ["speed", "altitude"]) {

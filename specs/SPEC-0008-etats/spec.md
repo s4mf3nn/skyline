@@ -1,8 +1,8 @@
 # SPEC-0008 : États d'interface
 
-Statut : BROUILLON
+Statut : VALIDÉE
 Risque estimé : moyen (écrans seulement ; ajoute le service `SystemSettings` pour ouvrir les réglages du téléphone, hors zone sensible : aucune position ni donnée personnelle n'est lue ou écrite ; modifie l'écran Ciel de SPEC-0005 pour y poser la ligne de données périmées)
-Dépend de : SPEC-0003, SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (le pager et ses indicateurs, la scène, l'écran Ciel, l'écran Prochains passages et le rafraîchissement existent ; cette spec reste `BROUILLON` tant que SPEC-0005 n'est pas écrite et que les autres ne sont pas livrées)
+Dépend de : SPEC-0003, SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007
 Tests de contrat : `tests/acceptance/SPEC-0008.test.ts` (Vitest), `tests/acceptance/SPEC-0008.native.test.tsx` (Jest)
 Scénarios cachés : `tests/holdout/SPEC-0008.test.ts` et `tests/holdout/SPEC-0008.native.test.tsx` (ne pas les décrire ici)
 

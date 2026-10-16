@@ -1,7 +1,7 @@
 import { act, render, screen, within } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import { createApp, type Feature } from "../../src/app";
-import { type Aircraft, createFakeAdsbSource } from "../../src/shared/adsb";
+import { type AdsbQuery, type Aircraft, createFakeAdsbSource } from "../../src/shared/adsb";
 import { createFakeClock } from "../../src/shared/clock";
 import { createFakeLocation, type Position } from "../../src/shared/location";
 import { createFakeErrorReporter } from "../../src/shared/monitoring";
@@ -50,9 +50,45 @@ function plane(
   return { hex, callsign, ...at(eastKm, northKm), altitudeM: 11_000, groundSpeedKmh: 720, trackDeg, ...overrides };
 }
 
+/** Avance un avion en ligne droite de `seconds` (vitesse sol et cap suivi, plan local) ; inchangé sans l'un des deux. */
+function advanceAircraft(aircraft: Aircraft, seconds: number): Aircraft {
+  if (aircraft.groundSpeedKmh === null || aircraft.trackDeg === null || seconds === 0) return aircraft;
+  const distanceKm = (aircraft.groundSpeedKmh / 3600) * seconds;
+  const track = (aircraft.trackDeg * Math.PI) / 180;
+  return {
+    ...aircraft,
+    latitude: aircraft.latitude + (distanceKm * Math.cos(track)) / KM_PER_DEGREE,
+    longitude:
+      aircraft.longitude +
+      (distanceKm * Math.sin(track)) / (KM_PER_DEGREE * Math.cos((aircraft.latitude * Math.PI) / 180)),
+  };
+}
+
+/**
+ * Source ADS-B factice dont les avions avancent avec l'horloge factice : la liste donnée (ou posée par `setAircraft`)
+ * est celle de l'instant courant, et chaque réponse l'extrapole jusqu'à l'heure de la requête. Le rafraîchissement
+ * toutes les 10 s (SPEC-0007) relit ainsi une source cohérente avec le temps écoulé.
+ */
+function createMovingSource(clock: { now(): number }, aircraft: Aircraft[]) {
+  const fake = createFakeAdsbSource(aircraft);
+  let anchorMs = clock.now();
+  return {
+    ...fake,
+    setAircraft(next: Aircraft[]) {
+      anchorMs = clock.now();
+      fake.setAircraft(next);
+    },
+    async fetchAircraft(query: AdsbQuery) {
+      const answer = await fake.fetchAircraft(query);
+      const seconds = (clock.now() - anchorMs) / 1000;
+      return answer.map((item) => advanceAircraft(item, seconds));
+    },
+  };
+}
+
 function setup(aircraft: Aircraft[]) {
   const clock = createFakeClock(NOW);
-  const adsb = createFakeAdsbSource(aircraft);
+  const adsb = createMovingSource(clock, aircraft);
   const location = createFakeLocation({ permission: "granted", position: OBSERVER });
   const monitoring = createFakeErrorReporter();
   const lifecycle = lifecycleModule().createFakeLifecycle();

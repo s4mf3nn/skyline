@@ -222,13 +222,13 @@ describe("SPEC-0006 Prochains passages (rendering)", () => {
 
   it("CA12 : colours the card with the airline theme, shows the generic tail and no route block", async () => {
     const harness = setup({
-      aircraft: [plane("a1", "AFR1506", -40.1, 0, 90), plane("u9", "ZZZ123", -60.1, 0, 90)],
+      aircraft: [plane("a1", "CTV1506", -40.1, 0, 90), plane("u9", "ZZZ123", -60.1, 0, 90)],
     });
     await render(<harness.App />);
     await settle();
     const { resolveAirline, airlineTheme } = airlinesModule();
     for (const [hex, callsign] of [
-      ["a1", "AFR1506"],
+      ["a1", "CTV1506"],
       ["u9", "ZZZ123"],
     ] as const) {
       const theme = airlineTheme(resolveAirline(callsign));
@@ -236,7 +236,7 @@ describe("SPEC-0006 Prochains passages (rendering)", () => {
       expect(screen.getByTestId(`passage-tail-${hex}`)).toBeOnTheScreen();
       expect(screen.queryByTestId(`passage-route-${hex}`)).toBeNull();
     }
-    const firstTheme = airlineTheme(resolveAirline("AFR1506"));
+    const firstTheme = airlineTheme(resolveAirline("CTV1506"));
     expect(StyleSheet.flatten(card("a1").getByText("02:56").props.style).color).toBe(firstTheme.big);
     expect(StyleSheet.flatten(card("a1").getByText("Passe à").props.style).color).toBe(firstTheme.small);
   });

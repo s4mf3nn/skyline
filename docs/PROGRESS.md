@@ -1,7 +1,7 @@
 # Avancement du projet
 
 <!-- Fichier généré par scripts/progress-table.mjs (workflow `progress`). Ne pas éditer à la main. -->
-Mis à jour le 2026-10-15 d'après origin/main. Légende : ✅ fait, 🟡 en cours, ⬜ à faire.
+Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cours, ⬜ à faire.
 
 ## Étapes du projet
 

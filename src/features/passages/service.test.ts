@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Passage, SceneState } from "../../shared/scene";
-import { buildCards, cardsOf, formatCountdown, formatLocalTime, gaugePercent } from "./service";
+import { buildCards, cardsOf, formatCountdown, formatLocalTime, gaugePercent, passagesScreenOf } from "./service";
 
 const NOW_MS = 1_800_000_000_000;
 
@@ -134,4 +134,33 @@ describe("cardsOf", () => {
       expect(cardsOf({ state, headingDeg: null }, "Europe/Paris")).toEqual([]);
     },
   );
+});
+
+describe("passagesScreenOf", () => {
+  const scene = { overhead: null, upcoming: [] };
+
+  it("returns the loading notice and no card while loading", () => {
+    const model = passagesScreenOf({ state: { status: "loading" }, headingDeg: null }, "Europe/Paris");
+    expect(model.cards).toEqual([]);
+    expect(model.notice?.kind).toBe("loading");
+    expect(model.stale).toBeNull();
+  });
+
+  it("returns the empty notice for a ready scene without aircraft", () => {
+    const state: SceneState = { status: "ready", scene, snapshotAtMs: NOW_MS, nowMs: NOW_MS };
+    expect(passagesScreenOf({ state, headingDeg: null }, "Europe/Paris").notice?.kind).toBe("empty");
+  });
+
+  it("returns cards, no notice and a stale line once the snapshot is old", () => {
+    const state: SceneState = {
+      status: "ready",
+      scene: { overhead: null, upcoming: [passage()] },
+      snapshotAtMs: NOW_MS - 180_000,
+      nowMs: NOW_MS,
+    };
+    const model = passagesScreenOf({ state, headingDeg: null }, "Europe/Paris");
+    expect(model.cards).toHaveLength(1);
+    expect(model.notice).toBeNull();
+    expect(model.stale?.text).toContain("Données de");
+  });
 });

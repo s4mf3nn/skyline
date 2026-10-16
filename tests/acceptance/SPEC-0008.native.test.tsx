@@ -164,7 +164,7 @@ const comeBack = (harness: Harness) =>
 const cardIds = () => screen.queryAllByTestId(/^passage-card-/).map((card) => String(card.props.testID));
 const staleText = () => `Données de ${statesModule().formatDataTime(NOW, TIME_ZONE)} : mise à jour impossible`;
 
-describe.skip("SPEC-0008 États d'interface (rendering)", () => {
+describe("SPEC-0008 États d'interface (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });

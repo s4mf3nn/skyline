@@ -53,7 +53,7 @@ function ready(overrides: Partial<{ scene: Scene; snapshotAtMs: number; nowMs: n
   };
 }
 
-describe.skip("SPEC-0008 États d'interface (logic)", () => {
+describe("SPEC-0008 États d'interface (logic)", () => {
   it("CA1 : fixes the staleness delay at three minutes", async () => {
     const { STALE_AFTER_MS } = await states();
     expect(STALE_AFTER_MS).toBe(180_000);

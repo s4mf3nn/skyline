@@ -1,4 +1,6 @@
 // Point d'entrée : l'interface, le faux et l'appel discret (aucun module natif). L'implémentation réelle vit dans `native.ts`.
+import { AppError } from "../errors";
+
 export interface SystemSettings {
   /** Ouvre les réglages de l'application dans le système. Rejette si le système refuse. */
   openSettings(): Promise<void>;
@@ -15,7 +17,7 @@ export function createFakeSystemSettings(options: { failing?: boolean } = {}): S
     },
     async openSettings() {
       openCount += 1;
-      if (options.failing === true) throw new Error("system settings unavailable");
+      if (options.failing === true) throw new AppError("SYSTEM_SETTINGS_UNAVAILABLE", "System settings unavailable");
     },
   };
 }

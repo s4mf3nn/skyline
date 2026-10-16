@@ -23,7 +23,7 @@ describe("createFakeSystemSettings", () => {
 
   it("rejects and still counts when failing", async () => {
     const settings = createFakeSystemSettings({ failing: true });
-    await expect(settings.openSettings()).rejects.toThrow();
+    await expect(settings.openSettings()).rejects.toMatchObject({ code: "SYSTEM_SETTINGS_UNAVAILABLE" });
     expect(settings.openCount).toBe(1);
   });
 });

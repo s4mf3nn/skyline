@@ -34,6 +34,7 @@ interface PreReview {
   addedDependencies(before: string | null, after: string | null): string[];
   summarySection(text: string, title: string): string | null;
   checkSummary(summary: string | null, added: string[]): string[];
+  checkSelfReview(summary: string | null, ids: string[], fileExists: (f: string) => boolean): string[];
 }
 const mod = (await import(pathToFileURL(path.resolve("scripts/pre-review.mjs")).href)) as PreReview;
 
@@ -287,6 +288,20 @@ describe("scripts/pre-review.mjs", () => {
     const s = "## A\nx\n## B\n<!-- note -->\ny\n";
     expect(mod.summarySection(s, "B")).toBe("y");
     expect(mod.summarySection(s, "C")).toBeNull();
+  });
+
+  it("exige une ligne par critère de la tâche, avec un fichier de test existant", () => {
+    const exists = (f: string) => f === "src/a/a.test.ts";
+    const ok =
+      "## Relecture contre la tâche\nCA1 : src/a/a.test.ts — rejette le vide\nCA2 : src/a/a.test.ts — ok\n## Suite\n";
+    expect(mod.checkSelfReview(ok, ["CA1", "CA2"], exists)).toEqual([]);
+    expect(mod.checkSelfReview(ok, [], exists)).toEqual([]);
+    expect(mod.checkSelfReview(ok, ["CA1", "CA3"], exists)).toEqual([expect.stringContaining("CA3")]);
+    expect(mod.checkSelfReview("## Relecture contre la tâche\nCA1 : src/b/b.test.ts — x\n", ["CA1"], exists)).toEqual([
+      expect.stringContaining("CA1"),
+    ]);
+    expect(mod.checkSelfReview("## Intention\nx\n", ["CA1"], exists)).toEqual([expect.stringContaining("absente")]);
+    expect(mod.checkSelfReview(null, ["CA1"], exists)).toEqual([expect.stringContaining("absente")]);
   });
 
   it("vérifie la section Context7 et la déclaration des dépendances", () => {

@@ -14,12 +14,14 @@
 // dans les dossiers de routage par fichiers (`factory.routeDirs` et `factory.routeIgnore` de package.json), frontières
 // entre features (une feature n'importe que `shared/` et le point d'entrée public des autres), conventions de code dans
 // `src/` (pas de `biome-ignore` ni de directive `@ts-` : ignore, expect-error, nocheck ; dans les features, ni horloge
-// directe `Date.now()` / `new Date()` ni `throw new Error(`).
+// directe `Date.now()` / `new Date()` ni `throw new Error(`), relecture du diff contre les critères de la tâche (section
+// « Relecture contre la tâche » de .pr-summary.md : une ligne `CAn : <fichier de test> — <preuve>` par critère).
 // Variables : BASE_REF (défaut origin/main), CONDUCTOR_ROOT_PATH et CONDUCTOR_WORKSPACE_PATH (baux).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { coveredCriteria, parsePlan } from "./split-plan.mjs";
 
 const base = process.env.BASE_REF ?? "origin/main";
 const git = (...args) =>
@@ -332,6 +334,49 @@ function showOrNull(ref) {
   }
 }
 
+const SELF_REVIEW = "Relecture contre la tâche";
+
+/** Violations de la section « Relecture contre la tâche » : chaque critère de la tâche y cite un fichier de test existant. */
+export function checkSelfReview(summary, ids, fileExists) {
+  if (ids.length === 0) return [];
+  const section = summary === null ? null : summarySection(summary, SELF_REVIEW);
+  if (!section)
+    return [
+      `section « ${SELF_REVIEW} » absente de .pr-summary.md (une ligne \`CAn : <fichier de test> — <preuve>\` par critère)`,
+    ];
+  const problems = [];
+  for (const id of ids) {
+    const line = section.split("\n").find((l) => new RegExp(`\\b${id}\\b`).test(l));
+    if (!line) {
+      problems.push(`${SELF_REVIEW} : critère ${id} de la tâche sans ligne`);
+      continue;
+    }
+    const cited = line.match(/[\w./-]+\.test\.tsx?/g) ?? [];
+    if (!cited.some((f) => fileExists(f)))
+      problems.push(`${SELF_REVIEW} : ${id} ne cite aucun fichier de test existant (\`<nom>.test.ts\`)`);
+  }
+  return problems;
+}
+
+/** Critères (CA/CU) de la tâche du bail `SPEC-XXXX-T#`, lus dans le plan ; vide si le plan est introuvable. */
+function leaseCriteria(leases) {
+  const ids = [];
+  for (const { task } of leases) {
+    const m = /^(SPEC-\d{4})-(T\d+)$/.exec(task);
+    if (!m) continue;
+    try {
+      const dir = fs.readdirSync("specs").find((d) => d.startsWith(`${m[1]}-`));
+      const planText = fs.readFileSync(path.join("specs", dir, "plan.md"), "utf8");
+      const plan = parsePlan(planText);
+      const t = plan.tasks.find((x) => x.id === m[2]);
+      if (t) ids.push(...coveredCriteria(plan.lines.slice(t.from - 1, t.to - 1)).ids);
+    } catch {
+      // plan absent : rien à contrôler
+    }
+  }
+  return ids;
+}
+
 /** Exécute les contrôles ; renvoie `{ problems, notes }`. */
 export function runChecks() {
   const problems = [];
@@ -397,6 +442,7 @@ export function runChecks() {
     .flatMap((f) => addedDependencies(showOrNull(`${mergeBase}:${f}`), showOrNull(`HEAD:${f}`)));
   const summary = fs.existsSync(".pr-summary.md") ? fs.readFileSync(".pr-summary.md", "utf8") : null;
   problems.push(...checkSummary(summary, added));
+  if (leases) problems.push(...checkSelfReview(summary, leaseCriteria(leases), (f) => fs.existsSync(f)));
   return { problems, notes };
 }
 

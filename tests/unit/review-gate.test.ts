@@ -57,6 +57,7 @@ describe("scripts/review-gate.mjs", () => {
     const repo = newRepo();
     fs.mkdirSync(path.join(repo, "scripts"), { recursive: true });
     fs.copyFileSync(path.resolve("scripts/pre-review.mjs"), path.join(repo, "scripts/pre-review.mjs"));
+    fs.copyFileSync(path.resolve("scripts/split-plan.mjs"), path.join(repo, "scripts/split-plan.mjs"));
     fs.mkdirSync(path.join(repo, ".github"), { recursive: true });
     fs.writeFileSync(
       path.join(repo, ".github/labeler.yml"),
@@ -79,6 +80,7 @@ describe("scripts/review-gate.mjs", () => {
     const repo = newRepo();
     fs.mkdirSync(path.join(repo, "scripts"), { recursive: true });
     fs.copyFileSync(path.resolve("scripts/pre-review.mjs"), path.join(repo, "scripts/pre-review.mjs"));
+    fs.copyFileSync(path.resolve("scripts/split-plan.mjs"), path.join(repo, "scripts/split-plan.mjs"));
     fs.mkdirSync(path.join(repo, ".github"), { recursive: true });
     fs.writeFileSync(
       path.join(repo, ".github/labeler.yml"),

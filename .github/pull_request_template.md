@@ -7,6 +7,9 @@
 <!-- Correctif de bug (/fix) : remplacer la ligne « Tâche » par « Correctif : Fixes #<issue> » et citer le critère ou le cas limite non tenu -->
 - Critères d'acceptation couverts : CA1, CA2
 
+## Relecture contre la tâche
+<!-- Une ligne par critère (et cas limite) de la tâche : `CA1 : src/features/x/x.test.ts — ce qui le prouve`. Relis ton diff contre `node scripts/split-plan.mjs task <SPEC> <T#>` avant /review. Hors spec ou correctif : supprimer la section -->
+
 ## Intention
 En deux ou trois phrases, ce que fait ce changement et pourquoi.
 

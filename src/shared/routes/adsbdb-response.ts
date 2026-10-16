@@ -38,11 +38,13 @@ export function routeUnavailable(): AppError {
  * Contenu de `response.<key>` ; `null` pour la réponse définitive « inconnu ».
  * Lève `ROUTE_UNAVAILABLE` pour tout autre corps.
  */
-function readEntry(body: unknown, key: string, unknownText: string): Record<string, unknown> | null {
+function readEntry(body: unknown, key: string, unknownText: string, notFound: boolean): Record<string, unknown> | null {
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) throw routeUnavailable();
   const { response } = parsed.data;
   if (response === unknownText) return null;
+  // Un 404 ne dit « inconnu » que par la phrase attendue (CA5, CA6).
+  if (notFound) throw routeUnavailable();
   const container = recordSchema.safeParse(response);
   if (!container.success) throw routeUnavailable();
   const entry = recordSchema.safeParse(container.data[key]);
@@ -58,15 +60,15 @@ function toAirport(raw: unknown): Airport {
 }
 
 /** Route d'un corps adsbdb ; `null` si l'indicatif est inconnu, lève `ROUTE_UNAVAILABLE` si le corps est illisible. */
-export function parseRouteBody(body: unknown): FlightRoute | null {
-  const entry = readEntry(body, "flightroute", "unknown callsign");
+export function parseRouteBody(body: unknown, notFound = false): FlightRoute | null {
+  const entry = readEntry(body, "flightroute", "unknown callsign", notFound);
   if (entry === null) return null;
   return { origin: toAirport(entry.origin), destination: toAirport(entry.destination) };
 }
 
 /** Type d'appareil d'un corps adsbdb ; `null` si inconnu ou invalide, lève `ROUTE_UNAVAILABLE` si le corps est illisible. */
-export function parseAircraftBody(body: unknown): string | null {
-  const entry = readEntry(body, "aircraft", "unknown aircraft");
+export function parseAircraftBody(body: unknown, notFound = false): string | null {
+  const entry = readEntry(body, "aircraft", "unknown aircraft", notFound);
   if (entry === null) return null;
   const type = z.string().safeParse(entry.type);
   if (!type.success) return null;

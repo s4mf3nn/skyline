@@ -25,6 +25,8 @@ const routeBody = {
   },
 };
 
+const aircraftBody = (type: unknown) => ({ response: { aircraft: { type, registration: "F-GRHZ" } } });
+
 async function messageOf(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
@@ -112,7 +114,7 @@ describe("adsbdb.com client: fetchRoute", () => {
   });
 
   it("rejects a 404 that does not carry the unknown phrase", async () => {
-    for (const body of [{ response: "nope" }, { response: {} }, "not json", null]) {
+    for (const body of [{ response: "nope" }, { response: {} }, routeBody, aircraftBody("A319"), "not json", null]) {
       const source = createAdsbdbRouteSource({ fetch: respond(body, 404) });
       expect(await messageOf(source.fetchRoute("AFR1015"))).toBe("Route source unavailable");
       expect(await messageOf(source.fetchAircraftType("3944ed"))).toBe("Route source unavailable");
@@ -170,8 +172,6 @@ describe("adsbdb.com client: fetchRoute", () => {
 });
 
 describe("adsbdb.com client: fetchAircraftType", () => {
-  const aircraftBody = (type: unknown) => ({ response: { aircraft: { type, registration: "F-GRHZ" } } });
-
   it("calls fetch once on the aircraft URL and returns the trimmed type", async () => {
     const fetch = vi.fn(respond(aircraftBody(" A319 111 ")));
     expect(await createAdsbdbRouteSource({ fetch }).fetchAircraftType("3944ED")).toBe("A319 111");

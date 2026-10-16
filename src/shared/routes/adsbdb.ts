@@ -19,8 +19,8 @@ export function buildAircraftUrl(hex: string): string | null {
 
 /** Source réelle des routes (adsbdb.com) ; `fetch` est injecté pour les tests. */
 export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSource {
-  // Rend le corps JSON ; un 404 est lu aussi, car seul le corps dit « inconnu » (CA5).
-  async function request(url: string): Promise<unknown> {
+  // Rend le corps JSON et si le statut est 404 : seul le corps dit « inconnu » (CA5).
+  async function request(url: string): Promise<{ body: unknown; notFound: boolean }> {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -38,7 +38,7 @@ export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSou
           signal: controller.signal,
         });
         if (!response.ok && response.status !== STATUS_NOT_FOUND) throw routeUnavailable();
-        return await response.json();
+        return { body: await response.json(), notFound: response.status === STATUS_NOT_FOUND };
       };
       return await Promise.race([read(), timeout]);
     } catch {
@@ -52,12 +52,14 @@ export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSou
     async fetchRoute(callsign) {
       const url = buildCallsignUrl(callsign);
       if (url === null) return null;
-      return parseRouteBody(await request(url));
+      const { body, notFound } = await request(url);
+      return parseRouteBody(body, notFound);
     },
     async fetchAircraftType(hex) {
       const url = buildAircraftUrl(hex);
       if (url === null) return null;
-      return parseAircraftBody(await request(url));
+      const { body, notFound } = await request(url);
+      return parseAircraftBody(body, notFound);
     },
   };
 }

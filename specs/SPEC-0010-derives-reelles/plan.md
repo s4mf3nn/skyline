@@ -1,9 +1,9 @@
 # Plan SPEC-0010
-Statut : BLOQUÉ
-Questions :
-1. Contradiction entre contrats : `tests/acceptance/SPEC-0006.native.test.tsx` (CA12, actif, l. 223-236) attend `passage-tail-a1` pour `AFR1506`, alors que SPEC-0010 CA6/CA7 exige l'absence de `passage-tail-<hex>` pour une compagnie à livrée (AFR en a une). Les deux contrats ont le même `setup` : aucun code ne peut les satisfaire ensemble. Proposition : amendement de SPEC-0006 (spec et contrat, PR `contract-change` du propriétaire) remplaçant `AFR1506` par une compagnie de la table sans livrée (`CTV…`) dans ce CA12, holdout de SPEC-0006 vérifié au passage. Préalable de T3 seulement ; T1 et T2 peuvent partir dès l'amendement accepté.
+Statut : PRÊT
+Questions : aucune
 
 Constats partagés :
+- **Amendement de SPEC-0006** : la contradiction entre SPEC-0006 CA12 (`AFR1506` attend `passage-tail-a1`) et SPEC-0010 CA6/CA7 est levée par l'amendement de SPEC-0006 CA12 (`CTV1506`, compagnie sans livrée), PR `contract-change` à fusionner avant T3.
 - **Préalables** : dépendances livrées (`plan-gate deps` OK) ; aucune mention légale dans l'app à ce jour : T2 n'est fusionnée qu'une fois les mentions du propriétaire présentes (critère de sortie, case cochée par le propriétaire).
 - **Interface figée** : « Contrat d'interface » de la spec ; `index.ts` ne charge jamais `livery.tsx` ni `liveries.gen.ts` (require d'images, illisibles sous Vitest).
 - **Fichiers générés** (`*.gen.ts`, ignorés par git, produits par `pnpm gen` avant typage, tests et `dev`) : `src/shared/airlines/livery-codes.gen.ts` (`LIVERY_CODES`, pur) et `src/shared/airlines/liveries.gen.ts` (`LIVERY_SOURCES`, un `require()` littéral par fichier, exigé par Metro).

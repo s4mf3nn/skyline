@@ -24,6 +24,8 @@ interface Passage {
   windowEndMs: number;
   closestDistanceKm: number;
   groundDistanceKm: number;
+  latitude: number;
+  longitude: number;
   arrivalBearingDeg: number;
   arrivalCardinal: CardinalPoint;
 }
@@ -193,6 +195,37 @@ describe("SPEC-0004 scene computation", () => {
     expectNear(passage.windowEndMs, T0 + 225 * SECOND, SECOND);
     expectNear(passage.arrivalBearingDeg, 270, 1);
     expect(passage.arrivalCardinal).toBe("O");
+  });
+
+  // Amendement SPEC-0009 : `.skip` retiré par la tâche qui ajoute `latitude` et `longitude` à `Passage` (plan SPEC-0009).
+  it.skip("CA4 : carries the latitude and longitude of the aircraft extrapolated in a straight line to nowMs", async () => {
+    const { groundDistanceKm } = await scene();
+    const aircraft = [plane("p1", -40, 0, 90, 720), plane("p2", 30, -3, 270, 720)];
+    const atNow = await computeAt(aircraft, T0 + 100 * SECOND);
+    const first = atNow.upcoming.find((passage) => passage.hex === "p1") as Passage;
+    const second = atNow.upcoming.find((passage) => passage.hex === "p2") as Passage;
+    expectNear(groundDistanceKm(first, at(-20, 0)), 0, 0.1);
+    expectNear(groundDistanceKm(second, at(10, -3)), 0, 0.1);
+    expectNear(groundDistanceKm(first, OBSERVER), first.groundDistanceKm, 0.1);
+    expectNear(groundDistanceKm(second, OBSERVER), second.groundDistanceKm, 0.1);
+  });
+
+  // Amendement SPEC-0009 : `.skip` retiré par la tâche qui ajoute `latitude` et `longitude` à `Passage` (plan SPEC-0009).
+  it.skip("CA4 : extrapolates the position backwards when nowMs is before the snapshot, and follows the track", async () => {
+    const { groundDistanceKm } = await scene();
+    const before = (await computeAt([plane("p3", -40, 0, 90, 720)], T0 - 50 * SECOND)).upcoming[0] as Passage;
+    expectNear(groundDistanceKm(before, at(-50, 0)), 0, 0.1);
+    const north = (await computeAt([plane("p4", 0, -30, 0, 360)], T0 + 20 * SECOND)).upcoming[0] as Passage;
+    expectNear(groundDistanceKm(north, at(0, -28)), 0, 0.1);
+  });
+
+  // Amendement SPEC-0009 : `.skip` retiré par la tâche qui ajoute `latitude` et `longitude` à `Passage` (plan SPEC-0009).
+  it.skip("CA4 : gives the extrapolated position of the overhead aircraft too", async () => {
+    const { groundDistanceKm } = await scene();
+    const result = await computeAt([plane("p5", -3, 1, 90, 720)], T0 + 5 * SECOND);
+    const overhead = result.overhead as Passage;
+    expect(overhead.hex).toBe("p5");
+    expectNear(groundDistanceKm(overhead, at(-2, 1)), 0, 0.1);
   });
 
   it("CA4 : computes the passage of an aircraft that goes by on the side", async () => {

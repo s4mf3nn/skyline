@@ -168,6 +168,35 @@ describe("scripts/plan-gate.mjs check", () => {
     expect(res.out).toContain("Dépendances de SPEC-0002 livrées : SPEC-0001");
   });
 
+  it("ignores a .skip that the dependent spec itself amended into the dependency contract", () => {
+    const amended = [
+      'describe("SPEC-0001", () => {',
+      "  // Amendement SPEC-0002 : `.skip` retiré par la tâche de SPEC-0002.",
+      '  it.skip("CA4 : amended", () => {});',
+      "});",
+      "",
+    ].join("\n");
+    const repo = newRepo({
+      "specs/SPEC-0002-redirect/plan.md": PLAN,
+      "specs/SPEC-0002-redirect/spec.md": "# SPEC-0002\nDépend de : SPEC-0001\n",
+      "tests/acceptance/SPEC-0001.test.ts": amended,
+    });
+    expect(check(repo, ["SPEC-0002", "T1"]).code).toBe(0);
+  });
+
+  it("still fails on a .skip amended by another spec or left without the amendment comment", () => {
+    const other = ["// Amendement SPEC-0003 : x", 'it.skip("a", () => {});', ""].join("\n");
+    const bare = ['it.skip("b", () => {});', ""].join("\n");
+    for (const contract of [other, bare]) {
+      const repo = newRepo({
+        "specs/SPEC-0002-redirect/plan.md": PLAN,
+        "specs/SPEC-0002-redirect/spec.md": "# SPEC-0002\nDépend de : SPEC-0001\n",
+        "tests/acceptance/SPEC-0001.test.ts": contract,
+      });
+      expect(check(repo, ["SPEC-0002", "T1"]).code).toBe(1);
+    }
+  });
+
   it("treats a dependency without a contract on the base as not delivered", () => {
     const repo = newRepo({ "specs/SPEC-0002-redirect/spec.md": "Dépend de : SPEC-0001\n" });
     expect(

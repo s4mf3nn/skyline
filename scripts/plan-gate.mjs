@@ -57,12 +57,24 @@ export function parseDependencies(specText) {
   return { deps };
 }
 
-/** La spec est-elle livrée sur la base : un contrat, et aucun de ses fichiers ne garde de `.skip` ? */
-function isDelivered(spec) {
+/**
+ * Retire du texte d'un contrat les lignes `.skip` dont la ligne précédente est le commentaire `Amendement <dependent>` :
+ * ce sont les tests ajoutés par la spec dépendante elle-même, que sa propre tâche activera. Sans cela, SPEC-0009
+ * attendrait une livraison de SPEC-0004 qui attend elle-même SPEC-0009.
+ */
+export function withoutAmendmentSkips(text, dependent) {
+  const lines = text.split("\n");
+  return lines
+    .filter((line, i) => !(/\.skip\s*\(/.test(line) && lines[i - 1]?.includes(`Amendement ${dependent} `)))
+    .join("\n");
+}
+
+/** La spec est-elle livrée sur la base : un contrat, et aucun de ses fichiers ne garde de `.skip` (hors amendement de `dependent`) ? */
+function isDelivered(spec, dependent) {
   const texts = git("ls-tree", "--name-only", base, "--", `${ACCEPTANCE_DIR}/`)
     .split("\n")
     .filter((p) => p && specOf(p) === spec)
-    .map((p) => git("show", `${base}:${p}`));
+    .map((p) => withoutAmendmentSkips(git("show", `${base}:${p}`), dependent));
   return isActive(texts);
 }
 
@@ -78,7 +90,7 @@ export function checkDependencies(spec, { requireSpec = false } = {}) {
     return { ok: true, message: `${spec} : pas de spec.md unique sur ${base}, aucune dépendance lue.` };
   const parsed = parseDependencies(git("show", `${base}:${paths[0]}`));
   if (parsed.error) return { ok: false, message: `${paths[0]} : ${parsed.error}.` };
-  const missing = parsed.deps.filter((dep) => !isDelivered(dep));
+  const missing = parsed.deps.filter((dep) => !isDelivered(dep, spec));
   if (missing.length) {
     return {
       ok: false,

@@ -4,6 +4,7 @@ import { type Aircraft, createFakeAdsbSource } from "../../src/shared/adsb";
 import { createFakeClock } from "../../src/shared/clock";
 import { createFakeLocation, type Position } from "../../src/shared/location";
 import { createFakeErrorReporter } from "../../src/shared/monitoring";
+import type { FlightLookup } from "../../src/shared/routes";
 
 // Contrat de SPEC-0009, partie écran (Jest, `jest-expo` et React Native Testing Library) : le bloc route et le type
 // d'appareil sur Ciel et sur les cartes de Prochains passages, montés par `createApp` avec les faux de src/shared/.
@@ -37,7 +38,7 @@ interface RoutesModule {
     routes?: Record<string, FlightRoute | null>;
     aircraftTypes?: Record<string, string | null>;
   }): FakeRouteSource;
-  createFlightLookup(input: { source: RouteSource; clock: { now(): number } }): unknown;
+  createFlightLookup(input: { source: RouteSource; clock: { now(): number } }): FlightLookup;
   formatEstimatedArrival(timestampMs: number, timeZone: string): string;
 }
 interface FeatureModule {

@@ -66,7 +66,7 @@ Découpage interne d'une feature : `src/features/<feature>/{screens,components,h
   - horloge : `src/shared/clock/` (comptes à rebours, heure de passage) ;
   - suivi des erreurs : Sentry, `src/shared/monitoring/` ;
   - réglages du système (ouvrir ceux de l'application) : `Linking` de React Native, `src/shared/system-settings/` ;
-  - source des routes de vol : à décider.
+  - source des routes de vol : adsbdb.com, `src/shared/routes/`.
 - Tâches planifiées : aucune. Le rafraîchissement toutes les 10 secondes est un minuteur de premier plan, mis en pause en arrière-plan.
 - Temps réel : aucun. L'application interroge la source ADS-B à intervalle.
 - Files de messages : aucune.

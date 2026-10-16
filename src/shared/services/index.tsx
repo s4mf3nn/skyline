@@ -4,12 +4,14 @@ import type { Clock } from "../clock";
 import type { AppLifecycle } from "../lifecycle";
 import type { LocationService } from "../location";
 import type { ErrorReporter } from "../monitoring";
+import type { FlightLookup } from "../routes";
 import type { SystemSettings } from "../system-settings";
 
 /**
  * Les services tiers, injectés dans l'application : des faux en test, les implémentations réelles en prod.
  * `lifecycle` est facultatif : sans lui, l'application ne se réactualise simplement pas au retour au premier plan.
  * `systemSettings` est facultatif : sans lui, la notice de permission refusée n'a pas de bouton.
+ * `routes` est facultatif : sans lui, aucune route ni aucun type d'appareil n'est affiché.
  */
 export interface AppServices {
   clock: Clock;
@@ -18,6 +20,7 @@ export interface AppServices {
   monitoring: ErrorReporter;
   lifecycle?: AppLifecycle;
   systemSettings?: SystemSettings;
+  routes?: FlightLookup;
 }
 
 const ServicesContext = createContext<AppServices | null>(null);

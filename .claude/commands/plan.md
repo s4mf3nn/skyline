@@ -5,7 +5,7 @@ argument-hint: <SPEC-XXXX>
 
 Contrôle d'abord que les specs dont elle dépend sont livrées : `node scripts/plan-gate.mjs deps $ARGUMENTS`. En cas d'échec, arrête-toi et recopie son message : on ne planifie pas une spec avant ses dépendances (voir `specs/ROADMAP.md`).
 
-Utilise ensuite le subagent `planner` sur la spec $ARGUMENTS. Le plan doit rester lisible tâche par tâche : `node scripts/split-plan.mjs list $ARGUMENTS` doit lister toutes les tâches une fois `plan.md` écrit (titres `### T# : …`), et `node scripts/plan-gate.mjs lint $ARGUMENTS` doit passer (SPEC-0000 : une tâche par groupe ; toute spec : une ligne `- Risque :` lisible par tâche, et un bloc `Conception` avec ses blocs de code par tâche de risque moyen ou élevé). Sinon, renvoie le message au `planner`.
+Utilise ensuite le subagent `planner` sur la spec $ARGUMENTS. Le plan doit rester lisible tâche par tâche : `node scripts/split-plan.mjs list $ARGUMENTS` doit lister toutes les tâches une fois `plan.md` écrit (titres `### T# : …`), et `node scripts/plan-gate.mjs lint $ARGUMENTS` doit passer (SPEC-0000 : une tâche par groupe ; toute spec : une ligne `- Risque :` lisible par tâche, un bloc `Conception` avec ses blocs de code par tâche de risque moyen ou élevé, et chaque critère de la spec couvert par une tâche ; `deps` et `check` refusent aussi une dépendance dont le plan laisse des critères sans tâche). Sinon, renvoie le message au `planner`.
 
 Une fois `plan.md` écrit :
 

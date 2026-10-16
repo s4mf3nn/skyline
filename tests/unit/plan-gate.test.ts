@@ -197,6 +197,23 @@ describe("scripts/plan-gate.mjs check", () => {
     }
   });
 
+  it("fails when a dependency has criteria that no plan task covers, and accepts ranges", () => {
+    const spec = "# SPEC-0001\n- **CA1** a\n- **CA2** b\n- **CA3** c\n";
+    const plan = (covered: string) =>
+      `Statut : PRÊT\n\n### T1 : x\n- Critères de la spec couverts : ${covered}\n- Risque : faible\n`;
+    const files = (covered: string) => ({
+      "specs/SPEC-0002-redirect/plan.md": PLAN,
+      "specs/SPEC-0002-redirect/spec.md": "# SPEC-0002\nDépend de : SPEC-0001\n",
+      "specs/SPEC-0001-base/spec.md": spec,
+      "specs/SPEC-0001-base/plan.md": plan(covered),
+      "tests/acceptance/SPEC-0001.test.ts": 'describe("SPEC-0001", () => {});\n',
+    });
+    const bad = check(newRepo(files("CA1")), ["SPEC-0002", "T1"]);
+    expect(bad.code).toBe(1);
+    expect(bad.err).toContain("CA2, CA3");
+    expect(check(newRepo(files("CA1 à CA3")), ["SPEC-0002", "T1"]).code).toBe(0);
+  });
+
   it("treats a dependency without a contract on the base as not delivered", () => {
     const repo = newRepo({ "specs/SPEC-0002-redirect/spec.md": "Dépend de : SPEC-0001\n" });
     expect(
@@ -232,7 +249,7 @@ describe("scripts/plan-gate.mjs check", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "plan gate "));
     repos.push(dir);
     // plan-gate.mjs importe ses voisins : ils sont copiés avec lui.
-    for (const name of ["plan-gate.mjs", "holdout.mjs", "contract-files.mjs"])
+    for (const name of ["plan-gate.mjs", "holdout.mjs", "contract-files.mjs", "split-plan.mjs"])
       fs.copyFileSync(path.resolve("scripts", name), path.join(dir, name));
     const copy = path.join(dir, "plan-gate.mjs");
     const res = check(repo, ["SPEC-0002"], {}, copy);

@@ -8,6 +8,7 @@ Consignes que les agents doivent appliquer, uniquement quand aucune forme plus d
 ## Journal
 | Date | Incident ou remarque | Forme retenue | Fichier modifié |
 |---|---|---|---|
+| 2026-10-16 | Une spec amendée (SPEC-0004) avait 17 critères sans tâche de plan, et les specs dépendantes n'étaient pas bloquées | Contrôle script : `plan-gate` (`deps`, `check`, `lint`) refuse un plan qui laisse des critères sans tâche ; test de non-régression | `scripts/plan-gate.mjs`, `tests/unit/plan-gate.test.ts`, `.claude/agents/planner.md`, `.claude/commands/plan.md` |
 
 ## Acquis hérités du boilerplate
 Incidents du projet d'origine, déjà traités par l'outillage livré. À connaître avant de retirer l'un de ces mécanismes.

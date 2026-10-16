@@ -4,6 +4,7 @@ import { type Aircraft, createFakeAdsbSource } from "../../src/shared/adsb";
 import { createFakeClock } from "../../src/shared/clock";
 import { createFakeLocation, type Position } from "../../src/shared/location";
 import { createFakeErrorReporter } from "../../src/shared/monitoring";
+import type { FlightLookup } from "../../src/shared/routes";
 
 // Scénarios cachés de SPEC-0009 (Jest) : parcours d'affichage de la route avec d'autres données que le contrat.
 interface Airport {
@@ -28,7 +29,7 @@ interface RoutesModule {
     routes?: Record<string, FlightRoute | null>;
     aircraftTypes?: Record<string, string | null>;
   }): FakeRouteSource;
-  createFlightLookup(input: { source: unknown; clock: { now(): number } }): unknown;
+  createFlightLookup(input: { source: unknown; clock: { now(): number } }): FlightLookup;
   formatEstimatedArrival(timestampMs: number, timeZone: string): string;
 }
 interface FeatureModule {

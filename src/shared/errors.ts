@@ -1,5 +1,10 @@
 // Codes d'erreur métier : en anglais, stables, testables par `code`.
-export type ErrorCode = "LOCATION_DENIED" | "ADSB_UNAVAILABLE" | "INVALID_COLOR" | "SYSTEM_SETTINGS_UNAVAILABLE";
+export type ErrorCode =
+  | "LOCATION_DENIED"
+  | "ADSB_UNAVAILABLE"
+  | "INVALID_COLOR"
+  | "SYSTEM_SETTINGS_UNAVAILABLE"
+  | "ROUTE_UNAVAILABLE";
 
 /** Erreur métier typée : le code sert aux appelants, le message n'est jamais affiché tel quel. */
 export class AppError extends Error {

@@ -8,6 +8,7 @@ import { createAppStateLifecycle } from "./shared/lifecycle/app-state";
 import { createExpoLocation } from "./shared/location/expo";
 import { readBuildInfo } from "./shared/monitoring/build";
 import { createSentryErrorReporter } from "./shared/monitoring/sentry";
+import { createLinkingSystemSettings } from "./shared/system-settings/native";
 
 const build = readBuildInfo(Constants.expoConfig?.extra);
 // La même horloge sert à la source de démonstration et à l'application.
@@ -26,6 +27,7 @@ export default createApp({
     adsb: adsbSource === "demo" ? createDemoAdsbSource(clock) : createAdsbLolSource({ fetch }),
     monitoring: createSentryErrorReporter({ dsn: process.env.EXPO_PUBLIC_SENTRY_DSN, ...build }),
     lifecycle: createAppStateLifecycle(),
+    systemSettings: createLinkingSystemSettings(),
   },
   build,
 });

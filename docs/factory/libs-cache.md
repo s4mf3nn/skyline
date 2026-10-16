@@ -105,3 +105,7 @@ Source : Context7 `/discord/hermes` (`doc/IntlAPIs.md`) le 2026-10-14.
 Source : Context7 `/colinhacks/zod/v4.6.5` le 2026-10-15.
 - `z.config({ jitless: true })` : désactive la compilation rapide (`new Function`), nécessaire sous Hermes ; à appeler en tête de module.
 - Repli par champ : `schema.nullable().catch(null)` ; `.catch` couvre aussi l'absence. `safeParse` rend `{ success, data | error }`, sans lever.
+
+## react-native 0.86.3 (`Linking.openSettings`)
+Source : `node_modules/react-native/Libraries/Linking/Linking.d.ts` le 2026-10-16.
+- `Linking.openSettings(): Promise<void>` ouvre les réglages de l'application ; la promesse peut rejeter (à avaler côté appelant, sans log).

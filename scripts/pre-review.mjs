@@ -358,23 +358,30 @@ export function checkSelfReview(summary, ids, fileExists) {
   return problems;
 }
 
-/** Critères (CA/CU) de la tâche du bail `SPEC-XXXX-T#`, lus dans le plan ; vide si le plan est introuvable. */
+/** Critères (CA/CU) d'une tâche d'après le texte du plan ; `null` si la tâche est absente du plan. */
+export function planCriteria(planText, taskId) {
+  const plan = parsePlan(planText);
+  const t = plan.tasks.find((x) => x.id === taskId);
+  return t ? coveredCriteria(plan.lines.slice(t.from - 1, t.to - 1)).ids : null;
+}
+
+/** Critères des tâches du bail `SPEC-XXXX-T#`, lus dans le plan ; un plan illisible devient une note, pas un silence. */
 function leaseCriteria(leases) {
   const ids = [];
+  const notes = [];
   for (const { task } of leases) {
     const m = /^(SPEC-\d{4})-(T\d+)$/.exec(task);
     if (!m) continue;
     try {
       const dir = fs.readdirSync("specs").find((d) => d.startsWith(`${m[1]}-`));
-      const planText = fs.readFileSync(path.join("specs", dir, "plan.md"), "utf8");
-      const plan = parsePlan(planText);
-      const t = plan.tasks.find((x) => x.id === m[2]);
-      if (t) ids.push(...coveredCriteria(plan.lines.slice(t.from - 1, t.to - 1)).ids);
+      const found = planCriteria(fs.readFileSync(path.join("specs", dir ?? m[1], "plan.md"), "utf8"), m[2]);
+      if (found === null) notes.push(`tâche ${task} absente du plan : ${SELF_REVIEW.toLowerCase()} non contrôlée`);
+      else ids.push(...found);
     } catch {
-      // plan absent : rien à contrôler
+      notes.push(`plan de ${m[1]} introuvable : ${SELF_REVIEW.toLowerCase()} non contrôlée`);
     }
   }
-  return ids;
+  return { ids, notes };
 }
 
 /** Exécute les contrôles ; renvoie `{ problems, notes }`. */
@@ -442,7 +449,11 @@ export function runChecks() {
     .flatMap((f) => addedDependencies(showOrNull(`${mergeBase}:${f}`), showOrNull(`HEAD:${f}`)));
   const summary = fs.existsSync(".pr-summary.md") ? fs.readFileSync(".pr-summary.md", "utf8") : null;
   problems.push(...checkSummary(summary, added));
-  if (leases) problems.push(...checkSelfReview(summary, leaseCriteria(leases), (f) => fs.existsSync(f)));
+  if (leases) {
+    const { ids, notes: planNotes } = leaseCriteria(leases);
+    notes.push(...planNotes);
+    problems.push(...checkSelfReview(summary, ids, (f) => fs.existsSync(f)));
+  }
   return { problems, notes };
 }
 

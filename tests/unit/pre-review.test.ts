@@ -34,6 +34,7 @@ interface PreReview {
   addedDependencies(before: string | null, after: string | null): string[];
   summarySection(text: string, title: string): string | null;
   checkSummary(summary: string | null, added: string[]): string[];
+  planCriteria(planText: string, taskId: string): string[] | null;
   checkSelfReview(summary: string | null, ids: string[], fileExists: (f: string) => boolean): string[];
 }
 const mod = (await import(pathToFileURL(path.resolve("scripts/pre-review.mjs")).href)) as PreReview;
@@ -302,6 +303,22 @@ describe("scripts/pre-review.mjs", () => {
     ]);
     expect(mod.checkSelfReview("## Intention\nx\n", ["CA1"], exists)).toEqual([expect.stringContaining("absente")]);
     expect(mod.checkSelfReview(null, ["CA1"], exists)).toEqual([expect.stringContaining("absente")]);
+  });
+
+  it("extrait les critères d'une tâche du plan, plages comprises", () => {
+    const plan = [
+      "# Plan",
+      "## Groupe A",
+      "### T1 : a",
+      "Groupe : A",
+      "- Critères de la spec couverts : CA1 à CA3, CU2",
+      "### T2 : b",
+      "Groupe : A",
+      "- Critères de la spec couverts : CA9",
+    ].join("\n");
+    expect(mod.planCriteria(plan, "T1")?.sort()).toEqual(["CA1", "CA2", "CA3", "CU2"]);
+    expect(mod.planCriteria(plan, "T2")).toEqual(["CA9"]);
+    expect(mod.planCriteria(plan, "T3")).toBeNull();
   });
 
   it("vérifie la section Context7 et la déclaration des dépendances", () => {

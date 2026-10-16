@@ -93,4 +93,25 @@ describe("predictPassage", () => {
     const passage = predictPassage(plane(-20, 0, 90, 720), OBSERVER, T0, T0);
     expect(passage).toMatchObject({ hex: "abc123", callsign: "TST1", altitudeM: 10_000, groundSpeedKmh: 720 });
   });
+
+  it("gives the position at nowMs, forwards in time", () => {
+    // 720 km/h = 0,2 km/s : 100 s plus tard, l'avion a avancé de 20 km vers l'est.
+    const passage = predictPassage(plane(-40, 0, 90, 720), OBSERVER, T0, T0 + 100_000);
+    expect(passage.latitude).toBeCloseTo(0, 6);
+    expect(passage.longitude).toBeCloseTo(-20 / KM_PER_DEGREE, 6);
+  });
+
+  it("gives the position at nowMs, backwards in time", () => {
+    const passage = predictPassage(plane(0, -30, 0, 720), OBSERVER, T0, T0 - 50_000);
+    expect(passage.latitude).toBeCloseTo(-40 / KM_PER_DEGREE, 6);
+    expect(passage.longitude).toBeCloseTo(0, 6);
+  });
+
+  it("converts the east offset to degrees with the latitude of the observer", () => {
+    const observer = { latitude: 60, longitude: 10 };
+    const aircraft = { ...plane(0, 0, 90, 720), latitude: 60, longitude: 10 };
+    const passage = predictPassage(aircraft, observer, T0, T0 + 100_000);
+    // 20 km vers l'est à 60° de latitude : deux fois plus de degrés qu'à l'équateur.
+    expect(passage.longitude).toBeCloseTo(10 + 40 / KM_PER_DEGREE, 6);
+  });
 });

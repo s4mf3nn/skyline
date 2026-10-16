@@ -1,4 +1,5 @@
 import { type Airline, type AirlineTheme, airlineTheme, resolveAirline } from "../../shared/airlines";
+import { formatClockTime } from "../../shared/clock";
 import { flightLabel, formatMetric } from "../../shared/format";
 import { arrowAngleDeg, type CardinalPoint, type Passage, type Scene, type SceneView } from "../../shared/scene";
 import { type StaleNotice, type StateNotice, staleNotice, stateNotice } from "../../shared/states";
@@ -63,16 +64,7 @@ export function formatCountdown(remainingMs: number): string {
 
 /** `HH:MM` sur 24 h dans le fuseau reçu. */
 export function formatLocalTime(timestampMs: number, timeZone: string): string {
-  // Assemblé depuis `formatToParts` : le motif de `format()` est localisé sur iOS.
-  const formatter = new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
-  const parts = formatter.formatToParts(timestampMs);
-  const partOf = (type: "hour" | "minute"): string => parts.find((part) => part.type === type)?.value ?? "00";
-  return `${partOf("hour")}:${partOf("minute")}`;
+  return formatClockTime(timestampMs, timeZone);
 }
 
 /** Avancement dans la fenêtre de visibilité, borné à [0, 1]. */

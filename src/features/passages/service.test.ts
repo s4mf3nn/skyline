@@ -16,6 +16,8 @@ function passage(overrides: Partial<Passage> = {}): Passage {
     closestTimeMs: NOW_MS + 150_000,
     windowEndMs: NOW_MS + 200_000,
     closestDistanceKm: 1,
+    latitude: 48.9,
+    longitude: 2.4,
     groundDistanceKm: 10,
     arrivalBearingDeg: 270,
     arrivalCardinal: "O",

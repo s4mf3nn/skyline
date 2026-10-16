@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakeClock } from "./index";
+import { createFakeClock, formatClockTime } from "./index";
 import { createSystemClock } from "./system";
 
 describe("fake clock", () => {
@@ -23,5 +23,16 @@ describe("system clock", () => {
     const now = createSystemClock().now();
     expect(now).toBeGreaterThanOrEqual(before);
     expect(now).toBeLessThanOrEqual(Date.now());
+  });
+});
+
+describe("formatClockTime", () => {
+  it("formats the local time on 24 hours in the given time zone", () => {
+    expect(formatClockTime(1_800_000_000_000, "Europe/Paris")).toBe("09:00");
+    expect(formatClockTime(1_800_000_000_000, "Pacific/Auckland")).toBe("21:00");
+  });
+
+  it("keeps the leading zeros and truncates the seconds", () => {
+    expect(formatClockTime(Date.UTC(2027, 0, 1, 0, 5, 59), "UTC")).toBe("00:05");
   });
 });

@@ -20,6 +20,9 @@ export interface Passage {
   closestTimeMs: number;
   windowEndMs: number;
   closestDistanceKm: number;
+  /** Position de l'avion à `nowMs`, extrapolée en ligne droite. */
+  latitude: number;
+  longitude: number;
   /** Distance au sol à `nowMs`. */
   groundDistanceKm: number;
   /** Gisement d'arrivée, dans [0, 360). */

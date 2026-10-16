@@ -2,7 +2,7 @@
 
 Statut : BROUILLON
 Risque estimé : élevé (crée `src/shared/routes/`, zone sensible de `docs/factory/RISK.md` : revue `full`, pas d'auto-merge ; réponse externe à valider, indicatif et adresse hexadécimale entrant dans le chemin de l'URL ; second hôte sortant, `api.adsbdb.com`)
-Dépend de : SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (SPEC-0004 telle qu'amendée : `Passage` porte la position de l'avion, voir « Décisions » ; cette spec reste `BROUILLON` tant que les amendements listés dans « Préalables avant `/plan` » ne sont pas fusionnés et que SPEC-0005 n'est pas écrite)
+Dépend de : SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007
 Tests de contrat : `tests/acceptance/SPEC-0009.test.ts` (Vitest), `tests/acceptance/SPEC-0009.native.test.tsx` (Jest)
 Scénarios cachés : `tests/holdout/SPEC-0009.test.ts` et `tests/holdout/SPEC-0009.native.test.tsx` (ne pas les décrire ici)
 
@@ -147,6 +147,7 @@ Réponses du propriétaire (2026-10-14) : heure d'arrivée seule, préfixée de 
 - `ROUTE_RETRY_AFTER_MS` est mesuré sur l'horloge injectée et la reprise attend un rafraîchissement de la scène : le réessai a donc lieu entre 10 s et 20 s après l'échec, pas à la seconde.
 - `formatEstimatedArrival` est la troisième répétition du formatage `HH:MM` (après `formatLocalTime` de SPEC-0006 et `formatDataTime` de SPEC-0008) : la tâche le factorise dans `src/shared/` en gardant les exports existants (les contrats de SPEC-0006 et SPEC-0008 n'en changent pas).
 - Départ « — » : une heure de départ estimée à rebours depuis la vitesse sol serait fausse (montée, attente au sol).
+- Dépendances : SPEC-0004 s'entend telle qu'amendée (`Passage` porte la position de l'avion). La spec reste `BROUILLON` tant que les amendements de « Préalables avant `/plan` » ne sont pas fusionnés et que SPEC-0005 n'est pas écrite.
 
 ## Préalables avant `/plan`
 Cette spec reste `BROUILLON` tant qu'ils ne sont pas fusionnés (même mécanisme que SPEC-0007 pour SPEC-0004) :

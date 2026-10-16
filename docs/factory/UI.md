@@ -21,7 +21,9 @@ Un composant partagé vit dans `src/shared/` et est listé ici avec son rôle.
 - `Pager` (`src/shared/pager/`) : deux écrans côte à côte, glissement horizontal et indicateur de page réglable (« Indicateur de page », valeur « Page 1 sur 2 »).
 
 ## États standard
-Aucun à ce stade. Chargement, vide et erreur sont définis par la première spec qui les affiche, puis réutilisés.
+Définis par SPEC-0008 dans `src/shared/states/` (textes dans `index.ts`, rendu dans `notice.tsx`), à réutiliser tels quels.
+- `StateNoticeView` : chargement, localisation refusée (bouton « Ouvrir les réglages »), hors ligne, aucun passage prévu. Fond `ground`, texte `ink`, titre en gros corps, détail en corps courant.
+- `StaleNoticeView` : ligne « Données de HH:MM : mise à jour impossible » après trois minutes sans réponse, en petit corps ; `color` permet à Ciel d'y mettre la couleur de la compagnie.
 
 ## Accessibilité
 - Chaque contrôle interactif a un nom accessible (`accessibilityLabel`) et un rôle (`accessibilityRole`).

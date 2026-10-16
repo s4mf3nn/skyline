@@ -301,6 +301,24 @@ describe("scripts/plan-gate.mjs, bootstrap plan", () => {
     expect(lint(repo, "SPEC-0000").status).toBe(0);
   });
 
+  it("lint refuses a criterion without task, but ignores a criterion marked « sans objet »", () => {
+    const lint = (repo: string) =>
+      spawnSync("node", [script, "lint", "SPEC-0002"], { cwd: repo, encoding: "utf8", env: gitEnv });
+    const spec = "# SPEC-0002\n- **CA1** : a\n- **CA2** : sans objet en v0\n- **CA3** : c\n";
+    const plan = (covered: string) =>
+      `Statut : PRÊT\n\n### T1 : x\n- Critères de la spec couverts : ${covered}\n- Risque : faible\n`;
+    const repo = newRepo(
+      {},
+      { "specs/SPEC-0002-redirect/spec.md": spec, "specs/SPEC-0002-redirect/plan.md": plan("CA1") },
+    );
+    const bad = lint(repo);
+    expect(bad.status).toBe(1);
+    expect(bad.stderr).toContain("CA3.");
+    expect(bad.stderr).not.toContain("CA2");
+    fs.writeFileSync(path.join(repo, "specs/SPEC-0002-redirect/plan.md"), plan("CA1, CA3"));
+    expect(lint(repo).status).toBe(0);
+  });
+
   it("requires a design block with code on medium and high risk tasks", async () => {
     const mod = await load();
     const task = (id: string, risk: string, design: string) =>

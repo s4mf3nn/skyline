@@ -75,7 +75,10 @@ export function withoutAmendmentSkips(text, dependent) {
  * couverts ». Un amendement de spec qui ajoute des critères sans amender le plan les laisse sans tâche.
  */
 export function uncoveredCriteria(specText, planText) {
-  const criteria = [...specText.matchAll(/^- \*\*(C[AU]\d+)\*\*/gm)].map((m) => m[1]);
+  // Un critère « sans objet » (puce `- **CA3** : sans objet…`) n'a pas de tâche à couvrir.
+  const criteria = [...specText.matchAll(/^- \*\*(C[AU]\d+)\*\*\s*:?\s*(sans objet)?/gim)]
+    .filter((m) => !m[2])
+    .map((m) => m[1]);
   const { lines, tasks } = parsePlan(planText);
   const covered = new Set(tasks.flatMap((t) => coveredCriteria(lines.slice(t.from - 1, t.to - 1)).ids));
   return criteria.filter((c) => !covered.has(c));

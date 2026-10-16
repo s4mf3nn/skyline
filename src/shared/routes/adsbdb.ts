@@ -1,15 +1,9 @@
 import type { FetchLike } from "../adsb/adsblol";
-import { AppError } from "../errors";
-import { parseAircraftBody, parseRouteBody } from "./adsbdb-response";
+import { parseAircraftBody, parseRouteBody, routeUnavailable } from "./adsbdb-response";
 import { normalizeCallsign, normalizeHex, ROUTE_REQUEST_TIMEOUT_MS, type RouteSource } from "./index";
 
 const BASE_URL = "https://api.adsbdb.com/v0";
 const STATUS_NOT_FOUND = 404;
-
-// Message fixe : ni l'URL ni le corps reçu dans une erreur (INV7).
-function unavailable(): AppError {
-  return new AppError("ROUTE_UNAVAILABLE", "Route source unavailable");
-}
 
 /** URL de l'indicatif : hôte et chemin fixes, indicatif normalisé ; `null` si l'indicatif est refusé. */
 export function buildCallsignUrl(callsign: string): string | null {
@@ -25,7 +19,7 @@ export function buildAircraftUrl(hex: string): string | null {
 
 /** Source réelle des routes (adsbdb.com) ; `fetch` est injecté pour les tests. */
 export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSource {
-  // Rend le corps JSON, ou `undefined` pour un 404 (réponse définitive « inconnu »).
+  // Rend le corps JSON ; un 404 est lu aussi, car seul le corps dit « inconnu » (CA5).
   async function request(url: string): Promise<unknown> {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -34,7 +28,7 @@ export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSou
       const timeout = new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
           controller.abort();
-          reject(unavailable());
+          reject(routeUnavailable());
         }, ROUTE_REQUEST_TIMEOUT_MS);
       });
       const read = async () => {
@@ -43,13 +37,12 @@ export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSou
           headers: { Accept: "application/json" },
           signal: controller.signal,
         });
-        if (response.status === STATUS_NOT_FOUND) return undefined;
-        if (!response.ok) throw unavailable();
+        if (!response.ok && response.status !== STATUS_NOT_FOUND) throw routeUnavailable();
         return await response.json();
       };
       return await Promise.race([read(), timeout]);
     } catch {
-      throw unavailable();
+      throw routeUnavailable();
     } finally {
       clearTimeout(timer);
     }
@@ -59,14 +52,12 @@ export function createAdsbdbRouteSource(options: { fetch: FetchLike }): RouteSou
     async fetchRoute(callsign) {
       const url = buildCallsignUrl(callsign);
       if (url === null) return null;
-      const body = await request(url);
-      return body === undefined ? null : parseRouteBody(body);
+      return parseRouteBody(await request(url));
     },
     async fetchAircraftType(hex) {
       const url = buildAircraftUrl(hex);
       if (url === null) return null;
-      const body = await request(url);
-      return body === undefined ? null : parseAircraftBody(body);
+      return parseAircraftBody(await request(url));
     },
   };
 }

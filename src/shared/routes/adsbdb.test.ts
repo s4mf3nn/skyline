@@ -109,7 +109,14 @@ describe("adsbdb.com client: fetchRoute", () => {
     const unknown = { response: "unknown callsign" };
     expect(await createAdsbdbRouteSource({ fetch: respond(unknown, 404) }).fetchRoute("AFR1015")).toBeNull();
     expect(await createAdsbdbRouteSource({ fetch: respond(unknown) }).fetchRoute("AFR1015")).toBeNull();
-    expect(await createAdsbdbRouteSource({ fetch: respond("not json", 404) }).fetchRoute("AFR1015")).toBeNull();
+  });
+
+  it("rejects a 404 that does not carry the unknown phrase", async () => {
+    for (const body of [{ response: "nope" }, { response: {} }, "not json", null]) {
+      const source = createAdsbdbRouteSource({ fetch: respond(body, 404) });
+      expect(await messageOf(source.fetchRoute("AFR1015"))).toBe("Route source unavailable");
+      expect(await messageOf(source.fetchAircraftType("3944ed"))).toBe("Route source unavailable");
+    }
   });
 
   it("rejects with ROUTE_UNAVAILABLE on every other response", async () => {

@@ -30,7 +30,7 @@ const airportSchema = z.object({
 const EMPTY_AIRPORT: Airport = { iata: null, city: null, latitude: null, longitude: null };
 
 // Message fixe : ni l'URL ni le corps reçu dans une erreur (INV7).
-function unavailable(): AppError {
+export function routeUnavailable(): AppError {
   return new AppError("ROUTE_UNAVAILABLE", "Route source unavailable");
 }
 
@@ -40,13 +40,13 @@ function unavailable(): AppError {
  */
 function readEntry(body: unknown, key: string, unknownText: string): Record<string, unknown> | null {
   const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) throw unavailable();
+  if (!parsed.success) throw routeUnavailable();
   const { response } = parsed.data;
   if (response === unknownText) return null;
   const container = recordSchema.safeParse(response);
-  if (!container.success) throw unavailable();
+  if (!container.success) throw routeUnavailable();
   const entry = recordSchema.safeParse(container.data[key]);
-  if (!entry.success) throw unavailable();
+  if (!entry.success) throw routeUnavailable();
   return entry.data;
 }
 

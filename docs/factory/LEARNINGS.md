@@ -8,6 +8,7 @@ Consignes que les agents doivent appliquer, uniquement quand aucune forme plus d
 ## Journal
 | Date | Incident ou remarque | Forme retenue | Fichier modifié |
 |---|---|---|---|
+| 2026-10-16 | La ligne « Dépend de » de SPEC-0010 et SPEC-0011 portait un commentaire : `parseDependencies` la refusait et le tableau d'avancement restait bloqué ; le gabarit montrait le même motif | Test de non-régression sur toutes les specs (ligne présente, lisible, dépendances existantes) ; commentaires déplacés sur une ligne « Note sur les dépendances » ; gabarit corrigé | `tests/unit/spec-dependencies.test.ts`, `specs/SPEC-0010-derives-reelles/spec.md`, `specs/SPEC-0011-parcours-critique/spec.md`, `specs/_template/spec.md` |
 
 ## Acquis hérités du boilerplate
 Incidents du projet d'origine, déjà traités par l'outillage livré. À connaître avant de retirer l'un de ces mécanismes.

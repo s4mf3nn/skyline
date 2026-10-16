@@ -2,7 +2,8 @@
 
 Statut : BROUILLON
 Risque estimé : élevé (crée `assets/tails/`, zone sensible de `docs/factory/RISK.md` : revue `full`, pas d'auto-merge ; images de tiers soumises à une autorisation consignée ; poids du bundle)
-Dépend de : SPEC-0002, SPEC-0004, SPEC-0005, SPEC-0006 (cette spec reste `BROUILLON` tant que SPEC-0005 n'est pas écrite : les `testID` de Ciel sont posés ici, comme dans SPEC-0009, et SPEC-0005 les reprend)
+Dépend de : SPEC-0002, SPEC-0004, SPEC-0005, SPEC-0006
+Note sur les dépendances : cette spec reste `BROUILLON` tant que SPEC-0005 n'est pas écrite : les `testID` de Ciel sont posés ici, comme dans SPEC-0009, et SPEC-0005 les reprend
 Tests de contrat : `tests/acceptance/SPEC-0010.test.ts` (Vitest), `tests/acceptance/SPEC-0010.native.test.tsx` (Jest) ; instantané des images : `tests/acceptance/SPEC-0010.liveries.json`
 Scénarios cachés : `tests/holdout/SPEC-0010.test.ts` et `tests/holdout/SPEC-0010.native.test.tsx` (ne pas les décrire ici)
 

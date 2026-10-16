@@ -2,22 +2,40 @@ import type { ReactElement } from "react";
 import { Text, View } from "react-native";
 import { AirlineTail } from "../../../shared/airlines/tail";
 import { usePagerAccent } from "../../../shared/pager";
+import { SkyRouteBlock } from "../../../shared/routes/block";
 import { useScene } from "../../../shared/scene";
 import { staleNotice } from "../../../shared/states";
 import { StaleNoticeView } from "../../../shared/states/notice";
 import { useShownSky } from "../hooks/use-shown-sky";
-import { CIEL_METRICS, STALE_NOTICE_TOP_PT } from "../service";
+import { CIEL_METRICS, type SkyRow, STALE_NOTICE_TOP_PT } from "../service";
 
 /** Écran Ciel : l'avion survolant (ou retenu), sur les couleurs de sa compagnie. */
 export function SkyScreen(): ReactElement | null {
-  const view = useShownSky();
+  const shown = useShownSky();
   const { state } = useScene();
-  usePagerAccent(view?.theme.small ?? null);
+  usePagerAccent(shown?.view.theme.small ?? null);
 
-  if (view === null) return null;
+  if (shown === null) return null;
+  const { view, passage, shownAtMs } = shown;
   const { theme } = view;
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const stale = staleNotice(state, timeZone);
+
+  const valueText = (row: SkyRow) => (
+    <Text
+      testID={`sky-value-${row.key}`}
+      numberOfLines={1}
+      className="font-archivo"
+      style={{
+        color: theme.big,
+        fontSize: CIEL_METRICS.valueSizePt,
+        fontWeight: "800",
+        fontVariant: ["tabular-nums"],
+      }}
+    >
+      {row.value}
+    </Text>
+  );
 
   return (
     <View testID="sky-screen" style={{ flex: 1, backgroundColor: theme.bg, overflow: "hidden" }}>
@@ -29,6 +47,7 @@ export function SkyScreen(): ReactElement | null {
           <StaleNoticeView screen="ciel" notice={stale} color={theme.small} />
         </View>
       )}
+      <SkyRouteBlock passage={passage} nowMs={shownAtMs} theme={theme} />
       <View
         style={{
           position: "absolute",
@@ -52,19 +71,7 @@ export function SkyScreen(): ReactElement | null {
             >
               {row.label}
             </Text>
-            <Text
-              testID={`sky-value-${row.key}`}
-              numberOfLines={1}
-              className="font-archivo"
-              style={{
-                color: theme.big,
-                fontSize: CIEL_METRICS.valueSizePt,
-                fontWeight: "800",
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {row.value}
-            </Text>
+            {row.key === "aircraft" ? <View testID="ciel-aircraft-type">{valueText(row)}</View> : valueText(row)}
           </View>
         ))}
       </View>

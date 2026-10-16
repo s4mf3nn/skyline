@@ -146,7 +146,7 @@ const cardBlock = (hex: string) => screen.queryByTestId(`passage-route-${hex}`);
 const arrivalAfter = (clock: { now(): number }) =>
   routesModule().formatEstimatedArrival(clock.now() + REMAINING_MS, TIME_ZONE);
 
-describe.skip("SPEC-0009 Routes de vol (rendering)", () => {
+describe("SPEC-0009 Routes de vol (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -264,7 +264,7 @@ describe.skip("SPEC-0009 Routes de vol (rendering)", () => {
       expect(screen.queryByTestId(`ciel-route-${id}`)).toBeNull();
     }
     expect(screen.getByTestId("ciel-aircraft-type")).toHaveTextContent("—");
-    first.unmount();
+    await first.unmount();
 
     const withoutCoordinates: FlightRoute = {
       origin: { iata: "SPU", city: "Split", latitude: null, longitude: null },
@@ -294,7 +294,7 @@ describe.skip("SPEC-0009 Routes de vol (rendering)", () => {
     await settle();
     expect(screen.queryByTestId("ciel-route-codes")).toBeNull();
     expect(screen.getByTestId("ciel-route-cities")).toHaveTextContent("Split → Paris");
-    view.unmount();
+    await view.unmount();
 
     const second = setup({ aircraft: [OVERHEAD], routes: { AFR1015: noCity } });
     await render(<second.App />);

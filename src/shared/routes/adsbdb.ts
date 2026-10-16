@@ -2,6 +2,9 @@ import type { FetchLike } from "../adsb/adsblol";
 import { parseAircraftBody, parseRouteBody, routeUnavailable } from "./adsbdb-response";
 import { normalizeCallsign, normalizeHex, ROUTE_REQUEST_TIMEOUT_MS, type RouteSource } from "./index";
 
+// Le contrat importe la durée limite depuis ce fichier.
+export { ROUTE_REQUEST_TIMEOUT_MS };
+
 const BASE_URL = "https://api.adsbdb.com/v0";
 const STATUS_NOT_FOUND = 404;
 

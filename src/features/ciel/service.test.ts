@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { UNKNOWN_AIRLINE } from "../../shared/airlines";
-import type { Passage, Scene } from "../../shared/scene";
-import { buildSkyView, CIEL_METRICS, nextSkyState, SKY_ABSENT, type SkyState, skyInputOf } from "./service";
+import type { Passage, Scene, SceneState } from "../../shared/scene";
+import {
+  buildShownSky,
+  buildSkyView,
+  CIEL_METRICS,
+  flightKeyOf,
+  nextSkyState,
+  SKY_ABSENT,
+  type SkyState,
+  sceneTimeOf,
+  skyInputOf,
+} from "./service";
 
 function passage(hex: string, overrides: Partial<Passage> = {}): Passage {
   return {
@@ -38,6 +48,12 @@ describe("CIEL_METRICS", () => {
 });
 
 describe("buildSkyView", () => {
+  it("shows the aircraft type when known and a dash otherwise", () => {
+    const value = (type: string | null) => buildSkyView(A, type).rows.find((row) => row.key === "aircraft")?.value;
+    expect(value("A319 111")).toBe("A319 111");
+    expect(value(null)).toBe("—");
+  });
+
   it("builds the six rows in order without units", () => {
     const view = buildSkyView(A);
     expect(view.hex).toBe("aaaaaa");
@@ -108,5 +124,32 @@ describe("skyInputOf", () => {
     expect(skyInputOf({ status: "denied" })).toEqual({ scene: null, denied: true });
     expect(skyInputOf({ status: "unavailable" })).toEqual({ scene: null, denied: false });
     expect(skyInputOf({ status: "loading" })).toEqual({ scene: null, denied: false });
+  });
+});
+
+describe("sceneTimeOf", () => {
+  it("returns the scene time once ready and 0 before", () => {
+    expect(sceneTimeOf({ status: "ready", scene: scene(null), snapshotAtMs: 1, nowMs: 5000 })).toBe(5000);
+    expect(sceneTimeOf({ status: "denied" } as SceneState)).toBe(0);
+  });
+});
+
+describe("buildShownSky", () => {
+  it("returns null until a plane and its scene time are known", () => {
+    expect(buildShownSky(null, null, null)).toBeNull();
+    expect(buildShownSky(A, null, null)).toBeNull();
+  });
+
+  it("carries the plane, its scene time and the type into the view", () => {
+    const sky = buildShownSky(A, 7000, "A319");
+    expect(sky).toMatchObject({ passage: A, shownAtMs: 7000 });
+    expect(sky?.view.rows.find((row) => row.key === "aircraft")?.value).toBe("A319");
+  });
+});
+
+describe("flightKeyOf", () => {
+  it("gives the hex and callsign of the shown plane, and nulls without one", () => {
+    expect(flightKeyOf(A)).toEqual({ hex: A.hex, callsign: A.callsign });
+    expect(flightKeyOf(null)).toEqual({ hex: null, callsign: null });
   });
 });

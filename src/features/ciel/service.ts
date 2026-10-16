@@ -25,6 +25,13 @@ export interface SkyView {
   rows: readonly SkyRow[];
 }
 
+export interface ShownSky {
+  view: SkyView;
+  passage: Passage;
+  /** Heure de scène de la position de `passage`. */
+  shownAtMs: number;
+}
+
 /** Valeurs du handoff de design (écran Ciel), en points. */
 export const CIEL_METRICS = {
   infoColumnRightPt: 24,
@@ -43,11 +50,11 @@ export const STALE_NOTICE_TOP_PT = 56;
 
 export const SKY_ABSENT: SkyState = { presence: "absent", passage: null };
 
-// Type d'appareil non fourni avant SPEC-0009.
+// Valeur affichée quand le type d'appareil est inconnu.
 const NO_VALUE = "—";
 
 /** Vue de l'avion montré : six lignes dans l'ordre du handoff, sans unité. */
-export function buildSkyView(passage: Passage): SkyView {
+export function buildSkyView(passage: Passage, aircraftType: string | null = null): SkyView {
   const airline = resolveAirline(passage.callsign);
   return {
     hex: passage.hex,
@@ -59,7 +66,7 @@ export function buildSkyView(passage: Passage): SkyView {
       { key: "heading", label: "Cap", value: passage.trackCardinal },
       { key: "airline", label: "Compagnie", value: airline.name },
       { key: "flight", label: "Vol", value: flightLabel(passage.callsign, airline) },
-      { key: "aircraft", label: "Appareil", value: NO_VALUE },
+      { key: "aircraft", label: "Appareil", value: aircraftType ?? NO_VALUE },
     ],
   };
 }
@@ -94,4 +101,24 @@ export function nextSkyState(input: {
 export function skyInputOf(state: SceneState): { scene: Scene | null; denied: boolean } {
   if (state.status === "ready") return { scene: state.scene, denied: false };
   return { scene: null, denied: state.status === "denied" };
+}
+
+/** Heure de scène de l'état : `0` tant qu'il n'y a pas de scène (aucun avion n'est alors montré). */
+export function sceneTimeOf(state: SceneState): number {
+  return state.status === "ready" ? state.nowMs : 0;
+}
+
+/** Avion montré avec sa vue ; `null` tant qu'aucun avion n'a été montré. */
+export function buildShownSky(
+  shown: Passage | null,
+  shownAtMs: number | null,
+  aircraftType: string | null,
+): ShownSky | null {
+  if (shown === null || shownAtMs === null) return null;
+  return { view: buildSkyView(shown, aircraftType), passage: shown, shownAtMs };
+}
+
+/** Avion dont on demande la route et le type : rien tant qu'aucun avion n'a été montré. */
+export function flightKeyOf(shown: Passage | null): { hex: string | null; callsign: string | null } {
+  return { hex: shown?.hex ?? null, callsign: shown?.callsign ?? null };
 }

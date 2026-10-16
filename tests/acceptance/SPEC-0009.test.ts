@@ -172,7 +172,7 @@ function haversineKm(a: { latitude: number; longitude: number }, b: { latitude: 
   return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
-describe.skip("SPEC-0009 adsbdb.com client", () => {
+describe("SPEC-0009 adsbdb.com client", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -371,7 +371,7 @@ describe.skip("SPEC-0009 adsbdb.com client", () => {
   });
 });
 
-describe.skip("SPEC-0009 session cache", () => {
+describe("SPEC-0009 session cache", () => {
   const ROUTE: FlightRoute = {
     origin: airport({ iata: "SPU", city: "Split", latitude: 43.5389, longitude: 16.298 }),
     destination: airport(),
@@ -472,7 +472,7 @@ describe.skip("SPEC-0009 session cache", () => {
   });
 });
 
-describe.skip("SPEC-0009 estimates and formats", () => {
+describe("SPEC-0009 estimates and formats", () => {
   // Géométrie sur un méridien : l'orthodromie est exactement `Δlatitude × 111,195 km`.
   const at = (northKm: number) => ({ latitude: 45 + northKm / KM_PER_DEGREE, longitude: 4.8 });
   const route = (originNorthKm: number, destinationNorthKm: number): FlightRoute => ({

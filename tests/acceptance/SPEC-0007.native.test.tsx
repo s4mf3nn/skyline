@@ -164,7 +164,7 @@ async function elapse(clock: { advance(ms: number): void }, seconds: number) {
   }
 }
 
-describe.skip("SPEC-0007 refresh (rendering)", () => {
+describe("SPEC-0007 refresh (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     renderedStatuses = [];

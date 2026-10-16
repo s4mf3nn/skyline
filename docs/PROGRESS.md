@@ -33,11 +33,11 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Bloquants
 
-- SPEC-0009 : ligne « Dépend de » illisible : "SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (SPEC-0004 telle qu'amendée : `Passage` porte la position de l'avion, voir « Décisi…
 - SPEC-0010 : ligne « Dépend de » illisible : "SPEC-0002, SPEC-0004, SPEC-0005, SPEC-0006 (cette spec reste `BROUILLON` tant que SPEC-0005 n'est pas écrite : les `testID` de…
 - SPEC-0011 : 3 question(s) ouverte(s) dans la spec
 - SPEC-0011 : ligne « Dépend de » illisible : "SPEC-0008, SPEC-0009, SPEC-0010 (le parcours complet existe : états, routes, dérives ; cette spec reste `BROUILLON` tant que c…
 
 ## Prochaines actions
 
+- /plan SPEC-0009 : spec fusionnée, dépendances livrées
 - workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004, SPEC-0006, SPEC-0005, SPEC-0007, SPEC-0008

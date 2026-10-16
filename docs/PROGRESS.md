@@ -33,7 +33,6 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Bloquants
 
-- SPEC-0008 : ligne « Dépend de » illisible : "SPEC-0003, SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (le pager et ses indicateurs, la scène, l'écran Ciel, l'écran Prochains…
 - SPEC-0009 : ligne « Dépend de » illisible : "SPEC-0004, SPEC-0005, SPEC-0006, SPEC-0007 (SPEC-0004 telle qu'amendée : `Passage` porte la position de l'avion, voir « Décisi…
 - SPEC-0010 : ligne « Dépend de » illisible : "SPEC-0002, SPEC-0004, SPEC-0005, SPEC-0006 (cette spec reste `BROUILLON` tant que SPEC-0005 n'est pas écrite : les `testID` de…
 - SPEC-0011 : 3 question(s) ouverte(s) dans la spec
@@ -41,4 +40,5 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Prochaines actions
 
+- /plan SPEC-0008 : spec fusionnée, dépendances livrées
 - workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004, SPEC-0006, SPEC-0005, SPEC-0007

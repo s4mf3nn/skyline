@@ -5,3 +5,4 @@ export interface Clock {
 }
 
 export { createFakeClock } from "./fake";
+export { formatClockTime } from "./format";

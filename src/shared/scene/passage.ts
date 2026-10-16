@@ -59,6 +59,9 @@ export function predictPassage(aircraft: Aircraft, observer: Position, takenAtMs
   const arrivalBearingDeg = normalizeDeg((Math.atan2(arrival.eastKm, arrival.northKm) * 180) / Math.PI);
   const now = positionAt(nowMs);
 
+  // Inverse de `toLocalKm`, pour rendre la position en degrés.
+  const cosLat = Math.cos((observer.latitude * Math.PI) / 180);
+
   return {
     hex: aircraft.hex,
     callsign: aircraft.callsign,
@@ -70,6 +73,8 @@ export function predictPassage(aircraft: Aircraft, observer: Position, takenAtMs
     closestTimeMs: Math.round(closestTimeRawMs),
     windowEndMs: Math.round(closestTimeRawMs + halfWindowMs),
     closestDistanceKm,
+    latitude: observer.latitude + now.northKm / KM_PER_DEGREE,
+    longitude: observer.longitude + now.eastKm / (KM_PER_DEGREE * cosLat),
     groundDistanceKm: Math.hypot(now.eastKm, now.northKm),
     arrivalBearingDeg,
     arrivalCardinal: cardinalPoint(arrivalBearingDeg),

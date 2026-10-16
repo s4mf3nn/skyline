@@ -15,6 +15,8 @@ function passage(hex: string, overrides: Partial<Passage> = {}): Passage {
     closestTimeMs: 0,
     windowEndMs: 0,
     closestDistanceKm: 1,
+    latitude: 48.9,
+    longitude: 2.4,
     groundDistanceKm: 10,
     arrivalBearingDeg: 270,
     arrivalCardinal: "O",

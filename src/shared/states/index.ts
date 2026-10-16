@@ -1,3 +1,4 @@
+import { formatClockTime } from "../clock";
 import type { SceneState } from "../scene";
 
 /** Délai sans réponse au bout duquel les données affichées sont dites périmées (3 minutes). */
@@ -46,16 +47,7 @@ export function isStale(snapshotAtMs: number, nowMs: number): boolean {
 
 /** `HH:MM` sur 24 h dans le fuseau reçu. */
 export function formatDataTime(timestampMs: number, timeZone: string): string {
-  // Assemblé depuis `formatToParts` : le motif de `format()` est localisé sur iOS.
-  const formatter = new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
-  const parts = formatter.formatToParts(timestampMs);
-  const partOf = (type: "hour" | "minute"): string => parts.find((part) => part.type === type)?.value ?? "00";
-  return `${partOf("hour")}:${partOf("minute")}`;
+  return formatClockTime(timestampMs, timeZone);
 }
 
 /** Notice de l'état d'attente, ou `null` quand il y a des avions à montrer. */

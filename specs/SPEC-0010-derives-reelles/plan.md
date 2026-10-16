@@ -68,7 +68,7 @@ Constats partagés :
 ## Groupe 2 (après fusion du groupe 1)
 ### T3 : Livrée sur les cartes et sur Ciel, activation des contrats
 - Périmètre : src/features/passages/components/airline-column.tsx, src/features/passages/components/upcoming-card.tsx, src/features/passages/components/overhead-card.tsx, src/features/passages/components/passage-card.native.test.tsx, src/features/ciel/screens/sky-screen.tsx, src/features/ciel/screens/sky-screen.native.test.tsx, tests/acceptance/SPEC-0010.test.ts, tests/acceptance/SPEC-0010.native.test.tsx
-- Dépend de : T1, T2, amendement de SPEC-0006 (question 1)
+- Dépend de : T1, T2, amendement de SPEC-0006 (voir Constats partagés)
 - Risque : élevé (clôture : active les scénarios cachés ; deux écrans)
 - Critères de la spec couverts : CA6, CA7, CA8, CA9, CA10, CA11, CA12
 - Définition de fini : `pnpm verify` vert ; retrait des **deux** `describe.skip` de SPEC-0010 (seule modification), tous verts ; contrats SPEC-0005, SPEC-0006 (amendé) et SPEC-0009 verts ; capture simulateur de Ciel et d'une carte dans la PR. Interface figée ci-dessus.

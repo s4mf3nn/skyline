@@ -26,7 +26,7 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | SPEC-0006 | Carrousel Prochains passages | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0005 | Écran Ciel et présence de Ciel dans le pager | ✅ | ✅ | ✅ 5/5 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0007 | Données réelles adsb.lol | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
-| SPEC-0008 | États d'interface | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
+| SPEC-0008 | États d'interface | ✅ | ✅ | ⬜ 0/3 | ⬜ | ⬜ | Prêt à implémenter |
 | SPEC-0009 | Routes de vol et type d'appareil | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0010 | Dérives réelles (livrées des compagnies) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
 | SPEC-0011 | Parcours critique, rejeu de trace et preuve sur iPhone | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
@@ -40,5 +40,6 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 
 ## Prochaines actions
 
-- /plan SPEC-0008 : spec fusionnée, dépendances livrées
+- /implement SPEC-0008 T1 : Groupe 1 (parallèle) débloqué
+- /implement SPEC-0008 T2 : Groupe 1 (parallèle) débloqué
 - workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004, SPEC-0006, SPEC-0005, SPEC-0007

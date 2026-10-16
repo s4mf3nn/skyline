@@ -7,7 +7,7 @@
 //   node scripts/plan-gate.mjs deps <SPEC-XXXX>         dépendances livrées seulement (au début de /plan)
 //   node scripts/plan-gate.mjs lint <SPEC-XXXX>         plan local, avant sa PR : SPEC-0000 a une tâche par groupe,
 //                                                       un risque lisible par tâche, une conception par tâche
-//                                                       de risque moyen ou élevé
+//                                                       de risque moyen ou élevé, tous les critères de la spec couverts
 // Dépendances : ligne `Dépend de : SPEC-XXXX, SPEC-YYYY` (ou `aucune`) de spec.md sur la base ; sans cette ligne, aucune.
 // Une spec est livrée quand elle a un contrat sur la base et qu'aucun de ses fichiers n'a plus de `.skip` : c'est la
 // fusion de sa tâche de clôture, le même signal que celui qui active ses scénarios cachés (scripts/holdout.mjs).
@@ -19,6 +19,7 @@ import { pathToFileURL } from "node:url";
 
 import { ACCEPTANCE_DIR, specOf } from "./contract-files.mjs";
 import { isActive } from "./holdout.mjs";
+import { coveredCriteria, parsePlan } from "./split-plan.mjs";
 
 const base = process.env.BASE_REF ?? "origin/main";
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -69,6 +70,31 @@ export function withoutAmendmentSkips(text, dependent) {
     .join("\n");
 }
 
+/**
+ * Critères (`- **CAn**` / `- **CUn**`) de la spec qu'aucune tâche du plan ne cite sur sa ligne « Critères de la spec
+ * couverts ». Un amendement de spec qui ajoute des critères sans amender le plan les laisse sans tâche.
+ */
+export function uncoveredCriteria(specText, planText) {
+  // Un critère « sans objet » (puce `- **CA3** : sans objet…`) n'a pas de tâche à couvrir.
+  const criteria = [...specText.matchAll(/^- \*\*(C[AU]\d+)\*\*\s*:?\s*(sans objet)?/gim)]
+    .filter((m) => !m[2])
+    .map((m) => m[1]);
+  const { lines, tasks } = parsePlan(planText);
+  const covered = new Set(tasks.flatMap((t) => coveredCriteria(lines.slice(t.from - 1, t.to - 1)).ids));
+  return criteria.filter((c) => !covered.has(c));
+}
+
+/** Message si la spec a un plan sur la base dont des critères n'ont aucune tâche, sinon null. */
+function uncoveredOnBase(spec) {
+  const [specPath] = specFilesOnBase(spec, "spec.md");
+  const [planPath] = specFilesOnBase(spec, "plan.md");
+  if (!specPath || !planPath) return null;
+  const missing = uncoveredCriteria(git("show", `${base}:${specPath}`), git("show", `${base}:${planPath}`));
+  return missing.length
+    ? `${spec} : critères sans tâche dans ${planPath} sur ${base} (${missing.join(", ")}). Amende d'abord son plan (/plan ${spec}).`
+    : null;
+}
+
 /** La spec est-elle livrée sur la base : un contrat, et aucun de ses fichiers ne garde de `.skip` (hors amendement de `dependent`) ? */
 function isDelivered(spec, dependent) {
   const texts = git("ls-tree", "--name-only", base, "--", `${ACCEPTANCE_DIR}/`)
@@ -90,6 +116,9 @@ export function checkDependencies(spec, { requireSpec = false } = {}) {
     return { ok: true, message: `${spec} : pas de spec.md unique sur ${base}, aucune dépendance lue.` };
   const parsed = parseDependencies(git("show", `${base}:${paths[0]}`));
   if (parsed.error) return { ok: false, message: `${paths[0]} : ${parsed.error}.` };
+  const uncovered = parsed.deps.map(uncoveredOnBase).find(Boolean);
+  if (uncovered)
+    return { ok: false, message: `${spec} dépend d'une spec amendée dont le plan est incomplet : ${uncovered}` };
   const missing = parsed.deps.filter((dep) => !isDelivered(dep, spec));
   if (missing.length) {
     return {
@@ -177,7 +206,15 @@ export function lintPlan(spec) {
     : [];
   if (paths.length !== 1) return { ok: false, message: `${spec} : pas de plan.md unique dans specs/.` };
   const plan = fs.readFileSync(paths[0], "utf8");
-  const problem = sequentialProblem(spec, plan) ?? designProblem(plan);
+  const specPath = fs
+    .readdirSync("specs")
+    .map((f) => `specs/${f}/spec.md`)
+    .find((p) => isSpecFile(p, spec, "spec.md") && fs.existsSync(p));
+  const missing = specPath ? uncoveredCriteria(fs.readFileSync(specPath, "utf8"), plan) : [];
+  const coverage = missing.length
+    ? `critères sans tâche (ligne « Critères de la spec couverts ») : ${missing.join(", ")}.`
+    : null;
+  const problem = sequentialProblem(spec, plan) ?? designProblem(plan) ?? coverage;
   return problem ? { ok: false, message: `${paths[0]} : ${problem}` } : { ok: true, message: `${paths[0]} : OK.` };
 }
 

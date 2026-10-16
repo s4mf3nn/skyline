@@ -65,8 +65,8 @@ Les invariants sont garantis par la validation à la frontière et par des fonct
   état d'interface prévu, jamais un plantage. (garantie par : validation à la frontière dans `src/shared/adsb/` et dans
   le client des routes)
 - **INV7** : la position de l'observateur ne sort de l'appareil que dans la requête à la source ADS-B, arrondie à
-  3 décimales (environ 100 m) ; la requête de
-  routes ne porte que l'indicatif. (garantie par : tests de contrat sur les faux des deux sources et du suivi des
+  3 décimales (environ 100 m) ; les requêtes vers la source des routes (route et type d'appareil) ne portent que
+  l'indicatif ou l'adresse `hex` de l'avion, qui identifient un avion et non l'observateur. (garantie par : tests de contrat sur les faux des deux sources et du suivi des
   erreurs ; règle de `docs/factory/DOMAIN-SECURITY.md`)
 - **INV8** : aucune couleur ni image de compagnie n'est inventée : une compagnie absente de la table prend
   `UNKNOWN_AIRLINE`, une compagnie sans image autorisée prend la dérive générique SVG. (garantie par : résolution de la

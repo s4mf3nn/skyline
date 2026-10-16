@@ -38,7 +38,9 @@ Notes :
   aussi) :
   1. `DOMAIN-SECURITY.md` : hôtes sortants nommés (`api.adsb.lol`, `api.adsbdb.com`, `https`) ; l'hôte n'est jamais
      une donnée reçue, un segment de chemin reçu (indicatif) est validé par format (ADR-0002).
-  2. `DOMAIN-SECURITY.md` : la requête de routes ne porte que l'indicatif, jamais la position de l'observateur (INV7).
+  2. `DOMAIN-SECURITY.md` : les requêtes vers adsbdb.com ne portent que l'indicatif (route) ou l'adresse `hex` (type
+     d'appareil) de l'avion, jamais la position ni le cap de l'observateur (INV7) ; le segment de chemin `hex` est
+     validé par format (six chiffres hexadécimaux) comme l'indicatif (amendement du 2026-10-16, ADR-0002).
   3. `DOMAIN-SECURITY.md` : la position envoyée à adsb.lol est arrondie à 3 décimales (environ 100 m) ; le calcul local
      garde la position exacte.
   4. `RISK.md`, `.github/labeler.yml`, `CODEOWNERS` : zone sensible `**/shared/routes/` (`review:full`).

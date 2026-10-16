@@ -72,8 +72,9 @@ ailleurs que sur la première carte de Prochains passages.
 | Cap du téléphone | Orienter la flèche de direction | Reste sur l'appareil | Mémoire seulement |
 | Erreurs et sessions techniques (version, environnement, feature, écran) | Stabilité et mesure de H1 et H2 | Sentry, sans donnée personnelle ni coordonnée (SPEC-0001) | Selon la rétention de Sentry |
 
-La requête de routes de vol (adsbdb.com, ADR-0002) ne porte que l'indicatif de l'avion, jamais la position de
-l'observateur. Aucune donnée n'est montrée à un autre utilisateur : il n'y en a pas en v0.
+Les requêtes vers adsbdb.com (ADR-0002) ne portent que l'indicatif de l'avion (route) ou son adresse `hex` (type
+d'appareil) : ces identifiants désignent un avion, pas l'observateur, et ne révèlent pas sa position, qui n'y figure
+jamais. Aucune donnée n'est montrée à un autre utilisateur : il n'y en a pas en v0.
 
 ## KPI et événements produit
 La v0 n'émet **aucun événement produit** : pas de SDK d'analytique, aucune nouvelle donnée sortante (décision du

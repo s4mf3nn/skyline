@@ -20,12 +20,15 @@ Options examinées le 2026-10-13 :
 
 ## Décision
 Option 2, retenue par le propriétaire le 2026-10-13 : les routes viennent d'adsbdb.com, `https://api.adsbdb.com`.
-- La requête ne porte que l'indicatif de l'avion, jamais la position de l'observateur (INV7).
+- La requête ne porte que des identifiants de l'avion : son indicatif (route, `/v0/callsign/{callsign}`) ou son adresse
+  OACI `hex` (type d'appareil, `/v0/aircraft/{hex}`, amendement du 2026-10-16). Jamais la position ni le cap de
+  l'observateur (INV7). Le `hex` identifie un avion, pas l'observateur, et ne révèle pas sa position.
 - L'indicatif entre dans le chemin de l'URL : il est validé avant tout appel (`trim`, majuscules, format
-  `^[A-Z0-9]{2,8}$`) ; un indicatif hors format n'est jamais envoyé et donne « route inconnue ». L'hôte est une
+  `^[A-Z0-9]{2,8}$`) ; un indicatif hors format n'est jamais envoyé et donne « route inconnue ». Le `hex` l'est de même
+  (`trim`, minuscules, six chiffres hexadécimaux) ; hors format, il n'est jamais envoyé et donne « type inconnu ». L'hôte est une
   constante, jamais une donnée reçue. Un test de contrat sur le faux des routes le vérifie avec un indicatif hostile.
-- Un indicatif est demandé au plus une fois par session de l'app : seules les réponses définitives (route trouvée,
-  indicatif inconnu de la base) sont gardées en mémoire ; un échec réseau n'est pas mis en cache et sera retenté. Les routes sont demandées hors du cycle de 10 s, seulement pour les avions affichés.
+- Un indicatif (ou un `hex`) est demandé au plus une fois par session de l'app : seules les réponses définitives (route
+  trouvée, indicatif ou `hex` inconnu de la base) sont gardées en mémoire ; un échec réseau n'est pas mis en cache et sera retenté. Les routes sont demandées hors du cycle de 10 s, seulement pour les avions affichés.
 - La réponse est validée à la frontière (INV6). Route absente, indicatif inconnu ou erreur réseau : repli « route
   inconnue », sans bloquer l'affichage de l'avion.
 - La source passe par une interface avec un faux, injectée par les tests, dans `src/shared/routes/`.

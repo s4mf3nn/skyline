@@ -2,7 +2,9 @@
 
 Statut : BROUILLON | VALIDÉE | EN COURS | LIVRÉE
 Risque estimé : faible | moyen | élevé
-Dépend de : aucune | SPEC-XXXX, SPEC-YYYY (specs à livrer avant de planifier celle-ci, voir `specs/ROADMAP.md`)
+Dépend de : aucune
+<!-- Remplacer « aucune » par SPEC-XXXX, SPEC-YYYY (specs à livrer avant de planifier celle-ci, voir `specs/ROADMAP.md`). Rien d'autre sur cette ligne : un commentaire va sur une ligne « Note sur les dépendances : … ». -->
+Note sur les dépendances : (facultatif, à supprimer si inutile)
 Tests de contrat : `tests/acceptance/SPEC-XXXX.test.ts` (ou fichiers suffixés `SPEC-XXXX.<suffixe>.test.ts(x)`)
 Scénarios cachés : `tests/holdout/SPEC-XXXX.test.ts` (ne pas les décrire ici)
 

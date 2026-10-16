@@ -2,7 +2,8 @@
 
 Statut : BROUILLON
 Risque estimé : faible (aucun fichier de `src/` : la spec ajoute un rejeu de trace, sa fixture et une fiche de preuve ; un écart révélé par le rejeu est un bug de SPEC-0004, corrigé par `/fix`)
-Dépend de : SPEC-0008, SPEC-0009, SPEC-0010 (le parcours complet existe : états, routes, dérives ; cette spec reste `BROUILLON` tant que ces specs ne sont pas livrées, `scripts/plan-gate.mjs deps SPEC-0011` le contrôle)
+Dépend de : SPEC-0008, SPEC-0009, SPEC-0010
+Note sur les dépendances : le parcours complet existe (états, routes, dérives) ; cette spec reste `BROUILLON` tant que ces specs ne sont pas livrées, `scripts/plan-gate.mjs deps SPEC-0011` le contrôle
 Tests de contrat : `tests/acceptance/SPEC-0011.test.ts` (Vitest) ; fixture : `tests/acceptance/SPEC-0011.trace.json`
 Scénarios cachés : `tests/holdout/SPEC-0011.test.ts` (ne pas les décrire ici)
 

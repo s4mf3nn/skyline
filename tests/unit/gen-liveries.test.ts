@@ -53,16 +53,16 @@ describe("scripts/gen-liveries.mjs", () => {
   it("is idempotent", () => {
     const root = tmpRoot(["AFR.png"]);
     gen(root);
-    expect(gen(root)).toContain("inchangé");
+    expect(gen(root)).toContain("unchanged");
   });
 
   it.each(["afr.png", "AFRA.png", "AF.png", "AFR.jpg", "AFR.png.bak"])("refuses the file name %s", (name) => {
-    expect(() => gen(tmpRoot([name]))).toThrow(/Fichier invalide/);
+    expect(() => gen(tmpRoot([name]))).toThrow(/Invalid file/);
   });
 
   it("refuses a sub-folder", () => {
     const root = tmpRoot(["AFR.png"]);
     fs.mkdirSync(path.join(root, "tails", "ABC.png"));
-    expect(() => gen(root)).toThrow(/Fichier invalide/);
+    expect(() => gen(root)).toThrow(/Invalid file/);
   });
 });

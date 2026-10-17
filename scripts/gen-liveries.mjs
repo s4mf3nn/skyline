@@ -19,7 +19,7 @@ function listImages(imagesDir) {
   const entries = fs.readdirSync(imagesDir, { withFileTypes: true });
   const invalid = entries.filter((e) => !e.isFile() || !IMAGE_NAME.test(e.name)).map((e) => e.name);
   if (invalid.length) {
-    throw new Error(`Fichier invalide dans ${imagesDir} (attendu <CODE>.png ou <CODE>.webp) : ${invalid.join(", ")}`);
+    throw new Error(`Invalid file in ${imagesDir} (expected <CODE>.png or <CODE>.webp): ${invalid.join(", ")}`);
   }
   return entries
     .map((e) => ({ code: IMAGE_NAME.exec(e.name)[1], file: e.name }))
@@ -48,7 +48,7 @@ function renderSources(images, imagesDir, outDir) {
 function write(target, content) {
   const previous = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : null;
   if (previous !== content) fs.writeFileSync(target, content);
-  return `${path.relative(process.cwd(), target)} : ${previous === content ? "inchangé" : "généré"}`;
+  return `${path.relative(process.cwd(), target)} : ${previous === content ? "unchanged" : "generated"}`;
 }
 
 const { values, positionals } = parseArgs({

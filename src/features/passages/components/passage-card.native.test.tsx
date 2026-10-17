@@ -109,12 +109,21 @@ describe("PassageCardView upcoming", () => {
     expect(view.queryByText("Au-dessus de vous")).toBeNull();
   });
 
-  it("renders the tail and no route block", async () => {
+  it("renders the livery and no route block", async () => {
     const [card] = cardsOf({ upcoming: [passage("a1")] }, null);
     if (!card) throw new Error("missing card");
     await renderCard(card);
-    expect(screen.getByTestId("passage-tail-a1")).toBeOnTheScreen();
+    expect(screen.getByTestId("passage-livery-a1")).toBeOnTheScreen();
+    expect(screen.queryByTestId("passage-tail-a1")).toBeNull();
     expect(screen.queryByTestId("passage-route-a1")).toBeNull();
+  });
+
+  it("falls back to the generic tail for an airline without livery", async () => {
+    const [card] = cardsOf({ upcoming: [passage("a1", { callsign: "CTV1506" })] }, null);
+    if (!card) throw new Error("missing card");
+    await renderCard(card);
+    expect(screen.getByTestId("passage-tail-a1")).toBeOnTheScreen();
+    expect(screen.queryByTestId("passage-livery-a1")).toBeNull();
   });
 
   it("renders no arrow while the heading is unknown", async () => {
@@ -167,7 +176,7 @@ describe("PassageCardView overhead", () => {
     expect(view.getByText("Vol")).toBeOnTheScreen();
     expect(view.getByText("AF1506")).toBeOnTheScreen();
     expect(view.getByText("Appareil")).toBeOnTheScreen();
-    expect(screen.getByTestId("passage-tail-h1")).toBeOnTheScreen();
+    expect(screen.getByTestId("passage-livery-h1")).toBeOnTheScreen();
     expect(styleOf("passage-card-h1").backgroundColor).toBe(card.theme.bg);
     expect(StyleSheet.flatten(view.getByText("EN CE").props.style).color).toBe(card.theme.big);
     expect(StyleSheet.flatten(view.getByText("Au-dessus de vous").props.style).color).toBe(card.theme.small);

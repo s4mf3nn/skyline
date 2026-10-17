@@ -90,7 +90,7 @@ export function OverheadCard({ card }: OverheadCardProps) {
         airlineName={card.airlineName}
         flightLabel={card.flightLabel}
         aircraftType={aircraftType ?? card.aircraftType}
-        tail={card.airline.tail}
+        airline={card.airline}
         labelColor={theme.small}
       />
     </>

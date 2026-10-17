@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Text, View } from "react-native";
-import type { TailPalette } from "../../../shared/airlines";
+import type { Airline } from "../../../shared/airlines";
+import { AirlineLivery, getLiverySource } from "../../../shared/airlines/livery";
 import { AirlineTail } from "../../../shared/airlines/tail";
 
 const TAIL_WIDTH_PT = 170;
@@ -12,7 +13,7 @@ interface AirlineColumnProps {
   airlineName: string;
   flightLabel: string;
   aircraftType: string;
-  tail: TailPalette;
+  airline: Airline;
   labelColor: string;
 }
 
@@ -35,16 +36,29 @@ function Field({ label, value, color }: FieldProps) {
   );
 }
 
-/** Dérive en bas à gauche, colonnes Compagnie, Vol et Appareil en bas à droite. */
-function AirlineColumnView({ hex, airlineName, flightLabel, aircraftType, tail, labelColor }: AirlineColumnProps) {
+/** Livrée réelle (ou dérive générique sans livrée) en bas à gauche, colonnes Compagnie, Vol et Appareil en bas à droite. */
+function AirlineColumnView({ hex, airlineName, flightLabel, aircraftType, airline, labelColor }: AirlineColumnProps) {
   return (
     <>
-      <View
-        testID={`passage-tail-${hex}`}
-        style={{ position: "absolute", left: TAIL_LEFT_PT, bottom: 0, width: TAIL_WIDTH_PT, height: TAIL_HEIGHT_PT }}
-      >
-        <AirlineTail palette={tail} width={TAIL_WIDTH_PT} height={TAIL_HEIGHT_PT} />
-      </View>
+      {getLiverySource(airline) !== null ? (
+        <View
+          style={{ position: "absolute", left: TAIL_LEFT_PT, bottom: 0, width: TAIL_WIDTH_PT, height: TAIL_HEIGHT_PT }}
+        >
+          <AirlineLivery
+            airline={airline}
+            testID={`passage-livery-${hex}`}
+            width={TAIL_WIDTH_PT}
+            height={TAIL_HEIGHT_PT}
+          />
+        </View>
+      ) : (
+        <View
+          testID={`passage-tail-${hex}`}
+          style={{ position: "absolute", left: TAIL_LEFT_PT, bottom: 0, width: TAIL_WIDTH_PT, height: TAIL_HEIGHT_PT }}
+        >
+          <AirlineTail palette={airline.tail} width={TAIL_WIDTH_PT} height={TAIL_HEIGHT_PT} />
+        </View>
+      )}
       <View style={{ position: "absolute", right: 22, bottom: 22, flexDirection: "row", gap: 14 }}>
         <Field label="Compagnie" value={airlineName} color={labelColor} />
         <Field label="Vol" value={flightLabel} color={labelColor} />

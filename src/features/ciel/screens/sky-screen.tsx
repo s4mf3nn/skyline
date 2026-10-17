@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { Text, View } from "react-native";
+import { AirlineLivery, getLiverySource } from "../../../shared/airlines/livery";
 import { AirlineTail } from "../../../shared/airlines/tail";
 import { usePagerAccent } from "../../../shared/pager";
 import { SkyRouteBlock } from "../../../shared/routes/block";
@@ -40,7 +41,22 @@ export function SkyScreen(): ReactElement | null {
   return (
     <View testID="sky-screen" style={{ flex: 1, backgroundColor: theme.bg, overflow: "hidden" }}>
       <View testID="sky-tail" style={{ position: "absolute", left: CIEL_METRICS.tailLeftPt, bottom: 0 }}>
-        <AirlineTail palette={view.airline.tail} width={CIEL_METRICS.tailWidthPt} height={CIEL_METRICS.tailHeightPt} />
+        {getLiverySource(view.airline) !== null ? (
+          <AirlineLivery
+            airline={view.airline}
+            testID="ciel-livery"
+            width={CIEL_METRICS.tailWidthPt}
+            height={CIEL_METRICS.tailHeightPt}
+          />
+        ) : (
+          <View testID="ciel-tail">
+            <AirlineTail
+              palette={view.airline.tail}
+              width={CIEL_METRICS.tailWidthPt}
+              height={CIEL_METRICS.tailHeightPt}
+            />
+          </View>
+        )}
       </View>
       {stale === null ? null : (
         <View style={{ position: "absolute", top: STALE_NOTICE_TOP_PT, left: 0, right: 0 }}>

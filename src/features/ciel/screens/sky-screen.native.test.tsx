@@ -56,6 +56,18 @@ describe("SkyScreen", () => {
     expect(screen.queryByTestId("data-stale-notice-ciel")).toBeNull();
   });
 
+  it("shows the livery for an airline that has one", async () => {
+    await mount([OVERHEAD]);
+    expect(screen.getByTestId("ciel-livery")).toBeOnTheScreen();
+    expect(screen.queryByTestId("ciel-tail")).toBeNull();
+  });
+
+  it("falls back to the generic tail for an airline without livery", async () => {
+    await mount([{ ...OVERHEAD, callsign: "CTV1506" }]);
+    expect(screen.getByTestId("ciel-tail")).toBeOnTheScreen();
+    expect(screen.queryByTestId("ciel-livery")).toBeNull();
+  });
+
   it("shows values without unit text", async () => {
     await mount([OVERHEAD]);
     for (const key of ["speed", "altitude"]) {

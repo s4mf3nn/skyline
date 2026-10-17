@@ -11,5 +11,7 @@ module.exports = {
   // Gesture Handler : module natif remplacé par un faux, pour rejouer les gestes avec `fireGestureHandler`.
   setupFiles: ["react-native-gesture-handler/jestSetup.js"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.cjs"],
+  // Images : une source `{ testUri }` propre à chaque fichier (le transformateur du preset donne `1` à toutes).
+  transform: { "\\.(png|webp)$": require.resolve("@react-native/jest-preset/jest/assetFileTransformer") },
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
 };

@@ -109,3 +109,8 @@ Source : Context7 `/colinhacks/zod/v4.6.5` le 2026-10-15.
 ## react-native 0.86.3 (`Linking.openSettings`)
 Source : `node_modules/react-native/Libraries/Linking/Linking.d.ts` le 2026-10-16.
 - `Linking.openSettings(): Promise<void>` ouvre les réglages de l'application ; la promesse peut rejeter (à avaler côté appelant, sans log).
+
+## jest-expo 57.0.6
+Source : lecture de `node_modules/jest-expo/jest-preset.js` et de `@react-native/jest-preset/jest/assetFileTransformer.js` le 2026-10-17 ; React Native 0.86.3 `Image` : Context7 `/react/react-native-website`.
+- Sous le preset, toute image `require()` vaut `1` : deux images ne se distinguent pas. Le `transform` du projet passe avant celui du preset : `"\\.(png|webp)$": require.resolve("@react-native/jest-preset/jest/assetFileTransformer")` donne `{ testUri: <chemin> }` propre à chaque fichier.
+- `<Image source>` : `require()` statique à chemin littéral (Metro), source de type `number` en production.

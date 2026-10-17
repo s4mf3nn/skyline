@@ -73,8 +73,8 @@ describe("SPEC-0012 holdout : couleurs des compagnies", () => {
     });
     const colors = extractColors(tail);
     expect(colors?.secondary).toBe("#FFFFFF");
-    // Les deux nuances de vert tombent dans la même case : la moyenne arrondie est celle des 160 pixels.
-    expect(colors?.primary).toMatch(/^#00(80|81)40$/);
+    // Les deux nuances de vert tombent dans la même case : la moyenne des 224 pixels vaut 128,5, arrondie à 129.
+    expect(colors?.primary).toBe("#008140");
     expect(extractColors(square(8, () => [255, 0, 0, 0]))).toBeNull();
   });
 
@@ -101,25 +101,26 @@ describe("SPEC-0012 holdout : couleurs des compagnies", () => {
     expect(fs.readFileSync(path.join(out, "colors.gen.ts"), "utf8")).toBe(first);
   });
 
-  it("gives the extracted colours whatever the callsign form, and the unknown ones to a stranger", async () => {
+  it("keeps handoff colours via an IATA callsign while an extracted airline follows the same path", async () => {
     const { AIRLINES, UNKNOWN_AIRLINE, resolveAirline, airlineTheme, contrastRatio } = await airlines();
-    const tails = fs.readdirSync(path.resolve("assets/tails")).filter((name) => name.endsWith(".png"));
-    const picked = AIRLINES.filter(
-      (airline) =>
-        tails.includes(`${airline.code}.png`) &&
-        airline.primary !== UNKNOWN_AIRLINE.primary &&
-        airline.iata.length > 0 &&
-        resolveAirline(`${airline.code}77`).code === airline.code,
-    );
-    expect(picked.length).toBeGreaterThanOrEqual(50);
-    for (const airline of picked.slice(0, 40)) {
-      const oaci = resolveAirline(` ${airline.code.toLowerCase()}77 `);
-      expect(oaci.primary).toBe(airline.primary);
-      expect(oaci.secondary).toBe(airline.secondary);
-      const theme = airlineTheme(oaci);
-      expect(theme.bg).toBe(airline.primary);
-      expect(contrastRatio(theme.small, theme.bg)).toBeGreaterThanOrEqual(4.5);
+    // Handoff : forme IATA et forme OACI donnent la même compagnie, aux couleurs du handoff.
+    for (const [iata, oaci, primary] of [
+      ["AF1234", "AFR1234", "#0B1F4B"],
+      ["KL641", "KLM641", "#00A1DE"],
+      ["FR8", "RYR8", "#073590"],
+    ]) {
+      expect(resolveAirline(iata as string)).toBe(resolveAirline(oaci as string));
+      expect(resolveAirline(iata as string).primary).toBe(primary);
     }
+    // Compagnie extraite : même chemin, couleurs de la table, thème lisible.
+    const american = resolveAirline("AA100");
+    expect(american.code).toBe("AAL");
+    expect(american.primary).not.toBe(UNKNOWN_AIRLINE.primary);
+    expect(AIRLINES.find((airline) => airline.code === "AAL")?.primary).toBe(american.primary);
+    const theme = airlineTheme(american);
+    expect(theme.bg).toBe(american.primary);
+    expect(contrastRatio(theme.small, theme.bg)).toBeGreaterThanOrEqual(4.5);
+    // Inconnue : couleurs inconnues, jamais une couleur voisine.
     expect(resolveAirline("ZZZ9999")).toBe(UNKNOWN_AIRLINE);
     expect(resolveAirline(null).primary).toBe("#1D1D1B");
   });

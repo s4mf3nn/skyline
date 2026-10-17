@@ -163,6 +163,29 @@ describe.skip("SPEC-0012 Couleurs des compagnies (extraction)", () => {
     expect(dropped?.secondary).toBe("#FFFFFF");
   });
 
+  it("CA4 : the distance filter applies before the bucket mean", async () => {
+    const { extractColors } = await genColors();
+    // 119 et 120 tombent dans la même case (r >> 5 = 3) : seuls les pixels à distance >= 120 entrent dans la moyenne.
+    const result = extractColors(pixels([[0, 0, 200, 255], 10], [[119, 0, 200, 255], 3], [[120, 0, 200, 255], 2]));
+    expect(result).toEqual({ primary: "#0000C8", secondary: "#7800C8" });
+  });
+
+  it("CA5 : pnpm gen runs gen-colors.mjs", () => {
+    const scripts = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")).scripts as Record<string, string>;
+    expect(scripts.gen).toContain("scripts/gen-colors.mjs");
+  });
+
+  it("CA5 : leaves a transparent image out of the table", () => {
+    const images = tmpDir();
+    const out = tmpDir();
+    fs.writeFileSync(path.join(images, "NUL.png"), encodePng(pixels([[9, 9, 9, 0], 4])));
+    fs.writeFileSync(path.join(images, "OKK.png"), encodePng(pixels([[0, 0, 200, 255], 4])));
+    expect(runGen(images, out).status).toBe(0);
+    const text = fs.readFileSync(path.join(out, "colors.gen.ts"), "utf8");
+    expect(text).toContain("OKK");
+    expect(text).not.toContain("NUL");
+  });
+
   it("CA5 : writes colors.gen.ts sorted by code, skips webp, and leaves an unchanged file alone", async () => {
     const images = tmpDir();
     const out = tmpDir();
@@ -203,19 +226,29 @@ describe.skip("SPEC-0012 Couleurs des compagnies (table)", () => {
   it("CA6 : an airline with a livery and no handoff colours takes the extracted colours, nothing else changes", async () => {
     const { AIRLINES, UNKNOWN_AIRLINE, resolveAirline } = await airlines();
     const { LIVERY_COLORS } = await load<ColorsGenModule>("src/shared/airlines/colors.gen.ts");
-    const extracted = pngCodes().filter((code) => !(code in HANDOFF));
+    const catalogue: Array<{ name: string; iata: string[]; icao: string[] }> = JSON.parse(
+      fs.readFileSync(path.resolve("tests/acceptance/SPEC-0002.catalogue.json"), "utf8"),
+    ).airlines;
+    expect(AIRLINES).toHaveLength(145);
+    const png = new Set(pngCodes());
+    for (const code of Object.keys(LIVERY_COLORS)) expect(png.has(code), code).toBe(true);
+    const extracted = Object.keys(LIVERY_COLORS).filter((code) => !(code in HANDOFF));
     expect(extracted.length).toBeGreaterThanOrEqual(100);
     let different = 0;
     for (const code of extracted) {
       const airline = AIRLINES.find((candidate) => candidate.code === code);
       expect(airline, code).toBeDefined();
       if (airline === undefined) continue;
-      expect(LIVERY_COLORS[code], code).toBeDefined();
       expect(airline.primary).toBe(LIVERY_COLORS[code]?.primary);
       expect(airline.secondary).toBe(LIVERY_COLORS[code]?.secondary);
       expect(airline.primary).toMatch(HEX);
       expect(airline.secondary).toMatch(HEX);
       expect(airline.tail).toEqual(UNKNOWN_AIRLINE.tail);
+      const entry = catalogue.find((candidate) => candidate.icao[0] === code);
+      expect(entry, code).toBeDefined();
+      expect(airline.name).toBe(entry?.name);
+      expect([...airline.iata]).toEqual(entry?.iata);
+      expect([...airline.icao]).toEqual(entry?.icao);
       expect(resolveAirline(`${code}123`).primary).toBe(airline.primary);
       if (airline.primary !== UNKNOWN_AIRLINE.primary) different++;
     }

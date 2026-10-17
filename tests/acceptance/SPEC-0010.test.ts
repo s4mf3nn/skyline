@@ -47,7 +47,7 @@ const HANDOFF_CODES = ["IBE", "AFR", "EZY", "DLH", "KLM", "RYR", "VLG", "TAP"];
 const TAILS_DIR = path.resolve("assets/tails");
 const airlines = () => load<AirlinesModule>("src/shared/airlines/index.ts");
 
-describe.skip("SPEC-0010 Dérives réelles (logique pure)", () => {
+describe("SPEC-0010 Dérives réelles (logique pure)", () => {
   it("CA1 : lists exactly the codes of the authorized liveries, among the table airlines", async () => {
     const { AIRLINES, UNKNOWN_AIRLINE, LIVERY_CODES } = await airlines();
     expect(SNAPSHOT_CODES).toHaveLength(137);

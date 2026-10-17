@@ -93,7 +93,7 @@ const tail = (hex: string) => screen.queryByTestId(`passage-tail-${hex}`);
 const expectedLabel = (callsign: string) => `Livrée ${airlinesModule().resolveAirline(callsign).name}`;
 const expectedSource = (callsign: string) => liveryModule().getLiverySource(airlinesModule().resolveAirline(callsign));
 
-describe.skip("SPEC-0010 Dérives réelles (rendering)", () => {
+describe("SPEC-0010 Dérives réelles (rendering)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });

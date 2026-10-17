@@ -1,12 +1,19 @@
 import type { ReactElement } from "react";
 import { Image, type ImageSourcePropType } from "react-native";
-import { LIVERY_SOURCES } from "./liveries.gen";
 import { hasLivery } from "./livery-rules";
 import type { Airline } from "./types";
 
+type LiverySources = Readonly<Record<string, ImageSourcePropType>>;
+
+// Chargement à l'appel : les `require()` d'images de liveries.gen ne sont lisibles que sous Metro et Jest,
+// pas sous Vitest, qui importe les écrans via le registre des features.
+function liverySources(): LiverySources {
+  return (require("./liveries.gen") as { LIVERY_SOURCES: LiverySources }).LIVERY_SOURCES;
+}
+
 /** Image de la livrée de la compagnie, ou `null` sans livrée (jamais l'image d'une autre compagnie). */
 export function getLiverySource(airline: Airline): ImageSourcePropType | null {
-  return hasLivery(airline) ? (LIVERY_SOURCES[airline.code] ?? null) : null;
+  return hasLivery(airline) ? (liverySources()[airline.code] ?? null) : null;
 }
 
 interface AirlineLiveryProps {

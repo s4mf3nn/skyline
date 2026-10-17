@@ -47,7 +47,7 @@ export default defineConfig({
       // hors couverture). Aucun calcul dans un .tsx.
       include: ["src/**/*.ts"],
       // Ajouter ici ce qu'aucun test ne charge : migrations, fichiers de configuration.
-      exclude: ["src/**/*.test.ts", "src/**/*.gen.ts"],
+      exclude: ["src/**/*.test.ts", "src/**/*.gen.ts", "src/**/*.tsx"],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
   },

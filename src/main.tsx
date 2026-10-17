@@ -6,6 +6,7 @@ import { chooseAdsbSource } from "./shared/adsb/select";
 import { createSystemClock } from "./shared/clock/system";
 import { createAppStateLifecycle } from "./shared/lifecycle/app-state";
 import { createExpoLocation } from "./shared/location/expo";
+import { chooseLocation } from "./shared/location/manual";
 import { readBuildInfo } from "./shared/monitoring/build";
 import { createSentryErrorReporter } from "./shared/monitoring/sentry";
 import { createFlightLookup } from "./shared/routes";
@@ -24,7 +25,13 @@ const adsbSource = chooseAdsbSource({
 export default createApp({
   services: {
     clock,
-    location: createExpoLocation(),
+    // Position fixée à la main (ex. EXPO_PUBLIC_MANUAL_POSITION=48.8566,2.3522) : développement seulement.
+    location: chooseLocation({
+      isDev: __DEV__,
+      // Lue seulement en développement : Expo recopie la valeur dans le bundle, le minifieur la retire hors `__DEV__`.
+      requested: __DEV__ ? process.env.EXPO_PUBLIC_MANUAL_POSITION : undefined,
+      real: createExpoLocation(),
+    }),
     // La démonstration ne sert qu'en développement et sur demande : jamais dans un build livré.
     adsb: adsbSource === "demo" ? createDemoAdsbSource(clock) : createAdsbLolSource({ fetch }),
     monitoring: createSentryErrorReporter({ dsn: process.env.EXPO_PUBLIC_SENTRY_DSN, ...build }),

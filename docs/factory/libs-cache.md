@@ -114,3 +114,8 @@ Source : `node_modules/react-native/Libraries/Linking/Linking.d.ts` le 2026-10-1
 Source : lecture de `node_modules/jest-expo/jest-preset.js` et de `@react-native/jest-preset/jest/assetFileTransformer.js` le 2026-10-17 ; React Native 0.86.3 `Image` : Context7 `/react/react-native-website`.
 - Sous le preset, toute image `require()` vaut `1` : deux images ne se distinguent pas. Le `transform` du projet passe avant celui du preset : `"\\.(png|webp)$": require.resolve("@react-native/jest-preset/jest/assetFileTransformer")` donne `{ testUri: <chemin> }` propre à chaque fichier.
 - `<Image source>` : `require()` statique à chemin littéral (Metro), source de type `number` en production.
+
+## pngjs 7.0.0
+Source : lecture de `node_modules/pngjs@7.0.0` (`lib/png.js`, `lib/png-sync.js`) le 2026-10-17.
+- Lecture : `import { PNG } from "pngjs"` fonctionne en ESM ; `PNG.sync.read(buffer)` rend `{ width, height, data }` en RGBA 8 bits (4 octets par pixel) et lève une erreur sur un PNG illisible. Écriture : `PNG.sync.write(image)`.
+- Pas de types embarqués (ni `@types/pngjs` ajouté) : un test TypeScript passe par `createRequire` avec un type local minimal.

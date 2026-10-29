@@ -305,6 +305,13 @@ describe("scripts/pre-review.mjs", () => {
     expect(mod.checkSelfReview(null, ["CA1"], exists)).toEqual([expect.stringContaining("absente")]);
   });
 
+  it("ne confond pas un critère avec un autre dont il est le préfixe", () => {
+    const exists = () => true;
+    const summary = "## Relecture contre la tâche\nCA10 : src/a/a.test.ts — x\n";
+    expect(mod.checkSelfReview(summary, ["CA1"], exists)).toEqual([expect.stringContaining("CA1")]);
+    expect(mod.checkSelfReview(summary, ["CA10"], exists)).toEqual([]);
+  });
+
   it("extrait les critères d'une tâche du plan, plages comprises", () => {
     const plan = [
       "# Plan",

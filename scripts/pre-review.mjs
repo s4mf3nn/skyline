@@ -346,7 +346,8 @@ export function checkSelfReview(summary, ids, fileExists) {
     ];
   const problems = [];
   for (const id of ids) {
-    const line = section.split("\n").find((l) => new RegExp(`\\b${id}\\b`).test(l));
+    // Mot entier (équivalent de `\b<id>\b`) sans construire de RegExp à partir d'une valeur dynamique.
+    const line = section.split("\n").find((l) => (l.match(/\w+/g) ?? []).includes(id));
     if (!line) {
       problems.push(`${SELF_REVIEW} : critère ${id} de la tâche sans ligne`);
       continue;

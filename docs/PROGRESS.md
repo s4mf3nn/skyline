@@ -1,7 +1,7 @@
 # Avancement du projet
 
 <!-- Fichier généré par scripts/progress-table.mjs (workflow `progress`). Ne pas éditer à la main. -->
-Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cours, ⬜ à faire.
+Mis à jour le 2026-10-29 d'après origin/main. Légende : ✅ fait, 🟡 en cours, ⬜ à faire.
 
 ## Étapes du projet
 
@@ -11,7 +11,7 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | ✅ | Cadrage |  |
 | ✅ | Socle | SPEC-0000 |
 | ✅ | Livraison prête | SPEC-0001 |
-| 🟡 | Specs métier | 6 / 10 |
+| 🟡 | Specs métier | 9 / 11 |
 | ⬜ | En production | aucune livraison |
 
 ## Specs
@@ -22,22 +22,22 @@ Mis à jour le 2026-10-16 d'après origin/main. Légende : ✅ fait, 🟡 en cou
 | SPEC-0001 | Livraison, cible réelle et observabilité | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0002 | Thème et table des compagnies | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0003 | Pager à deux pages | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
-| SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ✅ | ✅ 5/5 | ⬜ | ⬜ | En cours |
+| SPEC-0004 | Calcul de la scène, position et cap de l'observateur | ✅ | ✅ | ✅ 5/5 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0006 | Carrousel Prochains passages | ✅ | ✅ | ✅ 4/4 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0005 | Écran Ciel et présence de Ciel dans le pager | ✅ | ✅ | ✅ 5/5 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0007 | Données réelles adsb.lol | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
 | SPEC-0008 | États d'interface | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
-| SPEC-0009 | Routes de vol et type d'appareil | ✅ | ✅ | ⬜ 0/5 | ⬜ | ⬜ | Prêt à implémenter |
-| SPEC-0010 | Dérives réelles (livrées des compagnies) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
-| SPEC-0011 | Parcours critique, rejeu de trace et preuve sur iPhone | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Plan à écrire |
+| SPEC-0009 | Routes de vol et type d'appareil | ✅ | ✅ | ✅ 5/5 | ✅ | ⬜ | Livrée, à mettre en production |
+| SPEC-0010 | Dérives réelles (livrées des compagnies) | ✅ | ✅ | ✅ 3/3 | ✅ | ⬜ | Livrée, à mettre en production |
+| SPEC-0011 | Parcours critique, rejeu de trace et preuve sur iPhone | ✅ | ✅ | ⬜ 0/2 | ⬜ | ⬜ | Prêt à implémenter |
+| SPEC-0012 | Couleurs des compagnies extraites des dérives | ✅ | ✅ | 🟡 1/2 | ⬜ | ⬜ | En cours |
 
 ## Bloquants
 
-- SPEC-0009 : dépend de SPEC-0004, pas encore livrée(s)
-- SPEC-0010 : dépend de SPEC-0004, pas encore livrée(s)
 - SPEC-0011 : 3 question(s) ouverte(s) dans la spec
-- SPEC-0011 : dépend de SPEC-0009, SPEC-0010, pas encore livrée(s)
 
 ## Prochaines actions
 
-- workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0006, SPEC-0005, SPEC-0007, SPEC-0008
+- /implement SPEC-0011 T1 : Groupe 1 (parallèle) débloqué
+- /implement SPEC-0012 T2 : Groupe 2 (après fusion du groupe 1) débloqué
+- workflow release : livrée(s), pas en production : SPEC-0000, SPEC-0001, SPEC-0002, SPEC-0003, SPEC-0004, SPEC-0006, SPEC-0005, SPEC-0007, SPEC-0008, SPEC-0009,…

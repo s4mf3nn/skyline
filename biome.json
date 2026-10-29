@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/*.gen.ts", "!docs/brief"]
+    "includes": ["**", "!**/*.gen.ts", "!docs/brief", "!design_handoff_skyline_ciel_passages"]
   },
   "formatter": {
     "enabled": true,
